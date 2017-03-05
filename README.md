@@ -9,17 +9,22 @@ Development repository for Missing Link.
 
 1. First, clone CircuitHappy fork of [CHIP-SDK](https://github.com/CircuitHappy/CHIP-SDK)
 1. Run the setup script in `CHIP-SDK`
+
     ```
     ./setup_ubuntu.sh
     ```
+    
 1. Build the `missinglink` buildroot configuration. _This will take awhile._
+
     ```
     cd CHIP-SDK/CHIP-buildroot
     make missinglink_defconfig
     make
     ```
+    
 1. In the same directory that `CHIP-SDK` is located, clone `MissingLink` 
    recursively or clone and then get submodules
+   
     ```
     git clone --recursive https://github.com/CircuitHappy/MissingLink.git
     ```
@@ -30,12 +35,16 @@ Development repository for Missing Link.
     git clone https://github.com/CircuitHappy/MissingLink.git
     git submodule update --init --recursive
     ```
+    
 1. Run CMake
+
     ```
     cd build
     cmake ..
     ```
+    
 1. Build it
+
     ```
     make
     ```
