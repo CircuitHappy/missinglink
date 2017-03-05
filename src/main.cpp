@@ -146,7 +146,7 @@ namespace {
           const double phase = timeline.phaseAtTime(time, QUANTUM);
           const double tempo = timeline.tempo();
 
-          switch (state.playState) {
+          switch ((PlayState)state.playState) {
               case Cued: {
                       // Tweak this
                       const bool playHigh = (long)(beats * 2) % 2 == 0;
