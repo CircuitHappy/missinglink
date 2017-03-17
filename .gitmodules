@@ -4,3 +4,6 @@
 [submodule "vendor/link"]
 	path = vendor/link
 	url = https://github.com/Ableton/link.git
+[submodule "vendor/googletest"]
+	path = vendor/googletest
+	url = https://github.com/google/googletest
