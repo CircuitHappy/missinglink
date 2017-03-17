@@ -13,7 +13,8 @@ project(missing_link)
 include(vendor/link/AbletonLinkConfig.cmake)
 include_directories(${link_HEADERS})
 
-file(GLOB_RECURSE missing_link_sources "src/*.cpp")
+include_directories(./include)
+file(GLOB_RECURSE missing_link_sources "./src/*.cpp")
 add_executable(missing_link ${missing_link_sources})
 
 target_link_libraries(missing_link pthread)
