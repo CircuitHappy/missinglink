@@ -29,29 +29,44 @@ include(vendor/link/AbletonLinkConfig.cmake)
 include_directories(${link_HEADERS})
 include_directories(./include)
 
-file(GLOB_RECURSE missing_link_sources "./src/*.cpp")
+file(GLOB_RECURSE missing_link_sources "src/*.cpp")
+add_executable(missing_link ${missing_link_sources} main.cpp)
 
-add_library(missing_link_lib ${missing_link_sources})
-add_executable(missing_link main.cpp)
+set(
+  missing_link_libs
+  pthread
+  Ableton::Link
+)
 
-target_link_libraries(missing_link missing_link_lib)
-target_link_libraries(missing_link pthread)
-target_link_libraries(missing_link Ableton::Link)
+target_link_libraries(missing_link ${missing_link_libs})
 
 ########
 # Tests
 ########
 
 if(TESTS)
-  set(BUILD_GTEST ON CACHE BOOL "D")
   add_subdirectory(vendor/googletest/googletest)
   enable_testing()
 
-  file(GLOB_RECURSE missing_link_test_sources "./test/*.cpp")
-  add_executable(missing_link_tests ${missing_link_test_sources})
+  file(GLOB_RECURSE missing_link_test_sources "test/*.cpp")
 
-  target_link_libraries(missing_link_tests missing_link_lib)
-  target_link_libraries(missing_link_tests gtest gtest_main)
+  set(
+    missing_link_test_libs
+    gtest
+    gtest_main
+  )
+  
+  add_executable(
+    missing_link_tests 
+    ${missing_link_sources}
+    ${missing_link_test_sources}
+  )
+
+  target_link_libraries(
+    missing_link_tests 
+    ${missing_link_libs}
+    ${missing_link_test_libs}
+  )
 
   add_test(tests missing_link_tests)
 endif()

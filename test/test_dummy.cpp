@@ -5,7 +5,7 @@ TEST(Dummy, PassesATest) {
     EXPECT_EQ(i, 0);
 }
 
-TEST(DUmmy, FailsATest) {
+TEST(Dummy, FailsATest) {
     int i = 1;
     EXPECT_EQ(i, 0);
 }
