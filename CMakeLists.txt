@@ -13,7 +13,7 @@ SET(TESTS false CACHE BOOL "Configure with unit tests")
 
 if(CHIP)
   set(_BUILDROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/../CHIP-SDK)
-  set(CMAKE_TOOLCHAIN_FILE ./cmake_includes/chip_toolchain.cmake)
+  set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
 endif()
 
 ##########
@@ -26,10 +26,11 @@ set(CMAKE_CXX_FLAGS "-g -Wall")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(vendor/link/AbletonLinkConfig.cmake)
-include_directories(${link_HEADERS})
-include_directories(./include)
 
-file(GLOB_RECURSE missing_link_sources "src/*.cpp")
+include_directories(${link_HEADERS})
+include_directories(src)
+
+file(GLOB_RECURSE missing_link_sources "src/*.cpp" "src/*.hpp")
 add_executable(missing_link ${missing_link_sources} main.cpp)
 
 set(
