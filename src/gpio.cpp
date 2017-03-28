@@ -29,6 +29,6 @@ void Pin::Write(DigitalValue value) {
 
 }
 
-DigitalValue Pin::Read() {
-  return GPIO::LOW;
+MissingLink::DigitalValue Pin::Read() {
+  return LOW;
 }

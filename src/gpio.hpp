@@ -1,21 +1,19 @@
 #pragma once
 
+#include "missinglink_types.hpp"
+
 namespace MissingLink {
 namespace GPIO {
-
-enum DigitalValue {
-  LOW = 0,
-  HIGH = 1
-};
-
-enum Direction {
-  IN = 0,
-  OUT = 1
-};
 
 class Pin {
 
 public:
+
+  enum Direction {
+    IN = 0,
+    OUT = 1
+  };
+
   Pin(const int address);
 
   void Export();

@@ -12,11 +12,11 @@ int main(void) {
 
   GPIO::Pin blinky(132);
   blinky.Export();
-  blinky.SetDirection(GPIO::OUT);
+  blinky.SetDirection(GPIO::Pin::OUT);
 
   bool value = false;
   while (1) {
-    blinky.Write(value ? GPIO::HIGH : GPIO::LOW);
+    blinky.Write(value ? HIGH : LOW);
     value = !value;
     this_thread::sleep_for(chrono::seconds(1));
   }
