@@ -22,7 +22,7 @@ endif()
 
 project(missing_link)
 
-set(CMAKE_CXX_FLAGS "-g -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -48,7 +48,6 @@ target_link_libraries(missing_link ${missing_link_libs})
 
 if(TESTS)
   add_subdirectory(vendor/googletest/googletest)
-  enable_testing()
 
   file(GLOB_RECURSE missing_link_test_sources "test/*.cpp")
 
@@ -69,8 +68,6 @@ if(TESTS)
     ${missing_link_libs}
     ${missing_link_test_libs}
   )
-
-  add_test(tests missing_link_tests)
 endif()
 
 

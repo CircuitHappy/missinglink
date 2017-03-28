@@ -6,11 +6,11 @@
 #include "gpio.hpp"
 
 using namespace std;
-using namespace MissingLink;
+using namespace MissingLink::GPIO;
 
 int main(void) {
 
-  //GPIO::Pin blinky(132);
+  SysfsMappedPin blinky(132, Pin::OUT);
   //blinky.Export();
   //blinky.SetDirection(GPIO::Pin::OUT);
 

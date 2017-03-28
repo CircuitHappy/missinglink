@@ -6,7 +6,6 @@ namespace MissingLink {
 namespace GPIO {
 
 class Pin {
-
 public:
 
   enum Direction {
@@ -25,6 +24,16 @@ protected:
 
   virtual int read(DigitalValue &value) = 0;
   virtual int write(const DigitalValue value) = 0;
+};
+
+class SysfsMappedPin : public Pin {
+public:
+  SysfsMappedPin(const int address, const Direction direction);
+  int Export();
+  int Unexport();
+private:
+  int read(DigitalValue &value) override;
+  int write(const DigitalValue value) override;
 };
 
 }}
