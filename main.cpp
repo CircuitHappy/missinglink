@@ -3,7 +3,7 @@
 #include <chrono>
 #include <thread>
 
-#include "gpio.hpp"
+#include "missing_link/gpio.hpp"
 
 using namespace std;
 using namespace MissingLink::GPIO;

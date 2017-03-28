@@ -1,6 +1,6 @@
 #pragma once
 
-#include "missinglink_common.hpp"
+#include "missing_link/missinglink_common.hpp"
 
 namespace MissingLink {
 namespace GPIO {
