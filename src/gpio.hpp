@@ -1,6 +1,6 @@
 #pragma once
 
-#include "missinglink_types.hpp"
+#include "missinglink_common.hpp"
 
 namespace MissingLink {
 namespace GPIO {
@@ -14,21 +14,17 @@ public:
     OUT = 1
   };
 
-  Pin(const int address);
+  Pin(const int address, const Direction direction);
 
-  void Export();
-  void Unexport();
-
-  void SetDirection(Direction direction);
-
-  void Write(DigitalValue value);
-
-  DigitalValue Read();
+  int Read(DigitalValue &value);
+  int Write(const DigitalValue value);
 
 protected:
-
-private:
   const int m_address;
+  const Direction m_direction;
+
+  virtual int read(DigitalValue &value) = 0;
+  virtual int write(const DigitalValue value) = 0;
 };
 
 }}

@@ -10,16 +10,16 @@ using namespace MissingLink;
 
 int main(void) {
 
-  GPIO::Pin blinky(132);
-  blinky.Export();
-  blinky.SetDirection(GPIO::Pin::OUT);
+  //GPIO::Pin blinky(132);
+  //blinky.Export();
+  //blinky.SetDirection(GPIO::Pin::OUT);
 
-  bool value = false;
-  while (1) {
-    blinky.Write(value ? HIGH : LOW);
-    value = !value;
-    this_thread::sleep_for(chrono::seconds(1));
-  }
+  //bool value = false;
+  //while (1) {
+  //  blinky.Write(value ? HIGH : LOW);
+  //  value = !value;
+  //  this_thread::sleep_for(chrono::seconds(1));
+  //}
 
   //ofstream gpioExport;
   //gpioExport.open("/sys/class/gpio/export");
