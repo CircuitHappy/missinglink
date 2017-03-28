@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "missing_link/missinglink_common.hpp"
 
 namespace MissingLink {
@@ -29,8 +30,15 @@ protected:
 class SysfsMappedPin : public Pin {
 public:
   SysfsMappedPin(const int address, const Direction direction);
+
   int Export();
   int Unexport();
+
+protected:
+  std::string getInterfacePath() const;
+  virtual int writeToFile(const std::string strPath, const std::string strValue);
+  virtual int readFromFile(const std::string strPath, std::string &strValue);
+
 private:
   int read(DigitalValue &value) override;
   int write(const DigitalValue value) override;
