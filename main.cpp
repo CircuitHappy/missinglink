@@ -15,18 +15,19 @@ void signalHandler(int s) {
   exit(1);
 }
 
-void configureInterruptHandler() {
+void configureSignalHandler() {
   struct ::sigaction sigIntHandler;
   sigIntHandler.sa_handler = signalHandler;
   ::sigemptyset(&sigIntHandler.sa_mask);
   sigIntHandler.sa_flags = 0;
 
   ::sigaction(SIGINT, &sigIntHandler, NULL);
+  ::sigaction(SIGSEGV, &sigIntHandler, NULL);
 }
 
 int main(void) {
 
-  configureInterruptHandler();
+  configureSignalHandler();
 
   blinky.Export();
 
@@ -36,6 +37,7 @@ int main(void) {
     value = !value;
     this_thread::sleep_for(chrono::milliseconds(50));
   }
+
 
   return 0;
 }
