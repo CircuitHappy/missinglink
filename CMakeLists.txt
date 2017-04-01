@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.0)
 SET(CHIP false CACHE BOOL "Configure for cross-compilation to CHIP environment")
 SET(TESTS false CACHE BOOL "Configure with unit tests")
 
+set(CHIP_HOSTNAME missinglink.local CACHE STRING "Name of CHIP deployment target host on network")
+
 ############
 # Toolchain
 ############
@@ -42,6 +44,13 @@ set(
 
 target_link_libraries(missing_link ${missing_link_libs})
 
+if(CHIP)
+  add_custom_command(
+    TARGET missing_link POST_BUILD
+    COMMAND scp bin/missing_link root@${CHIP_HOSTNAME}:/usr/bin 
+  )
+endif()
+
 ########
 # Tests
 ########
@@ -68,6 +77,14 @@ if(TESTS)
     ${missing_link_libs}
     ${missing_link_test_libs}
   )
+
+  if(CHIP)
+    add_custom_command(
+      TARGET missing_link_tests POST_BUILD
+      COMMAND scp bin/missing_link_tests root@${CHIP_HOSTNAME}:/usr/bin 
+    )
+  endif()
+
 endif()
 
 
