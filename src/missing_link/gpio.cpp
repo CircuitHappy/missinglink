@@ -2,10 +2,10 @@
 #include <string>
 #include "missing_link/gpio.hpp"
 
-//extern "C" {
+extern "C" {
   #include <unistd.h>
   #include <fcntl.h>
-//}
+}
 
 using std::string;
 using namespace MissingLink::GPIO;
