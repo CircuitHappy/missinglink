@@ -7,7 +7,7 @@
 using namespace std;
 using namespace MissingLink;
 
-GPIO::SysfsMappedPin blinky(132, GPIO::Pin::OUT);
+GPIO::SysfsPin blinky(132, GPIO::Pin::OUT);
 
 void signalHandler(int s) {
   cout << "Caught signal " << s << endl;

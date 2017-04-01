@@ -1,7 +1,10 @@
 #pragma once
 
 #include <string>
+#include <memory>
+
 #include "missing_link/missinglink_common.hpp"
+#include "missing_link/file.hpp"
 
 namespace MissingLink {
 namespace GPIO {
@@ -15,6 +18,7 @@ public:
   };
 
   Pin(const int address, const Direction direction);
+  virtual ~Pin();
 
   int Read(DigitalValue &value);
   int Write(const DigitalValue value);
@@ -27,21 +31,26 @@ protected:
   virtual int write(const DigitalValue value) = 0;
 };
 
-class SysfsMappedPin : public Pin {
+class SysfsPin : public Pin {
 public:
-  SysfsMappedPin(const int address, const Direction direction);
+  SysfsPin(const int address, const Direction direction);
 
   int Export();
   int Unexport();
 
 protected:
   std::string getInterfacePath() const;
-  virtual int writeToFile(const std::string strPath, const std::string strValue);
-  virtual int readFromFile(const std::string strPath, std::string &strValue);
+  virtual std::unique_ptr<File> createFile(const std::string strPath, const File::Access access);
 
 private:
+  std::unique_ptr<File> m_valueFile;
+
   int read(DigitalValue &value) override;
   int write(const DigitalValue value) override;
+
+  int doExport();
+  int doUnexport();
+  int doSetDirection();
 };
 
 }}
