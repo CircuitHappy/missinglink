@@ -11,11 +11,15 @@ using namespace MissingLink;
 int main(void) {
 
   GPIO::SysfsMappedPin blinky(132, GPIO::Pin::OUT);
-  blinky.Export();
+  if (blinky.Export() < 0) {
+    return 1;
+  }
 
   bool value = false;
   while (1) {
-    blinky.Write(value ? HIGH : LOW);
+    if (blinky.Write(value ? HIGH : LOW) < 0) {
+      return 1;
+    }
     value = !value;
     this_thread::sleep_for(chrono::milliseconds(50));
   }

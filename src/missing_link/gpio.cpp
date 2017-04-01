@@ -1,6 +1,11 @@
+#include <iostream>
 #include <string>
-#include <stdio.h>
 #include "missing_link/gpio.hpp"
+
+//extern "C" {
+  #include <unistd.h>
+  #include <fcntl.h>
+//}
 
 using std::string;
 using namespace MissingLink::GPIO;
@@ -82,14 +87,19 @@ string SysfsMappedPin::getInterfacePath() const {
 }
 
 int SysfsMappedPin::writeToFile(const string strPath, const string strValue) {
-  FILE *fd = NULL;
-  if ((fd = fopen(strPath.c_str(), "w")) == NULL) {
+  int fd = -1;
+  if ((fd = open(strPath.c_str(), O_WRONLY)) < 0) {
+    std::cerr << "Failed to open " << strPath << std::endl;
     return -1;
   }
-  if (fprintf(fd, "%s", strValue.c_str()) < 0) {
+  size_t bytes = strValue.length();
+  int writtenBytes = ::write(fd, strValue.c_str(), bytes);
+  if (writtenBytes != (int)bytes)  {
+    std::cerr << "Failed to write " << strValue << " to " << strPath << std::endl;
     return -1;
   }
-  if (fclose(fd) != 0) {
+  if (close(fd) != 0) {
+    std::cerr << "Failed to close " << strPath << std::endl;
     return -1;
   }
   return 0;
