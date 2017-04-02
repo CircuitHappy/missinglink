@@ -18,6 +18,8 @@ public:
   int Open();
   int Close();
 
+  int Seek(const size_t nBytes);
+
   // On success returns bytes read.
   // On error returns negative value.
   int Read(char *buf, const size_t nBytes);
@@ -37,6 +39,7 @@ protected:
 
   virtual int open() = 0;
   virtual int close() = 0;
+  virtual int seek(const size_t nBytes) = 0;
   virtual int write(const char *buf, const size_t nBytes) = 0;
   virtual int read(char *buf, const size_t nBytes) = 0;
 };
@@ -54,6 +57,7 @@ private:
   bool isOpen() const override;
   int open() override;
   int close() override;
+  int seek(const size_t nBytes) override;
   int write(const char *buf, const size_t nBytes) override;
   int read(char *buf, const size_t nBytes) override;
 };

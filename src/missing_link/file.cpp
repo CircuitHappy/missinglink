@@ -38,6 +38,26 @@ int File::Close() {
   return result;
 }
 
+int File::Seek(const size_t nBytes) {
+  if (!isOpen()) {
+    std::cerr << "Cannot seek file " << m_strPath << ": File not open" << std::endl;
+    return -1;
+  }
+  int result = seek(nBytes);
+  if (result < 0) {
+    std::cerr << "Failed to seek file " << m_strPath << std::endl;
+  }
+  return result;
+}
+
+int File::Read(char *buf, const size_t nBytes) {
+  if (!canRead()) {
+    std::cerr << "Cannot read from file: opened without read access" << std::endl;
+    return -1;
+  }
+  return read(buf, nBytes);
+}
+
 int File::Write(const char *buf, const size_t nBytes) {
   if (!canWrite()) {
     std::cerr << "Cannot write to file: opened without write access" << std::endl;
@@ -52,14 +72,6 @@ int File::Write(const char *buf, const size_t nBytes) {
 
 int File::Write(const string strValue) {
   return Write(strValue.c_str(), strValue.size());
-}
-
-int File::Read(char *buf, const size_t nBytes) {
-  if (!canRead()) {
-    std::cerr << "Cannot read from file: opened without read access" << std::endl;
-    return -1;
-  }
-  return read(buf, nBytes);
 }
 
 bool File::canRead() const {
@@ -107,6 +119,11 @@ int UnbufferedFile::close() {
   int result = ::close(m_fd);
   m_fd = -1;
   return result;
+}
+
+int UnbufferedFile::seek(const size_t nBytes) {
+  bool success = ::lseek(m_fd, (off_t)nBytes, SEEK_SET);
+  return success ? 0 : -1;
 }
 
 int UnbufferedFile::write(const char *buf, const size_t nBytes) {
