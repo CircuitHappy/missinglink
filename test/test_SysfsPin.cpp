@@ -64,6 +64,22 @@ public:
 
   std::map<string, std::shared_ptr<FakeFile::StorageProxy>> touchedFileStorage;
 
+  std::shared_ptr<FakeFile::StorageProxy> GetExportFileStorage() {
+    return touchedFileStorage[s_rootInterfacePath + "/export"];
+  }
+
+  std::shared_ptr<FakeFile::StorageProxy> GetUnexportFileStorage() {
+    return touchedFileStorage[s_rootInterfacePath + "/export"];
+  }
+
+  std::shared_ptr<FakeFile::StorageProxy> GetDirectionFileStorage() {
+    return touchedFileStorage[getPinInterfacePath() + "/direction"];
+  }
+
+  std::shared_ptr<FakeFile::StorageProxy> GetValueFileStorage() {
+    return touchedFileStorage[getPinInterfacePath() + "/value"];
+  }
+
 private:
   std::unique_ptr<File> createFile(const string strPath, const File::Access access) override {
     auto file = new FakeFile(strPath, access);
@@ -78,7 +94,7 @@ private:
 TEST(SysfsPin, ExportsAddressOnExport) {
   TestSysfsPin pin(100, GPIO::Pin::OUT);
   EXPECT_EQ(pin.Export(), 0);
-  auto fileStorage = pin.touchedFileStorage["/sys/class/gpio/export"];
+  auto fileStorage = pin.GetExportFileStorage();
   ASSERT_NE(fileStorage.get(), nullptr);
   EXPECT_FALSE(fileStorage->isOpen);
   EXPECT_STREQ(fileStorage->buffer, "100");
@@ -87,14 +103,14 @@ TEST(SysfsPin, ExportsAddressOnExport) {
 TEST(SysfsPin, WritesDirectionOnExport) {
   TestSysfsPin outPin(100, GPIO::Pin::OUT);
   EXPECT_EQ(outPin.Export(), 0);
-  auto fileStorage = outPin.touchedFileStorage["/sys/class/gpio/gpio100/direction"];
+  auto fileStorage = outPin.GetDirectionFileStorage();
   ASSERT_NE(fileStorage, nullptr);
   EXPECT_FALSE(fileStorage->isOpen);
   EXPECT_STREQ(fileStorage->buffer, "out");
 
   TestSysfsPin inPin(100, GPIO::Pin::IN);
   EXPECT_EQ(inPin.Export(), 0);
-  fileStorage = inPin.touchedFileStorage["/sys/class/gpio/gpio100/direction"];
+  fileStorage = inPin.GetDirectionFileStorage();
   ASSERT_NE(fileStorage, nullptr);
   EXPECT_FALSE(fileStorage->isOpen);
   EXPECT_STREQ(fileStorage->buffer, "in");
@@ -103,7 +119,7 @@ TEST(SysfsPin, WritesDirectionOnExport) {
 TEST(SysfsPin, OpensValueFileOnExport) {
   TestSysfsPin pin(100, GPIO::Pin::OUT);
   EXPECT_EQ(pin.Export(), 0);
-  auto fileStorage = pin.touchedFileStorage["/sys/class/gpio/gpio100/value"];
+  auto fileStorage = pin.GetValueFileStorage();
   ASSERT_NE(fileStorage.get(), nullptr);
   EXPECT_TRUE(fileStorage->isOpen);
 }
@@ -112,7 +128,7 @@ TEST(SysfsPin, UnexportsAddressOnUnexport) {
   TestSysfsPin pin(100, GPIO::Pin::OUT);
   EXPECT_EQ(pin.Export(), 0);
   EXPECT_EQ(pin.Unexport(), 0);
-  auto fileStorage = pin.touchedFileStorage["/sys/class/gpio/unexport"];
+  auto fileStorage = pin.GetUnexportFileStorage();
   ASSERT_NE(fileStorage.get(), nullptr);
   EXPECT_FALSE(fileStorage->isOpen);
   EXPECT_STREQ(fileStorage->buffer, "100");
@@ -122,7 +138,7 @@ TEST(SysfsPin, ClosesValueFileOnUnexport) {
   TestSysfsPin pin(100, GPIO::Pin::OUT);
   EXPECT_EQ(pin.Export(), 0);
   EXPECT_EQ(pin.Unexport(), 0);
-  auto fileStorage = pin.touchedFileStorage["/sys/class/gpio/gpio100/value"];
+  auto fileStorage = pin.GetValueFileStorage();
   ASSERT_NE(fileStorage.get(), nullptr);
   EXPECT_FALSE(fileStorage->isOpen);
 }
@@ -131,7 +147,7 @@ TEST(SysfsPin, WritesValues) {
   TestSysfsPin pin(100, GPIO::Pin::OUT);
   EXPECT_EQ(pin.Export(), 0);
 
-  auto fileStorage = pin.touchedFileStorage["/sys/class/gpio/gpio100/value"];
+  auto fileStorage = pin.GetValueFileStorage();
   ASSERT_NE(fileStorage.get(), nullptr);
 
   EXPECT_EQ(pin.Write(LOW), 0);

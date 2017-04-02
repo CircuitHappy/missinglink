@@ -20,12 +20,16 @@ int Pin::Write(const DigitalValue value) {
   return write(value);
 }
 
-int Pin::Read(DigitalValue &value) {
+int Pin::Read(DigitalValue *value) {
   if (m_direction == OUT) {
     return -1;
   }
   return read(value);
 }
+
+//=======================
+
+const string SysfsPin::s_rootInterfacePath = "/sys/class/gpio";
 
 
 SysfsPin::SysfsPin(const int address, const Direction direction)
@@ -36,7 +40,7 @@ int SysfsPin::Export() {
   if (doExport() < 0) { return -1; }
   if (doSetDirection() < 0) { return -1; }
   File::Access mode = (m_direction == IN) ? File::READ : File::WRITE;
-  m_valueFile = createFile(getInterfacePath() + "/value", mode);
+  m_valueFile = createFile(getPinInterfacePath() + "/value", mode);
   if (m_valueFile->Open() < 0) {
     return -1;
   };
@@ -74,7 +78,7 @@ int SysfsPin::read(DigitalValue &value) {
 }
 
 int SysfsPin::doExport() {
-  const string strExportPath = "/sys/class/gpio/export";
+  const string strExportPath = s_rootInterfacePath + "/export";
   auto exportFile = createFile(strExportPath, File::WRITE);
   if (exportFile->Open() < 0) {
     return -1;
@@ -87,7 +91,7 @@ int SysfsPin::doExport() {
 }
 
 int SysfsPin::doUnexport() {
-  const string strUnexportPath = "/sys/class/gpio/unexport";
+  const string strUnexportPath = s_rootInterfacePath + "/unexport";
   auto file = createFile(strUnexportPath, File::WRITE);
   if (file->Open() < 0) {
     return -1;
@@ -100,7 +104,7 @@ int SysfsPin::doUnexport() {
 }
 
 int SysfsPin::doSetDirection() {
-  const string strDirectionPath = getInterfacePath() +  "/direction";
+  const string strDirectionPath = getPinInterfacePath() +  "/direction";
   auto file = createFile(strDirectionPath, File::WRITE);
   if (file->Open() < 0) {
     return -1;
@@ -112,8 +116,8 @@ int SysfsPin::doSetDirection() {
   return 0;
 }
 
-string SysfsPin::getInterfacePath() const {
-  return "/sys/class/gpio/gpio" + std::to_string(m_address);
+string SysfsPin::getPinInterfacePath() const {
+  return s_rootInterfacePath + "/gpio" + std::to_string(m_address);
 }
 
 std::unique_ptr<File> SysfsPin::createFile(const string strPath, const File::Access access) {

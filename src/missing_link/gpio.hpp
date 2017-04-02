@@ -39,7 +39,8 @@ public:
   int Unexport();
 
 protected:
-  std::string getInterfacePath() const;
+  static const std::string s_rootInterfacePath;
+  std::string getPinInterfacePath() const;
   virtual std::unique_ptr<File> createFile(const std::string strPath, const File::Access access);
 
 private:
