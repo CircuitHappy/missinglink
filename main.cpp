@@ -2,13 +2,14 @@
 #include <thread>
 #include <signal.h>
 
+#include "missing_link/pin_defs.hpp"
 #include "missing_link/gpio.hpp"
 
 using namespace std;
 using namespace MissingLink;
 
-GPIO::SysfsPin outPin(132, GPIO::Pin::OUT);
-GPIO::SysfsPin inPin(133, GPIO::Pin::IN);
+GPIO::SysfsPin outPin(GPIO::CHIP_DO, GPIO::Pin::OUT);
+GPIO::SysfsPin inPin(GPIO::CHIP_D1, GPIO::Pin::IN);
 
 void signalHandler(int s) {
   cout << "Caught signal " << s << endl;
@@ -39,21 +40,14 @@ int main(void) {
   inPin.Export();
   outPin.Export();
 
-  bool value = false;
+  GPIO::Toggle toggle(inPin);
   while (1) {
-    DigitalValue inValue = LOW;
-    if (inPin.Read(&inValue) < 0){
-      std::cerr << "Failed to read pin" << std::endl;
-    }
-    if (inValue == HIGH) {
-      if (outPin.Write(value ? HIGH : LOW) < 0) {
-        std::cerr << "Failed to write pin" << std::endl;
-      }
-      value = !value;
+    toggle.Process();
+    if (outPin.Write(toggle.GetState() ? HIGH : LOW) < 0) {
+      std::cerr << "Failed to write pin" << std::endl;
     }
     this_thread::sleep_for(chrono::milliseconds(50));
   }
-
 
   return 0;
 }

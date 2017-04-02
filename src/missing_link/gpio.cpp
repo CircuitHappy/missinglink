@@ -13,14 +13,14 @@ Pin::Pin(const int address, const Direction direction)
 
 Pin::~Pin() {}
 
-int Pin::Write(const DigitalValue value) {
+int Pin::Write(const DigitalValue value) const {
   if (m_direction == IN) {
     return -1;
   }
   return write(value);
 }
 
-int Pin::Read(DigitalValue *value) {
+int Pin::Read(DigitalValue *value) const {
   if (m_direction == OUT) {
     return -1;
   }
@@ -57,7 +57,7 @@ int SysfsPin::Unexport() {
   return 0;
 }
 
-int SysfsPin::write(const DigitalValue value) {
+int SysfsPin::write(const DigitalValue value) const {
   if (!m_valueFile.get()) {
     std::cerr << "Cannot write to pin " << m_address << ". Did you Export()?" << std::endl;
     return -1;
@@ -65,7 +65,7 @@ int SysfsPin::write(const DigitalValue value) {
   return m_valueFile->Write(value == HIGH ? "1" : "0");
 }
 
-int SysfsPin::read(DigitalValue *value) {
+int SysfsPin::read(DigitalValue *value) const {
   if (!m_valueFile.get()) {
     std::cerr << "Cannot read from pin " << m_address << ". Did you Export()?" << std::endl;
     return -1;
@@ -120,4 +120,28 @@ string SysfsPin::getPinInterfacePath() const {
 
 std::unique_ptr<File> SysfsPin::createFile(const string strPath, const File::Access access) {
   return std::unique_ptr<File>(new MissingLink::UnbufferedFile(strPath, access));
+}
+
+//======================
+
+Toggle::Toggle(const Pin &pin, DigitalValue trigger)
+  : m_pin(pin)
+  , m_trigger(trigger)
+  , m_state(false)
+  , m_lastValue(trigger == HIGH ? LOW : HIGH)
+{}
+
+void Toggle::Process() {
+  DigitalValue value;
+  if (m_pin.Read(&value) < 0) {
+    return;
+  }
+  if (value == m_trigger && value != m_lastValue) {
+    m_state = !m_state;
+  }
+  m_lastValue = value;
+}
+
+bool Toggle::GetState() const {
+  return m_state;
 }

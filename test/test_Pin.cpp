@@ -7,21 +7,21 @@ namespace {
 
 class TestPin : public GPIO::Pin {
 public:
-  TestPin(const int address, const GPIO::Pin::Direction direction)
+  TestPin(const int address, const GPIO::Pin::Direction direction, DigitalValue *outValue)
     : Pin(address, direction)
-    , valueWritten(LOW)
     , valueToRead(LOW)
+    , outValue(outValue)
   {}
 
-  DigitalValue valueWritten;
   DigitalValue valueToRead;
+  DigitalValue *outValue;
 
 private:
-  int write(const DigitalValue value) override {
-    valueWritten = value;
+  int write(const DigitalValue value) const override {
+    *outValue = value;
     return 0;
   }
-  int read(DigitalValue *value) override {
+  int read(DigitalValue *value) const override {
     *value = valueToRead;
     return 0;
   }
@@ -30,25 +30,28 @@ private:
 }
 
 TEST(Pin, WritesIfIsOutput) {
-  TestPin output(100, GPIO::Pin::OUT);
+  DigitalValue outValue;
+  TestPin output(100, GPIO::Pin::OUT, &outValue);
   int result = output.Write(HIGH);
   EXPECT_EQ(result, 0);
-  EXPECT_EQ(output.valueWritten, HIGH);
+  EXPECT_EQ(outValue, HIGH);
   result = output.Write(LOW);
   EXPECT_EQ(result, 0);
-  EXPECT_EQ(output.valueWritten, LOW);
+  EXPECT_EQ(outValue, LOW);
 
 };
 
 TEST(Pin, FailsToWriteIfIsInput) {
-  TestPin output(100, GPIO::Pin::IN);
+  DigitalValue outValue = LOW;
+  TestPin output(100, GPIO::Pin::IN, &outValue);
   int result = output.Write(HIGH);
   EXPECT_NE(result, 0);
-  EXPECT_EQ(output.valueWritten, LOW);
+  EXPECT_EQ(outValue, LOW);
 };
 
 TEST(Pin, ReadsIfIsInput) {
-  TestPin input(100, GPIO::Pin::IN);
+  DigitalValue outValue;
+  TestPin input(100, GPIO::Pin::IN, &outValue);
 
   DigitalValue value = LOW;
 
@@ -64,7 +67,8 @@ TEST(Pin, ReadsIfIsInput) {
 };
 
 TEST(Pin, FailsToReadIfIsOutput) {
-  TestPin input(100, GPIO::Pin::OUT);
+  DigitalValue outValue;
+  TestPin input(100, GPIO::Pin::OUT, &outValue);
   input.valueToRead = HIGH;
 
   DigitalValue value = LOW;
