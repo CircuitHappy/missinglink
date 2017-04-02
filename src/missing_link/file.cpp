@@ -122,7 +122,7 @@ int UnbufferedFile::close() {
 }
 
 int UnbufferedFile::seek(const size_t nBytes) {
-  bool success = ::lseek(m_fd, (off_t)nBytes, SEEK_SET);
+  bool success = ::lseek(m_fd, (off_t)nBytes, SEEK_SET) >= 0;
   return success ? 0 : -1;
 }
 
@@ -132,6 +132,6 @@ int UnbufferedFile::write(const char *buf, const size_t nBytes) {
 }
 
 int UnbufferedFile::read(char *buf, const size_t nBytes) {
-  bool success = ::read(m_fd, buf, nBytes) == (int)nBytes;
+  bool success = ::read(m_fd, buf, nBytes) >= 0;
   return success ? 0 : -1;
 }

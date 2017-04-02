@@ -45,6 +45,12 @@ private:
     return 0;
   }
 
+  int seek(const size_t nBytes) override {
+    // We don't care about adjusting seek because
+    // it isn't necessary for sysfs IO
+    return 0;
+  }
+
   int write(const char *buf, const size_t nBytes) override {
     ::memcpy(storageProxy->buffer, buf, nBytes);
     return 0;

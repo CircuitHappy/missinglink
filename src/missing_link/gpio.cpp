@@ -31,7 +31,6 @@ int Pin::Read(DigitalValue *value) {
 
 const string SysfsPin::s_rootInterfacePath = "/sys/class/gpio";
 
-
 SysfsPin::SysfsPin(const int address, const Direction direction)
   : Pin(address, direction)
 {}
@@ -48,7 +47,9 @@ int SysfsPin::Export() {
 }
 
 int SysfsPin::Unexport() {
-  m_valueFile->Close();
+  if (m_valueFile.get()) {
+    m_valueFile->Close();
+  }
   m_valueFile.reset(nullptr);
   if (doUnexport() < 0) {
     return -1;
@@ -69,11 +70,14 @@ int SysfsPin::read(DigitalValue *value) {
     std::cerr << "Cannot read from pin " << m_address << ". Did you Export()?" << std::endl;
     return -1;
   }
-  char buf[16];
-  if (m_valueFile->Read(buf, 16) < 0) {
+  if (m_valueFile->Seek(0) < 0) {
     return -1;
   }
-  *value = ::strcmp(buf, "0") == 0 ? LOW : HIGH;
+  char cValue;
+  if (m_valueFile->Read(&cValue, 1) < 0) {
+    return -1;
+  }
+  *value = cValue == '0' ? LOW : HIGH;
   return 0;
 }
 
@@ -83,11 +87,9 @@ int SysfsPin::doExport() {
   if (exportFile->Open() < 0) {
     return -1;
   }
-  if (exportFile->Write(std::to_string(m_address)) < 0) {
-    return -1;
-  }
+  int result = exportFile->Write(std::to_string(m_address));
   exportFile->Close();
-  return 0;
+  return result;
 }
 
 int SysfsPin::doUnexport() {
@@ -96,11 +98,9 @@ int SysfsPin::doUnexport() {
   if (file->Open() < 0) {
     return -1;
   }
-  if (file->Write(std::to_string(m_address)) < 0) {
-    return -1;
-  }
+  int result = file->Write(std::to_string(m_address));
   file->Close();
-  return 0;
+  return result;
 }
 
 int SysfsPin::doSetDirection() {
@@ -109,11 +109,9 @@ int SysfsPin::doSetDirection() {
   if (file->Open() < 0) {
     return -1;
   }
-  if (file->Write(m_direction == IN ? "in" : "out") < 0) {
-    return -1;
-  }
+  int result = file->Write(m_direction == IN ? "in" : "out");
   file->Close();
-  return 0;
+  return result;
 }
 
 string SysfsPin::getPinInterfacePath() const {
