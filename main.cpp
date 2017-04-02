@@ -7,11 +7,13 @@
 using namespace std;
 using namespace MissingLink;
 
-GPIO::SysfsPin blinky(132, GPIO::Pin::OUT);
+GPIO::SysfsPin outPin(132, GPIO::Pin::OUT);
+GPIO::SysfsPin inPin(133, GPIO::Pin::IN);
 
 void signalHandler(int s) {
   cout << "Caught signal " << s << endl;
-  blinky.Unexport();
+  outPin.Unexport();
+  inPin.Unexport();
   exit(1);
 }
 
@@ -29,12 +31,26 @@ int main(void) {
 
   configureSignalHandler();
 
-  blinky.Export();
+  // Unexport every time first (don't care if it fails)
+  // to clean up any other process state
+  inPin.Unexport();
+  outPin.Unexport();
+
+  inPin.Export();
+  outPin.Export();
 
   bool value = false;
   while (1) {
-    blinky.Write(value ? HIGH : LOW);
-    value = !value;
+    DigitalValue inValue = LOW;
+    if (inPin.Read(&inValue) < 0){
+      std::cerr << "Failed to read pin" << std::endl;
+    }
+    if (inValue == HIGH) {
+      if (outPin.Write(value ? HIGH : LOW) < 0) {
+        std::cerr << "Failed to write pin" << std::endl;
+      }
+      value = !value;
+    }
     this_thread::sleep_for(chrono::milliseconds(50));
   }
 
