@@ -156,3 +156,22 @@ TEST(SysfsPin, WritesValues) {
   EXPECT_EQ(pin.Write(HIGH), 0);
   EXPECT_STREQ(fileStorage->buffer, "1");
 }
+
+TEST(SysfsPin, ReadsValues) {
+  TestSysfsPin pin(100, GPIO::Pin::IN);
+  EXPECT_EQ(pin.Export(), 0);
+
+  auto fileStorage = pin.GetValueFileStorage();
+  ASSERT_NE(fileStorage.get(), nullptr);
+
+  DigitalValue result;
+
+  ::strcpy(fileStorage->buffer, "0");
+  EXPECT_EQ(pin.Read(&result), 0);
+  EXPECT_EQ(result, LOW);
+
+  ::strcpy(fileStorage->buffer, "1");
+  EXPECT_EQ(pin.Read(&result), 0);
+  EXPECT_EQ(result, HIGH);
+
+}

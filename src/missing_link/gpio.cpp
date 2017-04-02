@@ -64,7 +64,7 @@ int SysfsPin::write(const DigitalValue value) {
   return m_valueFile->Write(value == HIGH ? "1" : "0");
 }
 
-int SysfsPin::read(DigitalValue &value) {
+int SysfsPin::read(DigitalValue *value) {
   if (!m_valueFile.get()) {
     std::cerr << "Cannot read from pin " << m_address << ". Did you Export()?" << std::endl;
     return -1;
@@ -73,7 +73,7 @@ int SysfsPin::read(DigitalValue &value) {
   if (m_valueFile->Read(buf, 16) < 0) {
     return -1;
   }
-  value = ::strcmp(buf, "0") == 0 ? LOW : HIGH;
+  *value = ::strcmp(buf, "0") == 0 ? LOW : HIGH;
   return 0;
 }
 

@@ -20,14 +20,14 @@ public:
   Pin(const int address, const Direction direction);
   virtual ~Pin();
 
-  int Read(DigitalValue &value);
+  int Read(DigitalValue *value);
   int Write(const DigitalValue value);
 
 protected:
   const int m_address;
   const Direction m_direction;
 
-  virtual int read(DigitalValue &value) = 0;
+  virtual int read(DigitalValue *value) = 0;
   virtual int write(const DigitalValue value) = 0;
 };
 
@@ -46,7 +46,7 @@ protected:
 private:
   std::unique_ptr<File> m_valueFile;
 
-  int read(DigitalValue &value) override;
+  int read(DigitalValue *value) override;
   int write(const DigitalValue value) override;
 
   int doExport();

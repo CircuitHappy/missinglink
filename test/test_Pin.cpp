@@ -21,8 +21,8 @@ private:
     valueWritten = value;
     return 0;
   }
-  int read(DigitalValue &value) override {
-    value = valueToRead;
+  int read(DigitalValue *value) override {
+    *value = valueToRead;
     return 0;
   }
 };
@@ -53,12 +53,12 @@ TEST(Pin, ReadsIfIsInput) {
   DigitalValue value = LOW;
 
   input.valueToRead = HIGH;
-  int result = input.Read(value);
+  int result = input.Read(&value);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(value, HIGH);
 
   input.valueToRead = LOW;
-  result = input.Read(value);
+  result = input.Read(&value);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(value, LOW);
 };
@@ -68,7 +68,7 @@ TEST(Pin, FailsToReadIfIsOutput) {
   input.valueToRead = HIGH;
 
   DigitalValue value = LOW;
-  int result = input.Read(value);
+  int result = input.Read(&value);
   EXPECT_NE(result, 0);
   EXPECT_NE(value, HIGH);
 };
