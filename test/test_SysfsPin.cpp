@@ -15,11 +15,12 @@ public:
 
   class StorageProxy {
   public:
-    StorageProxy() : isOpen(false) {
+    StorageProxy() : isOpen(false), offset(0) {
       ::memset(buffer, 0, 128);
     }
     bool isOpen;
     char buffer[128];
+    int offset;
   };
 
   FakeFile(const string strPath, const Access access)
@@ -46,18 +47,20 @@ private:
   }
 
   int seek(const size_t nBytes) override {
-    // We don't care about adjusting seek because
-    // it isn't necessary for sysfs IO
+    storageProxy->offset = nBytes;
     return 0;
   }
 
   int write(const char *buf, const size_t nBytes) override {
+    // We don't care about offset here because
+    // it isn't necessary for sysfs IO writes
     ::memcpy(storageProxy->buffer, buf, nBytes);
     return 0;
   }
 
   int read(char *buf, const size_t nBytes) override {
-    ::memcpy(buf, storageProxy->buffer, nBytes);
+    ::memcpy(buf, storageProxy->buffer + storageProxy->offset, nBytes);
+    storageProxy->offset += nBytes;
     return 0;
   }
 };
@@ -171,6 +174,9 @@ TEST(SysfsPin, ReadsValues) {
   ASSERT_NE(fileStorage.get(), nullptr);
 
   DigitalValue result;
+
+  // This implicitly tests seek because the fake storage
+  // maintains its own buffer offset (like a real file) when reading
 
   ::strcpy(fileStorage->buffer, "0");
   EXPECT_EQ(pin.Read(&result), 0);
