@@ -122,16 +122,63 @@ std::unique_ptr<File> SysfsPin::createFile(const string strPath, const File::Acc
   return std::unique_ptr<File>(new MissingLink::UnbufferedFile(strPath, access));
 }
 
+
 //======================
 
-Toggle::Toggle(const Pin &pin, DigitalValue trigger)
+
+Control::Control(const Pin &pin, DigitalValue trigger)
   : m_pin(pin)
   , m_trigger(trigger)
+{}
+
+Control::~Control() {}
+
+void Control::Process() {
+  process();
+}
+
+
+//======================
+
+
+Button::Button(const Pin &pin, DigitalValue trigger)
+  : Control(pin, trigger)
+  , m_event(NONE)
+  , m_lastValue(trigger == HIGH ? LOW : HIGH)
+{}
+
+bool Button::IsPressed() const {
+  return m_lastValue == m_trigger;
+}
+
+Button::Event Button::GetCurrentEvent() const {
+  return m_event;
+}
+
+void Button::process() {
+  DigitalValue value;
+  if (m_pin.Read(&value) < 0) {
+    return;
+  }
+  if (value != m_lastValue) {
+    m_event = (value == m_trigger) ? TOUCH_DOWN : TOUCH_UP;
+  } else {
+    m_event = NONE;
+  }
+  m_lastValue = value;
+}
+
+
+//======================
+
+
+Toggle::Toggle(const Pin &pin, DigitalValue trigger)
+  : Control(pin, trigger)
   , m_state(false)
   , m_lastValue(trigger == HIGH ? LOW : HIGH)
 {}
 
-void Toggle::Process() {
+void Toggle::process() {
   DigitalValue value;
   if (m_pin.Read(&value) < 0) {
     return;

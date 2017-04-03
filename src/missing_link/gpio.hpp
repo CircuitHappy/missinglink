@@ -58,20 +58,53 @@ private:
 };
 
 
-class Toggle {
+class Control {
+public:
+  Control(const Pin &pin, DigitalValue trigger = HIGH);
+  virtual ~Control();
+  void Process();
+protected:
+  const Pin &m_pin;
+  const DigitalValue m_trigger;
+  virtual void process() = 0;
+};
+
+
+class Button : public Control {
+public:
+
+  enum Event {
+    NONE,
+    TOUCH_DOWN,
+    TOUCH_UP
+  };
+
+  // Caller is responsible for managing pin initialization
+  Button(const Pin &pin, DigitalValue trigger = HIGH);
+
+  // Returns true while button is pressed
+  bool IsPressed() const;
+
+  Event GetCurrentEvent() const;
+
+protected:
+  Event m_event;
+  DigitalValue m_lastValue;
+  void process() override;
+};
+
+
+class Toggle : public Control {
 public:
   // Caller is responsible for managing pin initialization
   Toggle(const Pin &pin, DigitalValue trigger = HIGH);
 
-  void Process();
-
   bool GetState() const;
 
 protected:
-  const Pin &m_pin;
-  const DigitalValue m_trigger;
   bool m_state;
   DigitalValue m_lastValue;
+  void process() override;
 };
 
 }}

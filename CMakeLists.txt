@@ -47,7 +47,7 @@ target_link_libraries(missing_link ${missing_link_libs})
 if(CHIP)
   add_custom_command(
     TARGET missing_link POST_BUILD
-    COMMAND scp bin/missing_link root@${CHIP_HOSTNAME}:/usr/bin 
+    COMMAND scp -l 8192 bin/missing_link root@${CHIP_HOSTNAME}:/usr/bin 
   )
 endif()
 
@@ -81,7 +81,7 @@ if(TESTS)
   if(CHIP)
     add_custom_command(
       TARGET missing_link_tests POST_BUILD
-      COMMAND scp bin/missing_link_tests root@${CHIP_HOSTNAME}:/usr/bin 
+      COMMAND scp -l 8192 bin/missing_link_tests root@${CHIP_HOSTNAME}:/usr/bin 
     )
   endif()
 

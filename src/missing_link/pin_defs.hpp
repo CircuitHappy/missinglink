@@ -4,7 +4,7 @@ namespace MissingLink {
 namespace GPIO {
 
 enum CHIP_GPIO {
-  CHIP_DO = 132,
+  CHIP_D0 = 132,
   CHIP_D1 = 133,
   CHIP_D2 = 134,
   CHIP_D3 = 135,
