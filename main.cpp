@@ -155,6 +155,8 @@ namespace {
                   break;
               default:
                   state.pins.playingOut.Write(LOW);
+                  state.pins.clockOut.Write(HIGH);
+                  state.pins.resetOut.Write(HIGH);
                   break;
           }
 
