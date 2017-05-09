@@ -101,13 +101,13 @@ namespace {
       const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
       const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
       const bool resetHigh = (phase <= resetHighFraction);
-      pins.resetOut.Write(resetHigh ? LOW : HIGH);
+      pins.resetOut.Write(resetHigh ? HIGH : LOW);
 
       // Fractional beat value for which clock should be high
       const double secondsPerDivision = 60.0 / (tempo * PULSES_PER_BEAT);
       const double clockHighFraction = PULSE_LENGTH / secondsPerDivision;
       const bool clockHigh = (beatFraction <= clockHighFraction);
-      pins.clockOut.Write(clockHigh ? LOW : HIGH);
+      pins.clockOut.Write(clockHigh ? HIGH : LOW);
   }
 
   void input(State& state) {
@@ -155,8 +155,8 @@ namespace {
                   break;
               default:
                   state.pins.playingOut.Write(LOW);
-                  state.pins.clockOut.Write(HIGH);
-                  state.pins.resetOut.Write(HIGH);
+                  state.pins.clockOut.Write(LOW);
+                  state.pins.resetOut.Write(LOW);
                   break;
           }
 
@@ -190,4 +190,3 @@ int main(void) {
 
   return 0;
 }
-
