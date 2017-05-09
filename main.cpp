@@ -101,13 +101,13 @@ namespace {
       const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
       const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
       const bool resetHigh = (phase <= resetHighFraction);
-      pins.resetOut.Write(resetHigh ? HIGH : LOW);
+      pins.resetOut.Write(resetHigh ? LOW : HIGH);
 
       // Fractional beat value for which clock should be high
       const double secondsPerDivision = 60.0 / (tempo * PULSES_PER_BEAT);
       const double clockHighFraction = PULSE_LENGTH / secondsPerDivision;
       const bool clockHigh = (beatFraction <= clockHighFraction);
-      pins.clockOut.Write(clockHigh ? HIGH : LOW);
+      pins.clockOut.Write(clockHigh ? LOW : HIGH);
   }
 
   void input(State& state) {
