@@ -1,4 +1,3 @@
-#include "missing_link/file.hpp"
 #include "missing_link/gpio.hpp"
 #include "gtest/gtest.h"
 
@@ -10,91 +9,13 @@ using std::string;
 
 namespace {
 
-class FakeFile : public File {
-public:
-
-  class StorageProxy {
-  public:
-    StorageProxy() : isOpen(false), offset(0) {
-      ::memset(buffer, 0, 128);
-    }
-    bool isOpen;
-    char buffer[128];
-    int offset;
-  };
-
-  FakeFile(const string strPath, const Access access)
-    : File(strPath, access)
-    , storageProxy(std::shared_ptr<StorageProxy>(new StorageProxy()))
-  {}
-
-  std::shared_ptr<StorageProxy> storageProxy;
-
-private:
-
-  bool isOpen() const override {
-    return storageProxy->isOpen;
-  }
-
-  int open() override {
-    storageProxy->isOpen = true;
-    return 0;
-  }
-
-  int close() override {
-    storageProxy->isOpen = false;
-    return 0;
-  }
-
-  int seek(const size_t nBytes) override {
-    storageProxy->offset = nBytes;
-    return 0;
-  }
-
-  int write(const char *buf, const size_t nBytes) override {
-    // We don't care about offset here because
-    // it isn't necessary for sysfs IO writes
-    ::memcpy(storageProxy->buffer, buf, nBytes);
-    return 0;
-  }
-
-  int read(char *buf, const size_t nBytes) override {
-    ::memcpy(buf, storageProxy->buffer + storageProxy->offset, nBytes);
-    storageProxy->offset += nBytes;
-    return 0;
-  }
-};
-
 class TestSysfsPin : public GPIO::SysfsPin {
 public:
   TestSysfsPin(const int address, const GPIO::Pin::Direction direction)
     : SysfsPin(address, direction)
   {}
 
-  std::map<string, std::shared_ptr<FakeFile::StorageProxy>> touchedFileStorage;
-
-  std::shared_ptr<FakeFile::StorageProxy> GetExportFileStorage() {
-    return touchedFileStorage[s_rootInterfacePath + "/export"];
-  }
-
-  std::shared_ptr<FakeFile::StorageProxy> GetUnexportFileStorage() {
-    return touchedFileStorage[s_rootInterfacePath + "/export"];
-  }
-
-  std::shared_ptr<FakeFile::StorageProxy> GetDirectionFileStorage() {
-    return touchedFileStorage[getPinInterfacePath() + "/direction"];
-  }
-
-  std::shared_ptr<FakeFile::StorageProxy> GetValueFileStorage() {
-    return touchedFileStorage[getPinInterfacePath() + "/value"];
-  }
-
 private:
-  std::unique_ptr<File> createFile(const string strPath, const File::Access access) override {
-    auto file = new FakeFile(strPath, access);
-    touchedFileStorage[strPath] = file->storageProxy;
-    return std::unique_ptr<File>(file);
-  }
 
 };
 

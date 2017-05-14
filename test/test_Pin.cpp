@@ -17,11 +17,11 @@ public:
   DigitalValue *outValue;
 
 private:
-  int write(const DigitalValue value) const override {
+  int write(const DigitalValue value) override {
     *outValue = value;
     return 0;
   }
-  int read(DigitalValue *value) const override {
+  int read(DigitalValue *value) override {
     *value = valueToRead;
     return 0;
   }
@@ -38,7 +38,6 @@ TEST(Pin, WritesIfIsOutput) {
   result = output.Write(LOW);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(outValue, LOW);
-
 };
 
 TEST(Pin, FailsToWriteIfIsInput) {

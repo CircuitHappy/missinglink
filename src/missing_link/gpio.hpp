@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "missing_link/missinglink_common.hpp"
-#include "missing_link/file.hpp"
 
 namespace MissingLink {
 namespace GPIO {
@@ -18,18 +17,22 @@ public:
     OUT = 1
   };
 
-  Pin(const int address, const Direction direction);
+  Pin(const int address, const Direction direction, const DigitalValue initial = LOW);
   virtual ~Pin();
 
-  int Read(DigitalValue *value) const;
-  int Write(const DigitalValue value) const;
+  int Read(DigitalValue *value);
+  int Write(const DigitalValue value);
 
 protected:
   const int m_address;
   const Direction m_direction;
+  const DigitalValue m_initialValue;
 
-  virtual int read(DigitalValue *value) const = 0;
-  virtual int write(const DigitalValue value) const = 0;
+  virtual int read(DigitalValue *value) = 0;
+  virtual int write(const DigitalValue value) = 0;
+
+private:
+  DigitalValue m_lastValueWritten;
 };
 
 
@@ -43,14 +46,15 @@ public:
 
 protected:
   static const std::string s_rootInterfacePath;
-  std::string getPinInterfacePath() const;
-  virtual std::unique_ptr<File> createFile(const std::string strPath, const File::Access access);
+
+  const std::string m_pinInterfacePath;
+
+  virtual int writeToFile(const std::string &strPath, const void *buf, size_t nBytes);
+  virtual int readFromFile(const std::string &strPath, void *buf, size_t nBytes);
 
 private:
-  std::unique_ptr<File> m_valueFile;
-
-  int read(DigitalValue *value)const override;
-  int write(const DigitalValue value) const override;
+  int read(DigitalValue *value) override;
+  int write(const DigitalValue value) override;
 
   int doExport();
   int doUnexport();
@@ -60,11 +64,11 @@ private:
 
 class Control {
 public:
-  Control(const Pin &pin, DigitalValue trigger = HIGH);
+  Control(Pin &pin, DigitalValue trigger = HIGH);
   virtual ~Control();
   void Process();
 protected:
-  const Pin &m_pin;
+  Pin &m_pin;
   const DigitalValue m_trigger;
   virtual void process() = 0;
 };
@@ -80,7 +84,7 @@ public:
   };
 
   // Caller is responsible for managing pin initialization
-  Button(const Pin &pin, DigitalValue trigger = HIGH);
+  Button(Pin &pin, DigitalValue trigger = HIGH);
 
   // Returns true while button is pressed
   bool IsPressed() const;
@@ -97,7 +101,7 @@ protected:
 class Toggle : public Control {
 public:
   // Caller is responsible for managing pin initialization
-  Toggle(const Pin &pin, DigitalValue trigger = HIGH);
+  Toggle(Pin &pin, DigitalValue trigger = HIGH);
 
   bool GetState() const;
 
