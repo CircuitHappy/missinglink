@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <thread>
+
 #include <signal.h>
 #include <pthread.h>
 
@@ -88,8 +89,7 @@ namespace {
       pins.resetOut.Write(resetHigh ? HIGH : LOW);
 
       // Fractional beat value for which clock should be high
-      const double secondsPerDivision = 60.0 / (tempo * PULSES_PER_BEAT);
-      const double clockHighFraction = PULSE_LENGTH / secondsPerDivision;
+      const double clockHighFraction = 0.5;
       const bool clockHigh = (beatFraction <= clockHighFraction);
       pins.clockOut.Write(clockHigh ? HIGH : LOW);
   }
@@ -116,36 +116,36 @@ namespace {
   }
 
   void output(State& state) {
-      while (state.running) {
-          const auto time = state.link.clock().micros();
-          auto timeline = state.link.captureAudioTimeline();
+    while (state.running) {
+      const auto time = state.link.clock().micros();
+      auto timeline = state.link.captureAudioTimeline();
 
-          const double beats = timeline.beatAtTime(time, QUANTUM);
-          const double phase = timeline.phaseAtTime(time, QUANTUM);
-          const double tempo = timeline.tempo();
+      const double beats = timeline.beatAtTime(time, QUANTUM);
+      const double phase = timeline.phaseAtTime(time, QUANTUM);
+      const double tempo = timeline.tempo();
 
-          switch ((PlayState)state.playState) {
-              case Cued: {
-                  const bool playHigh = (long)(beats * 2) % 2 == 0;
-                  state.pins.playingOut.Write(playHigh ? HIGH : LOW);
-                  if (phase <= 0.01) {
-                      state.playState.store(Playing);
-                  }
-                  break;
-              }
-              case Playing:
-                  state.pins.playingOut.Write(HIGH);
-                  outputClock(state.pins, beats, phase, tempo);
-                  break;
-              default:
-                  state.pins.playingOut.Write(LOW);
-                  state.pins.clockOut.Write(LOW);
-                  state.pins.resetOut.Write(LOW);
-                  break;
+      switch ((PlayState)state.playState) {
+        case Cued: {
+          const bool playHigh = (long)(beats * 2) % 2 == 0;
+          state.pins.playingOut.Write(playHigh ? HIGH : LOW);
+          if (phase <= 0.01) {
+            state.playState.store(Playing);
           }
-
-          std::this_thread::sleep_for(std::chrono::microseconds(100));
+          break;
+        }
+        case Playing:
+          state.pins.playingOut.Write(HIGH);
+          outputClock(state.pins, beats, phase, tempo);
+          break;
+        default:
+          state.pins.playingOut.Write(LOW);
+          state.pins.clockOut.Write(LOW);
+          state.pins.resetOut.Write(LOW);
+          break;
       }
+
+      std::this_thread::sleep_for(std::chrono::microseconds(250));
+    }
   }
 }
 
@@ -159,6 +159,12 @@ int main(void) {
 
   std::thread inputThread(input, std::ref(state));
   std::thread outputThread(output, std::ref(state));
+
+  sched_param param;
+  param.sched_priority = 90;
+  if(::pthread_setschedparam(outputThread.native_handle(), SCHED_FIFO, &param) < 0) {
+    std::cerr << "Failed to set output thread priority\n";
+  }
 
   inputThread.join();
   outputThread.join();
