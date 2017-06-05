@@ -36,11 +36,11 @@ Development repository for Missing Link.
     git submodule update --init --recursive
     ```
     
-1. Run CMake
+1. Run CMake passing the `CHIP` option as `true` to use cross-compilation toolchain in buildroot directory
 
     ```
     cd build
-    cmake ..
+    cmake -DCHIP=true ..
     ```
     
 1. Build it
@@ -48,8 +48,3 @@ Development repository for Missing Link.
     ```
     make
     ```
-
-For now this will always build using the CHIP cross-compilation toolchain.
-Once `missing_link` is built, copy it into `CHIP-buildroot/output/target/usr/bin` and
-rebuild `CHIP-buildroot` (just do `make` again) to recreate the filesystem image. Finally,
-create the CHIP NAND images using the steps in `CHIP-SDK` and flash it to CHIP.
