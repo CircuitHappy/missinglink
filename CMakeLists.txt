@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.0)
 SET(CHIP false CACHE BOOL "Configure for cross-compilation to CHIP environment")
 SET(TESTS false CACHE BOOL "Configure with unit tests")
 
+set(CHIP_SDK_PATH ${CMAKE_CURRENT_LIST_DIR}/../CHIP-SDK CACHE STRING "Path of CHIP-SDK directory")
 set(CHIP_HOSTNAME missinglink.local CACHE STRING "Name of CHIP deployment target host on network")
 
 ############
@@ -14,7 +15,7 @@ set(CHIP_HOSTNAME missinglink.local CACHE STRING "Name of CHIP deployment target
 ############
 
 if(CHIP)
-  set(_BUILDROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/../CHIP-SDK)
+  set(_BUILDROOT_DIR ${CHIP_SDK_PATH})
   set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
 endif()
 
