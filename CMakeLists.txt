@@ -18,17 +18,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(vendor/link/AbletonLinkConfig.cmake)
-include_directories(${link_HEADERS})
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
-file(GLOB_RECURSE missing_link_sources "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
+include_directories(${link_HEADERS})
 
-add_executable(missing_link ${missing_link_sources} main.cpp)
-
-set(
-  missing_link_libs
-  pthread
-  Ableton::Link
+file(
+  GLOB_RECURSE
+  missing_link_sources
+  "${CMAKE_CURRENT_LIST_DIR}/src/missing_link/*.cpp"
 )
+
+file(
+  GLOB_RECURSE
+  missing_link_display_sources
+  "${CMAKE_CURRENT_LIST_DIR}/src/display/*.cpp"
+)
+
+add_executable(missing_link ${missing_link_sources})
+add_executable(missing_link_display ${missing_link_display_sources})
+
+set(missing_link_libs pthread Ableton::Link)
 
 target_link_libraries(missing_link ${missing_link_libs})
