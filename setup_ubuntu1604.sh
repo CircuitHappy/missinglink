@@ -7,6 +7,7 @@ sudo apt-get -y install \
  git \
  mercurial \
  cmake \
+ bc \
  curl \
  screen \
  unzip \
