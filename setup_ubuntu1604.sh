@@ -96,6 +96,6 @@ else
   popd
 fi
 
-if [ $(echo $PWD | grep vagrant) ];then
-  sudo chown -R vagrant:vagrant *
+if [ $(echo $PWD | grep ubuntu) ];then
+  sudo chown -R ubuntu:ubuntu *
 fi
