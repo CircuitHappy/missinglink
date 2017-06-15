@@ -27,7 +27,8 @@ sudo apt-get -y install \
  libacl1-dev \
  zlib1g-dev \
  liblzo2-dev \
- uuid-dev
+ uuid-dev \
+ ntp
 
 if uname -a |grep -q 64;
 then
