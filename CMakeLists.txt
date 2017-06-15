@@ -1,23 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 
-##########
-# Options
-##########
-
-SET(CHIP false CACHE BOOL "Configure for cross-compilation to CHIP environment")
-SET(TESTS false CACHE BOOL "Configure with unit tests")
-
-set(CHIP_SDK_PATH ${CMAKE_CURRENT_LIST_DIR}/../CHIP-SDK CACHE STRING "Path of CHIP-SDK directory")
-set(CHIP_HOSTNAME missinglink.local CACHE STRING "Name of CHIP deployment target host on network")
-
 ############
 # Toolchain
 ############
 
-if(CHIP)
-  set(_BUILDROOT_DIR ${CHIP_SDK_PATH})
-  set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
-endif()
+set(_BUILDROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
 
 ##########
 # Project
@@ -44,48 +32,3 @@ set(
 )
 
 target_link_libraries(missing_link ${missing_link_libs})
-
-if(CHIP)
-  add_custom_command(
-    TARGET missing_link POST_BUILD
-    COMMAND scp -l 8192 bin/missing_link root@${CHIP_HOSTNAME}:/usr/bin 
-  )
-endif()
-
-########
-# Tests
-########
-
-if(TESTS)
-  add_subdirectory(vendor/googletest/googletest)
-
-  file(GLOB_RECURSE missing_link_test_sources "test/*.cpp")
-
-  set(
-    missing_link_test_libs
-    gtest
-    gtest_main
-  )
-  
-  add_executable(
-    missing_link_tests 
-    ${missing_link_sources}
-    ${missing_link_test_sources}
-  )
-
-  target_link_libraries(
-    missing_link_tests 
-    ${missing_link_libs}
-    ${missing_link_test_libs}
-  )
-
-  if(CHIP)
-    add_custom_command(
-      TARGET missing_link_tests POST_BUILD
-      COMMAND scp -l 8192 bin/missing_link_tests root@${CHIP_HOSTNAME}:/usr/bin 
-    )
-  endif()
-
-endif()
-
-
