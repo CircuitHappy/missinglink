@@ -1,0 +1,14 @@
+#!/bin/bash
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "ERROR: This command must be run from the linux VM"
+  exit 1
+fi
+
+cd ../CHIP-buildroot
+make missinglink_defconfig
+make
+
+cd ../missinglink
+rm -rf build/*
+cd build
+cmake ..

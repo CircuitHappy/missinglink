@@ -1,0 +1,3 @@
+#!/bin/bash
+CHIP_HOSTNAME="${CHIP_HOSTNAME:-missinglink.local}"
+scp build/bin/* root@${CHIP_HOSTNAME}:/usr/bin
