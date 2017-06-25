@@ -14,4 +14,4 @@ make
 cd "${MISSINGLINK_PATH}"
 rm -r build/*
 cd build
-cmake ..
+cmake -D_BUILDROOT_DIR="${BUILDROOT_PATH}/.." ..
