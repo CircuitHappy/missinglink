@@ -2,3 +2,9 @@ build/
 !build/.gitkeep
 .vagrant/
 *.log
+
+# Build dependencies (only applies to Ubuntu hosts)
+CHIP-buildroot
+chip-mtd-utils
+CHIP-tools
+sunxi-tools
