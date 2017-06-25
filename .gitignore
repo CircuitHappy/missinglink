@@ -2,6 +2,7 @@ build/
 !build/.gitkeep
 .vagrant/
 *.log
+*.pyc
 
 # Build dependencies (only applies to Ubuntu hosts)
 CHIP-buildroot
