@@ -4,8 +4,8 @@
 using namespace std;
 
 int main(void) {
-  int fd = i2c_open(1);
-  i2c_init(fd, 0x3c);
+  unsigned char command[2] = {0x00, 0x01};
+  i2c_write(1, 0x3c, command, 2);
   return 0;
 }
 

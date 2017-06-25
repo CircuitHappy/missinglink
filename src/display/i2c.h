@@ -4,8 +4,7 @@
 extern "C" {
 #endif
 
-int i2c_open(unsigned int bus);
-int i2c_init(int fd, int addr);
+int i2c_write(int bus, int addr, const unsigned char *data, size_t nbytes);
 
 #ifdef __cplusplus
 }
