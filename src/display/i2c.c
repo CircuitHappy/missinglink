@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017
+ * Circuit Happy, LLC
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -31,4 +36,5 @@ void i2c_write(int bus, int addr, const unsigned char *data, size_t nbytes) {
     perror("Failed to write to i2c device");
     exit(1);
   }
+  close(fd);
 }

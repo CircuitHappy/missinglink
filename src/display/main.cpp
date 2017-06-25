@@ -1,11 +1,12 @@
 #include <iostream>
-#include "i2c.h"
+#include "display/oled.h"
 
 using namespace std;
 
 int main(void) {
-  unsigned char command[2] = {0x00, 0x01};
-  i2c_write(1, 0x3c, command, 2);
+  oled_init();
+  oled_write(0, "MISSING LINK");
+  oled_write(1, "v0.1");
   return 0;
 }
 
