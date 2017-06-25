@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 # Toolchain
 ############
 
-set(_BUILDROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+set(_BUILDROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/.." CACHE string)
 set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
 
 ##########

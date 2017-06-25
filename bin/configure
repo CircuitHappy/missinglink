@@ -4,14 +4,17 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   exit 1
 fi
 
-MISSINGLINK_PATH=`pwd`
-BUILDROOT_PATH="${BUILDROOT_PATH:-${MISSINGLINK_PATH}/..}"
+MISSINGLINK_DIR=`pwd`
+BUILDROOT_DIR="${BUILDROOT_DIR:-${MISSINGLINK_DIR}/..}"
 
-cd "${BUILDROOT_PATH}/CHIP-buildroot"
+echo "$MISSINGLINK_DIR"
+echo "$BUILDROOT_DIR"
+
+cd "${BUILDROOT_DIR}/CHIP-buildroot"
 make missinglink_defconfig
 make
 
-cd "${MISSINGLINK_PATH}"
+cd "${MISSINGLINK_DIR}"
 rm -r build/*
 cd build
-cmake -D_BUILDROOT_DIR="${BUILDROOT_PATH}/.." ..
+cmake -D_BUILDROOT_DIR="${BUILDROOT_DIR}" ..

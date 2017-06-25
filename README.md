@@ -59,7 +59,7 @@ Of the other directories, only `CHIP-buildroot` is necessary for cross-compilati
 This will probably take a long ass time, so be patient.
 
 ```
-BUILDROOT_PATH="./" bin/configure
+BUILDROOT_DIR=`pwd` bin/configure
 ```
 
 The project directory should now contain the following directories.
