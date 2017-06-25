@@ -7,9 +7,6 @@ fi
 MISSINGLINK_DIR=`pwd`
 BUILDROOT_DIR="${BUILDROOT_DIR:-${MISSINGLINK_DIR}/..}"
 
-echo "$MISSINGLINK_DIR"
-echo "$BUILDROOT_DIR"
-
 cd "${BUILDROOT_DIR}/CHIP-buildroot"
 make missinglink_defconfig
 make
