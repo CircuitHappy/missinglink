@@ -5,13 +5,19 @@
 #include <iostream>
 #include <thread>
 
+#include <stdlib.h>
 #include <signal.h>
+#include <string.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include <ableton/Link.hpp>
-
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/gpio.hpp"
+
+#define SOCK_PATH "/tmp/ml-display-bus"
 
 using namespace std;
 using namespace MissingLink;
@@ -164,6 +170,41 @@ int main(void) {
   param.sched_priority = 90;
   if(::pthread_setschedparam(outputThread.native_handle(), SCHED_FIFO, &param) < 0) {
     std::cerr << "Failed to set output thread priority\n";
+  }
+
+  // Proof of concept display code
+  int sd;
+  struct sockaddr_un remote;
+
+  remote.sun_family = AF_UNIX;
+  strcpy(remote.sun_path, SOCK_PATH);
+  int sd_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+
+  while (state.running) {
+
+    if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+      std::cerr << "failed to create display socket\n";
+      exit(1);
+    }
+
+    if (connect(sd, (struct sockaddr *)&remote, sd_len) == -1) {
+      std::cerr << "failed to connect to display socket\n";
+      exit(1);
+    }
+
+    auto timeline = state.link.captureAppTimeline();
+    const double tempo = timeline.tempo();
+    char display_buf[16];
+    sprintf(display_buf, "%.1f BPM\n", tempo);
+
+    if (send(sd, display_buf, strlen(display_buf) + 1, 0) < 0) {
+      std::cerr << "failed to send to display socket\n";
+      exit(1);
+    }
+
+    close(sd);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(17));
   }
 
   inputThread.join();

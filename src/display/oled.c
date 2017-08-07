@@ -70,7 +70,8 @@ void oled_write(unsigned int line, const char *text) {
   unsigned char ddram_addr = 0x80 | (line << 6);
   oled_command(ddram_addr);
 
-  for (int i=0; i < strlen(text); i++) {
+  int len = strlen(text);
+  for (int i=0; i < len; i++) {
     oled_data((unsigned char)text[i]);
   }
 }
