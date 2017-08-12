@@ -7,15 +7,36 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "display/oled.h"
+#include "display/ht16k33.h"
 
 #define SOCK_PATH "/tmp/ml-display-bus"
 
-int main(void) {
-  oled_init();
-  oled_write(0, "MISSING LINK");
-  oled_write(1, "v0.1");
+void init_display() {
+  ht16k33_init();
 
+  ht16k33_write_ascii(0, 'L', false);
+  ht16k33_write_ascii(1, 'I', false);
+  ht16k33_write_ascii(2, 'N', false);
+  ht16k33_write_ascii(3, 'K', false);
+
+  ht16k33_commit();
+
+  sleep(1);
+
+  ht16k33_clear();
+
+  ht16k33_write_ascii(1, 'V', false);
+  ht16k33_write_ascii(2, '0', true);
+  ht16k33_write_ascii(3, '1', false);
+
+  ht16k33_commit();
+
+  sleep(2);
+
+  ht16k33_clear();
+}
+
+void sock_loop() {
   int ssd;
   struct sockaddr_un local;
 
@@ -53,25 +74,22 @@ int main(void) {
       exit(1);
     }
 
-    char buf[20];
-    int msg_size = recv(scd, buf, 16, 0);
+    char buf[8];
+    int msg_size = recv(scd, buf, 8, 0);
 
     if (msg_size < 0) {
       perror("failed to receive stream data\n");
-    } else if (msg_size > 16) {
-      perror("string too long to display\n");
+    } else {
+      ht16k33_write_string(buf);
     }
-
-    for (int i = strlen(buf); i < 16; i++) {
-      buf[i] = ' ';
-    }
-    buf[17] = '\0';
-
-    oled_write(0, buf);
 
     close(scd);
   }
+}
 
+int main(void) {
+  init_display();
+  sock_loop();
   return 0;
 }
 

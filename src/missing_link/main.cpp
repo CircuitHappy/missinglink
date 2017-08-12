@@ -184,27 +184,30 @@ int main(void) {
 
     if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
       std::cerr << "failed to create display socket\n";
-      exit(1);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      continue;
     }
 
     if (connect(sd, (struct sockaddr *)&remote, sd_len) == -1) {
       std::cerr << "failed to connect to display socket\n";
-      exit(1);
+      close(sd);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      continue;
     }
 
     auto timeline = state.link.captureAppTimeline();
     const double tempo = timeline.tempo();
-    char display_buf[16];
-    sprintf(display_buf, "%.1f BPM\n", tempo);
 
-    if (send(sd, display_buf, strlen(display_buf) + 1, 0) < 0) {
+    char display_buf[8];
+    sprintf(display_buf, "%.1f", tempo);
+
+    if (send(sd, display_buf, 8, 0) < 0) {
       std::cerr << "failed to send to display socket\n";
-      exit(1);
     }
 
     close(sd);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(17));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
 
   inputThread.join();
