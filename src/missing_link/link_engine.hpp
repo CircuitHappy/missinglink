@@ -41,10 +41,11 @@ namespace MissingLink {
 
     GPIO::Button m_btnPlayStop;
 
+    std::chrono::microseconds m_lastOutputTime;
+
     void runInput();
     void runOutput();
     void runDisplaySocket();
-    void outputClock(double beats, double phase, double tempo);
   };
 
 }

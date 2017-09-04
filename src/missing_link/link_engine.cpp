@@ -28,6 +28,7 @@ LinkEngine::LinkEngine()
   , m_playingOut(GPIO::CHIP_D6, GPIO::Pin::OUT)
   , m_playStopIn(GPIO::CHIP_D7, GPIO::Pin::IN)
   , m_btnPlayStop(m_playStopIn)
+  , m_lastOutputTime(0)
 {
   m_clockOut.Export();
   m_resetOut.Export();
@@ -81,26 +82,52 @@ void LinkEngine::runInput() {
 
 void LinkEngine::runOutput() {
   while (m_state.running) {
-    const auto time = m_link.clock().micros();
+    const auto lastTime = m_lastOutputTime;
+    const auto currentTime = m_link.clock().micros();
+
+    m_lastOutputTime = currentTime;
+
+    if (lastTime == chrono::microseconds(0) || currentTime < lastTime) {
+      continue;
+    }
+
     auto timeline = m_link.captureAudioTimeline();
 
-    const double beats = timeline.beatAtTime(time, QUANTUM);
-    const double phase = timeline.phaseAtTime(time, QUANTUM);
     const double tempo = timeline.tempo();
+
+    const double lastBeats = timeline.beatAtTime(lastTime, QUANTUM);
+    const double currentBeats = timeline.beatAtTime(currentTime, QUANTUM);
+
+    const double lastPhase = timeline.phaseAtTime(lastTime, QUANTUM);
+    const double currentPhase = timeline.phaseAtTime(currentTime, QUANTUM);
 
     switch ((PlayState)m_state.playState) {
       case Cued: {
-        const bool playHigh = (long)(beats * 2) % 2 == 0;
+        const bool playHigh = (long)(currentBeats * 2) % 2 == 0;
         m_playingOut.Write(playHigh ? HIGH : LOW);
-        if (phase <= 0.01) {
+        if (currentPhase < lastPhase) {
           m_state.playState.store(Playing);
         }
         break;
       }
-      case Playing:
+      case Playing: {
         m_playingOut.Write(HIGH);
-        outputClock(beats, phase, tempo);
+
+        const auto lastPulses = lastBeats * PULSES_PER_BEAT * 2.0;
+        const auto currentPulses = currentBeats * PULSES_PER_BEAT * 2.0;
+
+        const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
+        const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
+
+        const bool resetHigh = (currentPhase <= resetHighFraction);
+        m_resetOut.Write(resetHigh ? HIGH : LOW);
+
+        if (floor(currentPulses) > floor(lastPulses)) {
+          const bool clockHigh = (int)(floor(currentPulses)) % 2 == 0;
+          m_clockOut.Write(clockHigh ? HIGH : LOW);
+        }
         break;
+      }
       default:
         m_playingOut.Write(LOW);
         m_clockOut.Write(LOW);
@@ -108,7 +135,7 @@ void LinkEngine::runOutput() {
         break;
     }
 
-    this_thread::sleep_for(chrono::microseconds(250));
+    this_thread::sleep_for(chrono::microseconds(500));
   }
 }
 
@@ -150,20 +177,4 @@ void LinkEngine::runDisplaySocket() {
 
     this_thread::sleep_for(chrono::milliseconds(50));
   }
-}
-
-void LinkEngine::outputClock(double beats, double phase, double tempo) {
-  // Fractional portion of current beat value
-  double intgarbage;
-  const double beatFraction = std::modf(beats * PULSES_PER_BEAT, &intgarbage);
-
-  const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
-  const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
-  const bool resetHigh = (phase <= resetHighFraction);
-  m_resetOut.Write(resetHigh ? HIGH : LOW);
-
-  // Fractional beat value for which clock should be high
-  const double clockHighFraction = 0.5;
-  const bool clockHigh = (beatFraction <= clockHighFraction);
-  m_clockOut.Write(clockHigh ? HIGH : LOW);
 }
