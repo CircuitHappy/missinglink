@@ -13,27 +13,12 @@
 
 void init_display() {
   ht16k33_init();
-
-  ht16k33_write_ascii(0, 'L', false);
-  ht16k33_write_ascii(1, 'I', false);
-  ht16k33_write_ascii(2, 'N', false);
-  ht16k33_write_ascii(3, 'K', false);
-
+  ht16k33_write_string("LINK");
   ht16k33_commit();
-
   sleep(1);
-
-  ht16k33_clear();
-
-  ht16k33_write_ascii(1, 'V', false);
-  ht16k33_write_ascii(2, '0', true);
-  ht16k33_write_ascii(3, '1', false);
-
+  ht16k33_write_string("v0.1");
   ht16k33_commit();
-
   sleep(2);
-
-  ht16k33_clear();
 }
 
 void sock_loop() {
