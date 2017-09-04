@@ -21,46 +21,29 @@
 using namespace std;
 using namespace MissingLink;
 
-LinkEngine::Pins::Pins()
-  : clockOut(GPIO::SysfsPin(GPIO::CHIP_D0, GPIO::Pin::OUT))
-  , resetOut(GPIO::SysfsPin(GPIO::CHIP_D1, GPIO::Pin::OUT))
-  , playingOut(GPIO::SysfsPin(GPIO::CHIP_D6, GPIO::Pin::OUT))
-  , playStopIn(GPIO::SysfsPin(GPIO::CHIP_D7, GPIO::Pin::IN))
+LinkEngine::LinkEngine()
+  : m_link(120.0)
+  , m_clockOut(GPIO::CHIP_D0, GPIO::Pin::OUT)
+  , m_resetOut(GPIO::CHIP_D1, GPIO::Pin::OUT)
+  , m_playingOut(GPIO::CHIP_D6, GPIO::Pin::OUT)
+  , m_playStopIn(GPIO::CHIP_D7, GPIO::Pin::IN)
+  , m_btnPlayStop(m_playStopIn)
+{
+  m_clockOut.Export();
+  m_resetOut.Export();
+  m_playingOut.Export();
+  m_playStopIn.Export();
+  m_link.enable(true);
+}
+
+LinkEngine::State::State()
+  : running(true)
+  , playState(Stopped)
 {}
 
-void LinkEngine::Pins::ExportAll() {
-  clockOut.Export();
-  resetOut.Export();
-  playingOut.Export();
-  playStopIn.Export();
-}
-
-void LinkEngine::Pins::UnexportAll() {
-  clockOut.Unexport();
-  resetOut.Unexport();
-  playingOut.Unexport();
-  playStopIn.Unexport();
-}
-
-LinkEngine::State::State(LinkEngine::Pins &pins)
-  : link(120.0)
-  , running(true)
-  , playState(Stopped)
-  , playStop(GPIO::Button(pins.playStopIn))
-  , pins(pins)
-{
-  link.enable(true);
-}
-
 void LinkEngine::Run() {
-  Pins pins;
-  State state(pins);
-
-  pins.UnexportAll();
-  pins.ExportAll();
-
-  std::thread inputThread(&LinkEngine::runInput, this, std::ref(state));
-  std::thread outputThread(&LinkEngine::runOutput, this, std::ref(state));
+  std::thread inputThread(&LinkEngine::runInput, this);
+  std::thread outputThread(&LinkEngine::runOutput, this);
 
   sched_param param;
   param.sched_priority = 90;
@@ -68,28 +51,25 @@ void LinkEngine::Run() {
     std::cerr << "Failed to set output thread priority\n";
   }
 
-  runDisplaySocket(state);
-
+  runDisplaySocket();
   inputThread.join();
   outputThread.join();
-
-  pins.UnexportAll();
 }
 
-void LinkEngine::runInput(LinkEngine::State &state) {
+void LinkEngine::runInput() {
 
-  while (state.running) {
+  while (m_state.running) {
 
-    state.playStop.Process();
+    m_btnPlayStop.Process();
 
-    if (state.playStop.GetCurrentEvent() == GPIO::Button::TOUCH_DOWN) {
-      switch ((PlayState)state.playState) {
+    if (m_btnPlayStop.GetCurrentEvent() == GPIO::Button::TOUCH_DOWN) {
+      switch ((PlayState)m_state.playState) {
         case Stopped:
-          state.playState.store(Cued);
+          m_state.playState.store(Cued);
           break;
         case Cued:
         case Playing:
-          state.playState.store(Stopped);
+          m_state.playState.store(Stopped);
           break;
       }
     }
@@ -99,32 +79,32 @@ void LinkEngine::runInput(LinkEngine::State &state) {
 
 }
 
-void LinkEngine::runOutput(LinkEngine::State &state) {
-  while (state.running) {
-    const auto time = state.link.clock().micros();
-    auto timeline = state.link.captureAudioTimeline();
+void LinkEngine::runOutput() {
+  while (m_state.running) {
+    const auto time = m_link.clock().micros();
+    auto timeline = m_link.captureAudioTimeline();
 
     const double beats = timeline.beatAtTime(time, QUANTUM);
     const double phase = timeline.phaseAtTime(time, QUANTUM);
     const double tempo = timeline.tempo();
 
-    switch ((PlayState)state.playState) {
+    switch ((PlayState)m_state.playState) {
       case Cued: {
         const bool playHigh = (long)(beats * 2) % 2 == 0;
-        state.pins.playingOut.Write(playHigh ? HIGH : LOW);
+        m_playingOut.Write(playHigh ? HIGH : LOW);
         if (phase <= 0.01) {
-          state.playState.store(Playing);
+          m_state.playState.store(Playing);
         }
         break;
       }
       case Playing:
-        state.pins.playingOut.Write(HIGH);
-        outputClock(state.pins, beats, phase, tempo);
+        m_playingOut.Write(HIGH);
+        outputClock(beats, phase, tempo);
         break;
       default:
-        state.pins.playingOut.Write(LOW);
-        state.pins.clockOut.Write(LOW);
-        state.pins.resetOut.Write(LOW);
+        m_playingOut.Write(LOW);
+        m_clockOut.Write(LOW);
+        m_resetOut.Write(LOW);
         break;
     }
 
@@ -132,7 +112,7 @@ void LinkEngine::runOutput(LinkEngine::State &state) {
   }
 }
 
-void LinkEngine::runDisplaySocket(LinkEngine::State &state) {
+void LinkEngine::runDisplaySocket() {
   // Proof of concept display code
   int sd;
   struct sockaddr_un remote;
@@ -141,7 +121,7 @@ void LinkEngine::runDisplaySocket(LinkEngine::State &state) {
   strcpy(remote.sun_path, SOCK_PATH);
   int sd_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
 
-  while (state.running) {
+  while (m_state.running) {
 
     if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
       cerr << "failed to create display socket\n";
@@ -156,7 +136,7 @@ void LinkEngine::runDisplaySocket(LinkEngine::State &state) {
       continue;
     }
 
-    auto timeline = state.link.captureAppTimeline();
+    auto timeline = m_link.captureAppTimeline();
     const double tempo = timeline.tempo();
 
     char display_buf[8];
@@ -172,7 +152,7 @@ void LinkEngine::runDisplaySocket(LinkEngine::State &state) {
   }
 }
 
-void LinkEngine::outputClock(Pins &pins, double beats, double phase, double tempo) {
+void LinkEngine::outputClock(double beats, double phase, double tempo) {
   // Fractional portion of current beat value
   double intgarbage;
   const double beatFraction = std::modf(beats * PULSES_PER_BEAT, &intgarbage);
@@ -180,10 +160,10 @@ void LinkEngine::outputClock(Pins &pins, double beats, double phase, double temp
   const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
   const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
   const bool resetHigh = (phase <= resetHighFraction);
-  pins.resetOut.Write(resetHigh ? HIGH : LOW);
+  m_resetOut.Write(resetHigh ? HIGH : LOW);
 
   // Fractional beat value for which clock should be high
   const double clockHighFraction = 0.5;
   const bool clockHigh = (beatFraction <= clockHighFraction);
-  pins.clockOut.Write(clockHigh ? HIGH : LOW);
+  m_clockOut.Write(clockHigh ? HIGH : LOW);
 }

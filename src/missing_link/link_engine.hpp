@@ -9,6 +9,7 @@ namespace MissingLink {
 
   public:
 
+    LinkEngine();
     void Run();
 
   private:
@@ -23,31 +24,27 @@ namespace MissingLink {
         Playing
     };
 
-    struct Pins {
-      GPIO::SysfsPin clockOut;
-      GPIO::SysfsPin resetOut;
-      GPIO::SysfsPin playingOut;
-      GPIO::SysfsPin playStopIn;
-
-      Pins();
-      void ExportAll();
-      void UnexportAll();
-    };
-
     struct State {
-      ableton::Link link;
       std::atomic<bool> running;
       std::atomic<PlayState> playState;
-      GPIO::Button playStop;
-      Pins &pins;
-
-      State(Pins &pins);
+      State();
     };
 
-    void runInput(State& state);
-    void runOutput(State& state);
-    void runDisplaySocket(State& state);
-    void outputClock(Pins &pins, double beats, double phase, double tempo);
+    State m_state;
+
+    ableton::Link m_link;
+
+    GPIO::SysfsPin m_clockOut;
+    GPIO::SysfsPin m_resetOut;
+    GPIO::SysfsPin m_playingOut;
+    GPIO::SysfsPin m_playStopIn;
+
+    GPIO::Button m_btnPlayStop;
+
+    void runInput();
+    void runOutput();
+    void runDisplaySocket();
+    void outputClock(double beats, double phase, double tempo);
   };
 
 }
