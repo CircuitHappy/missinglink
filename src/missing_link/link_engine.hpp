@@ -33,10 +33,10 @@ namespace MissingLink {
 
     ableton::Link m_link;
 
-    GPIO::SysfsPin m_clockOut;
-    GPIO::SysfsPin m_resetOut;
-    GPIO::SysfsPin m_playingOut;
-    GPIO::SysfsPin m_playStopIn;
+    GPIO::Pin m_clockOut;
+    GPIO::Pin m_resetOut;
+    GPIO::Pin m_playingOut;
+    GPIO::Pin m_playStopIn;
 
     GPIO::Button m_btnPlayStop;
 

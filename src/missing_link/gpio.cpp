@@ -9,10 +9,13 @@ using std::string;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
 
+const string Pin::s_rootInterfacePath = "/sys/class/gpio";
+
 Pin::Pin(int address, Direction direction, DigitalValue initial)
   : m_address(address)
   , m_direction(direction)
   , m_initialValue(initial)
+  , m_pinInterfacePath(s_rootInterfacePath + "/gpio" + std::to_string(address))
 {}
 
 Pin::~Pin() {}
@@ -38,16 +41,7 @@ int Pin::Read(DigitalValue *value) {
   return read(value);
 }
 
-//=======================
-
-const string SysfsPin::s_rootInterfacePath = "/sys/class/gpio";
-
-SysfsPin::SysfsPin(int address, Direction direction)
-  : Pin(address, direction)
-  , m_pinInterfacePath(s_rootInterfacePath + "/gpio" + std::to_string(address))
-{}
-
-int SysfsPin::Export() {
+int Pin::Export() {
   if (doExport() < 0) { return -1; }
   if (doSetDirection() < 0) { return -1; }
   if (m_direction == OUT) {
@@ -56,17 +50,17 @@ int SysfsPin::Export() {
   return 0;
 }
 
-int SysfsPin::Unexport() {
+int Pin::Unexport() {
   return doUnexport();
 }
 
-int SysfsPin::write(DigitalValue value) {
+int Pin::write(DigitalValue value) {
   auto strValuePath = m_pinInterfacePath + "/value";
   const char * charValue = value == HIGH ? "1" : "0";
   return writeToFile(strValuePath, charValue, 1);
 }
 
-int SysfsPin::read(DigitalValue *value) {
+int Pin::read(DigitalValue *value) {
   auto strValuePath = m_pinInterfacePath + "/value";
   char buf[2];
   if (readFromFile(strValuePath, buf, 1) < 0) {
@@ -76,7 +70,7 @@ int SysfsPin::read(DigitalValue *value) {
   return 0;
 }
 
-int SysfsPin::writeToFile(const std::string &strPath, const void *buf, size_t nBytes) {
+int Pin::writeToFile(const std::string &strPath, const void *buf, size_t nBytes) {
   int fd = ::open(strPath.c_str(), O_WRONLY);
   if (fd < 0) { return -1; }
   int result = ::write(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
@@ -87,7 +81,7 @@ int SysfsPin::writeToFile(const std::string &strPath, const void *buf, size_t nB
   return result;
 }
 
-int SysfsPin::readFromFile(const std::string &strPath, void *buf, size_t nBytes) {
+int Pin::readFromFile(const std::string &strPath, void *buf, size_t nBytes) {
   int fd = ::open(strPath.c_str(), O_RDONLY);
   if (fd < 0) { return -1; }
   int result = ::read(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
@@ -95,23 +89,24 @@ int SysfsPin::readFromFile(const std::string &strPath, void *buf, size_t nBytes)
   return result;
 }
 
-int SysfsPin::doExport() {
+int Pin::doExport() {
   auto strExportPath = s_rootInterfacePath + "/export";
   auto strAddress = std::to_string(m_address);
   return writeToFile(strExportPath, strAddress.c_str(), strAddress.size());
 }
 
-int SysfsPin::doUnexport() {
+int Pin::doUnexport() {
   auto strUnexportPath = s_rootInterfacePath + "/unexport";
   auto strAddress = std::to_string(m_address);
   return writeToFile(strUnexportPath, strAddress.c_str(), strAddress.size());
 }
 
-int SysfsPin::doSetDirection() {
+int Pin::doSetDirection() {
   auto strDirectionPath = m_pinInterfacePath +  "/direction";
   string strDirection = m_direction == IN ? "in" : "out";
   return writeToFile(strDirectionPath, strDirection.c_str(), strDirection.size());
 }
+
 
 //======================
 

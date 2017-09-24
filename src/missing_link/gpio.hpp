@@ -8,8 +8,8 @@
 namespace MissingLink {
 namespace GPIO {
 
-// Abstract base class for GPIO pins
 class Pin {
+
 public:
 
   enum Direction {
@@ -20,47 +20,35 @@ public:
   Pin(int address, Direction direction, DigitalValue initial = LOW);
   virtual ~Pin();
 
+  int Export();
+  int Unexport();
+
   int Read(DigitalValue *value);
   int Write(DigitalValue value);
 
 protected:
+
+  static const std::string s_rootInterfacePath;
+
   const int m_address;
   const Direction m_direction;
   const DigitalValue m_initialValue;
-
-  virtual int read(DigitalValue *value) = 0;
-  virtual int write(DigitalValue value) = 0;
-
-private:
-  DigitalValue m_lastValueWritten;
-};
-
-
-// Pin Implementation based on linux sysfs
-class SysfsPin : public Pin {
-public:
-  SysfsPin(int address, Direction direction);
-
-  int Export();
-  int Unexport();
-
-protected:
-  static const std::string s_rootInterfacePath;
-
   const std::string m_pinInterfacePath;
+
+  int read(DigitalValue *value);
+  int write(DigitalValue value);
+
+  int doExport();
+  int doUnexport();
+  int doSetDirection();
 
   virtual int writeToFile(const std::string &strPath, const void *buf, size_t nBytes);
   virtual int readFromFile(const std::string &strPath, void *buf, size_t nBytes);
 
 private:
-  int read(DigitalValue *value) override;
-  int write(DigitalValue value) override;
 
-  int doExport();
-  int doUnexport();
-  int doSetDirection();
+  DigitalValue m_lastValueWritten;
 };
-
 
 class Control {
 public:
