@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017
+ * Circuit Happy, LLC
+ */
+
 #include <iostream>
 #include <cstring>
 #include <fcntl.h>

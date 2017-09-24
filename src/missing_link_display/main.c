@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017
+ * Circuit Happy, LLC
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

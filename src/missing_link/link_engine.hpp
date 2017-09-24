@@ -1,3 +1,8 @@
+/**
+ * Copyright (c) 2017
+ * Circuit Happy, LLC
+ */
+
 #pragma once
 
 #include <ableton/link.hpp>
