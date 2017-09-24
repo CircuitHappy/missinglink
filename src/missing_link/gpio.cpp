@@ -107,6 +107,7 @@ int Pin::doSetDirection() {
   return writeToFile(strDirectionPath, strDirection.c_str(), strDirection.size());
 }
 
+// BELOW THIS LINE IS DEPRECATED AND WILL BE REMOVED
 
 //======================
 

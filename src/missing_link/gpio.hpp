@@ -8,47 +8,64 @@
 namespace MissingLink {
 namespace GPIO {
 
+enum DigitalValue {
+  LOW = 0,
+  HIGH = 1
+};
+
 class Pin {
 
-public:
+  public:
 
-  enum Direction {
-    IN = 0,
-    OUT = 1
-  };
+    enum Direction {
+      IN = 0,
+      OUT = 1
+    };
 
-  Pin(int address, Direction direction, DigitalValue initial = LOW);
-  virtual ~Pin();
+    Pin(int address, Direction direction, DigitalValue initial = LOW);
+    virtual ~Pin();
 
-  int Export();
-  int Unexport();
+    int Export();
+    int Unexport();
 
-  int Read(DigitalValue *value);
-  int Write(DigitalValue value);
+    int Read(DigitalValue *value);
+    int Write(DigitalValue value);
 
-protected:
+  protected:
 
-  static const std::string s_rootInterfacePath;
+    static const std::string s_rootInterfacePath;
 
-  const int m_address;
-  const Direction m_direction;
-  const DigitalValue m_initialValue;
-  const std::string m_pinInterfacePath;
+    const int m_address;
+    const Direction m_direction;
+    const DigitalValue m_initialValue;
+    const std::string m_pinInterfacePath;
 
-  int read(DigitalValue *value);
-  int write(DigitalValue value);
+    int read(DigitalValue *value);
+    int write(DigitalValue value);
 
-  int doExport();
-  int doUnexport();
-  int doSetDirection();
+    int doExport();
+    int doUnexport();
+    int doSetDirection();
 
-  virtual int writeToFile(const std::string &strPath, const void *buf, size_t nBytes);
-  virtual int readFromFile(const std::string &strPath, void *buf, size_t nBytes);
+    virtual int writeToFile(const std::string &strPath, const void *buf, size_t nBytes);
+    virtual int readFromFile(const std::string &strPath, void *buf, size_t nBytes);
 
-private:
+  private:
 
-  DigitalValue m_lastValueWritten;
+    DigitalValue m_lastValueWritten;
+
 };
+
+
+class I2CDevice {
+
+  public:
+
+  private:
+
+};
+
+// BELOW THIS LINE IS DEPRECATED AND WILL BE REMOVED
 
 class Control {
 public:

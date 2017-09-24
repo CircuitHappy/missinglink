@@ -20,6 +20,7 @@
 
 using namespace std;
 using namespace MissingLink;
+using namespace MissingLink::GPIO;
 
 LinkEngine::LinkEngine()
   : m_link(120.0)
