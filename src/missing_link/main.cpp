@@ -1,3 +1,4 @@
+#include "missing_link/gpio.hpp"
 #include "missing_link/link_engine.hpp"
 
 int main(void) {

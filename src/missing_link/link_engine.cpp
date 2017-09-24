@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "missing_link/gpio.hpp"
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/link_engine.hpp"
 

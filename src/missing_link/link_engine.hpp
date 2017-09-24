@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ableton/link.hpp>
-#include "missing_link/gpio.hpp"
 
 namespace MissingLink {
 
