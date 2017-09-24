@@ -2,8 +2,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "display/i2c.h"
-#include "display/ht16k33.h"
+#include "missing_link_display/i2c.h"
+#include "missing_link_display/ht16k33.h"
 
 static const int HTK16K33_I2C_BUS = 1;
 static const int HTK16K33_I2C_ADDR = 0x70;

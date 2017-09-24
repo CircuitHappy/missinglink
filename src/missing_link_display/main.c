@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "display/ht16k33.h"
+#include "missing_link_display/ht16k33.h"
 
 #define SOCK_PATH "/tmp/ml-display-bus"
 

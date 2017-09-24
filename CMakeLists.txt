@@ -31,8 +31,7 @@ file(
 file(
   GLOB_RECURSE
   missing_link_display_sources
-  "${CMAKE_CURRENT_LIST_DIR}/src/display/*.c"
-  "${CMAKE_CURRENT_LIST_DIR}/src/display/*.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/src/missing_link_display/*.c"
 )
 
 add_executable(missing_link ${missing_link_sources})

@@ -11,6 +11,8 @@
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
 
+#include "missing_link_display/i2c.h"
+
 static int i2c_open(unsigned int bus) {
   int fd;
   char filename[16];
