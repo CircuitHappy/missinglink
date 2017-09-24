@@ -17,11 +17,11 @@ public:
     OUT = 1
   };
 
-  Pin(const int address, const Direction direction, const DigitalValue initial = LOW);
+  Pin(int address, Direction direction, DigitalValue initial = LOW);
   virtual ~Pin();
 
   int Read(DigitalValue *value);
-  int Write(const DigitalValue value);
+  int Write(DigitalValue value);
 
 protected:
   const int m_address;
@@ -29,7 +29,7 @@ protected:
   const DigitalValue m_initialValue;
 
   virtual int read(DigitalValue *value) = 0;
-  virtual int write(const DigitalValue value) = 0;
+  virtual int write(DigitalValue value) = 0;
 
 private:
   DigitalValue m_lastValueWritten;
@@ -39,7 +39,7 @@ private:
 // Pin Implementation based on linux sysfs
 class SysfsPin : public Pin {
 public:
-  SysfsPin(const int address, const Direction direction);
+  SysfsPin(int address, Direction direction);
 
   int Export();
   int Unexport();
@@ -54,7 +54,7 @@ protected:
 
 private:
   int read(DigitalValue *value) override;
-  int write(const DigitalValue value) override;
+  int write(DigitalValue value) override;
 
   int doExport();
   int doUnexport();

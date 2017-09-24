@@ -9,7 +9,7 @@ using std::string;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
 
-Pin::Pin(const int address, const Direction direction, const DigitalValue initial)
+Pin::Pin(int address, Direction direction, DigitalValue initial)
   : m_address(address)
   , m_direction(direction)
   , m_initialValue(initial)
@@ -17,7 +17,7 @@ Pin::Pin(const int address, const Direction direction, const DigitalValue initia
 
 Pin::~Pin() {}
 
-int Pin::Write(const DigitalValue value) {
+int Pin::Write(DigitalValue value) {
   if (m_direction == IN) {
     return -1;
   }
@@ -42,7 +42,7 @@ int Pin::Read(DigitalValue *value) {
 
 const string SysfsPin::s_rootInterfacePath = "/sys/class/gpio";
 
-SysfsPin::SysfsPin(const int address, const Direction direction)
+SysfsPin::SysfsPin(int address, Direction direction)
   : Pin(address, direction)
   , m_pinInterfacePath(s_rootInterfacePath + "/gpio" + std::to_string(address))
 {}
@@ -60,7 +60,7 @@ int SysfsPin::Unexport() {
   return doUnexport();
 }
 
-int SysfsPin::write(const DigitalValue value) {
+int SysfsPin::write(DigitalValue value) {
   auto strValuePath = m_pinInterfacePath + "/value";
   const char * charValue = value == HIGH ? "1" : "0";
   return writeToFile(strValuePath, charValue, 1);
@@ -76,10 +76,10 @@ int SysfsPin::read(DigitalValue *value) {
   return 0;
 }
 
-int SysfsPin::writeToFile(const std::string &strPath, const void *buf, const size_t nBytes) {
-  const int fd = ::open(strPath.c_str(), O_WRONLY);
+int SysfsPin::writeToFile(const std::string &strPath, const void *buf, size_t nBytes) {
+  int fd = ::open(strPath.c_str(), O_WRONLY);
   if (fd < 0) { return -1; }
-  const int result = ::write(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
+  int result = ::write(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
   if (result < 0) {
     std::cerr << "Error writing to value file\n";
   }
@@ -87,10 +87,10 @@ int SysfsPin::writeToFile(const std::string &strPath, const void *buf, const siz
   return result;
 }
 
-int SysfsPin::readFromFile(const std::string &strPath, void *buf, const size_t nBytes) {
-  const int fd = ::open(strPath.c_str(), O_RDONLY);
+int SysfsPin::readFromFile(const std::string &strPath, void *buf, size_t nBytes) {
+  int fd = ::open(strPath.c_str(), O_RDONLY);
   if (fd < 0) { return -1; }
-  const int result = ::read(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
+  int result = ::read(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
   ::close(fd);
   return result;
 }
