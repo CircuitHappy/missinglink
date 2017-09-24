@@ -2,7 +2,6 @@
 
 #include <string>
 #include <memory>
-#include <mutex>
 
 #include "missing_link/common.h"
 
@@ -62,20 +61,18 @@ class I2CDevice {
 
   public:
 
-    I2CDevice(uint8_t bus, uint8_t address);
+    I2CDevice(uint8_t bus, uint8_t devAddr);
     virtual ~I2CDevice();
 
-    void Read();
+    uint8_t ReadByte(uint8_t regAddr);
     void WriteByte(uint8_t regAddr, uint8_t value);
 
   private:
 
     int m_fd;
-    std::mutex m_mutex;
 
-    void open(uint8_t bus, uint8_t address);
+    void open(uint8_t bus, uint8_t devAddr);
     void close();
-
 };
 
 // BELOW THIS LINE IS DEPRECATED AND WILL BE REMOVED

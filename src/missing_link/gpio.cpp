@@ -112,37 +112,41 @@ int Pin::doSetDirection() {
 
 //======================
 
-static inline void i2c_smbus_write(int fd, uint8_t regAddr, union i2c_smbus_data *data, int size) {
-    i2c_smbus_ioctl_data args;
-    args.read_write = I2C_SMBUS_WRITE;
-    args.command = regAddr;
-    args.size = size;
-    args.data = data;
-    if (::ioctl(fd, I2C_SMBUS, &args)) {
-      std::cerr << "[ERROR] i2c SMBUS failed" << std::endl;
-    }
+static inline void i2c_smbus_transaction(int fd, char rw, uint8_t regAddr, union i2c_smbus_data *data, int size) {
+  i2c_smbus_ioctl_data args;
+  args.read_write = rw;
+  args.command = regAddr;
+  args.size = size;
+  args.data = data;
+  if (::ioctl(fd, I2C_SMBUS, &args)) {
+    std::cerr << "[ERROR] i2c SMBUS failed" << std::endl;
+  }
 }
 
-I2CDevice::I2CDevice(uint8_t bus, uint8_t address) : m_fd(-1) {
-  open(bus, address);
+I2CDevice::I2CDevice(uint8_t bus, uint8_t devAddr) : m_fd(-1) {
+  open(bus, devAddr);
 }
 
 I2CDevice::~I2CDevice() {
   close();
 }
 
-void I2CDevice::Read() {}
-
-void I2CDevice::WriteByte(uint8_t regAddr, uint8_t value) {
-    i2c_smbus_data data;
-    data.byte = value;
-    i2c_smbus_write(m_fd, regAddr, &data, 2);
+uint8_t I2CDevice::ReadByte(uint8_t regAddr) {
+  i2c_smbus_data data;
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_READ, regAddr, &data, 2);
+  return data.byte;
 }
 
-void I2CDevice::open(uint8_t bus, uint8_t address) {
+void I2CDevice::WriteByte(uint8_t regAddr, uint8_t value) {
+  i2c_smbus_data data;
+  data.byte = value;
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, regAddr, &data, 2);
+}
+
+void I2CDevice::open(uint8_t bus, uint8_t devAddr) {
   string interface = "/dev/i2c-" + std::to_string(bus);
   m_fd = ::open(interface.c_str(), O_RDWR);
-  if (::ioctl(m_fd, I2C_SLAVE, address)) {
+  if (::ioctl(m_fd, I2C_SLAVE, devAddr)) {
     std::cerr << "[ERROR] Could not open I2C interface" << std::endl;
   }
 }
