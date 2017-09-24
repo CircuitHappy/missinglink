@@ -13,11 +13,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "missing_link/common.h"
 #include "missing_link/gpio.hpp"
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/link_engine.hpp"
-
-#define SOCK_PATH "/tmp/ml-display-bus"
 
 using namespace std;
 using namespace MissingLink;
@@ -146,7 +145,7 @@ void LinkEngine::runDisplaySocket() {
   struct sockaddr_un remote;
 
   remote.sun_family = AF_UNIX;
-  strcpy(remote.sun_path, SOCK_PATH);
+  strcpy(remote.sun_path, ML_DISPLAY_SOCK_PATH);
   int sd_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
 
   while (m_state.running) {

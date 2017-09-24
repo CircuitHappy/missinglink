@@ -7,9 +7,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "missing_link/common.h"
 #include "missing_link_display/ht16k33.h"
-
-#define SOCK_PATH "/tmp/ml-display-bus"
 
 void init_display() {
   ht16k33_init();
@@ -31,7 +30,7 @@ void sock_loop() {
   }
 
   local.sun_family = AF_UNIX;
-  strcpy(local.sun_path, SOCK_PATH);
+  strcpy(local.sun_path, ML_DISPLAY_SOCK_PATH);
 
   // Remove existing socket
   unlink(local.sun_path);

@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 
-#include "missing_link/missinglink_common.hpp"
+#include "missing_link/common.h"
 
 namespace MissingLink {
 namespace GPIO {
