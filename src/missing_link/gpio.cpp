@@ -1,7 +1,10 @@
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
 
 #include "missing_link/gpio.hpp"
 
@@ -105,6 +108,50 @@ int Pin::doSetDirection() {
   auto strDirectionPath = m_pinInterfacePath +  "/direction";
   string strDirection = m_direction == IN ? "in" : "out";
   return writeToFile(strDirectionPath, strDirection.c_str(), strDirection.size());
+}
+
+//======================
+
+static inline void i2c_smbus_write(int fd, uint8_t regAddr, union i2c_smbus_data *data, int size) {
+    i2c_smbus_ioctl_data args;
+    args.read_write = I2C_SMBUS_WRITE;
+    args.command = regAddr;
+    args.size = size;
+    args.data = data;
+    if (::ioctl(fd, I2C_SMBUS, &args)) {
+      std::cerr << "[ERROR] i2c SMBUS failed" << std::endl;
+    }
+}
+
+I2CDevice::I2CDevice(uint8_t bus, uint8_t address) : m_fd(-1) {
+  open(bus, address);
+}
+
+I2CDevice::~I2CDevice() {
+  close();
+}
+
+void I2CDevice::Read() {}
+
+void I2CDevice::WriteByte(uint8_t regAddr, uint8_t value) {
+    i2c_smbus_data data;
+    data.byte = value;
+    i2c_smbus_write(m_fd, regAddr, &data, 2);
+}
+
+void I2CDevice::open(uint8_t bus, uint8_t address) {
+  string interface = "/dev/i2c-" + std::to_string(bus);
+  m_fd = ::open(interface.c_str(), O_RDWR);
+  if (::ioctl(m_fd, I2C_SLAVE, address)) {
+    std::cerr << "[ERROR] Could not open I2C interface" << std::endl;
+  }
+}
+
+void I2CDevice::close() {
+  if (m_fd >= 0) {
+    ::close(m_fd);
+    m_fd = -1;
+  }
 }
 
 // BELOW THIS LINE IS DEPRECATED AND WILL BE REMOVED
