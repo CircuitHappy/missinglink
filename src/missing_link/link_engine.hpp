@@ -40,14 +40,9 @@ namespace MissingLink {
 
     GPIO::Pin m_clockOut;
     GPIO::Pin m_resetOut;
-    GPIO::Pin m_playingOut;
-    GPIO::Pin m_playStopIn;
-
-    GPIO::Button m_btnPlayStop;
 
     std::chrono::microseconds m_lastOutputTime;
 
-    void runInput();
     void runOutput();
     void runDisplaySocket();
   };
