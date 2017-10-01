@@ -1,4 +1,8 @@
-#include "missing_link/gpio.hpp"
+/**
+ * Copyright (c) 2017
+ * Circuit Happy, LLC
+ */
+
 #include "missing_link/io_expander.hpp"
 
 #define IO_EXP_I2C_BUS 1
@@ -52,6 +56,8 @@ IOExpander::IOExpander()
   // If not in BANK mode (default state), the IOCON register is at 0x0A.
   // Once the option is set, it will be located at the enum lookup value.
   m_i2cDevice->WriteByte(0x0A, BANK_ADDRESSING);
+  m_i2cDevice->WriteByte(IOCON, BANK_ADDRESSING);
+  m_i2cDevice->WriteByte(0x0A, 0x00); // reset OLAT if device was not in bank address mode
 }
 
 IOExpander::~IOExpander() {}

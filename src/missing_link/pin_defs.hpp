@@ -1,9 +1,8 @@
 #pragma once
 
 namespace MissingLink {
-namespace GPIO {
 
-enum CHIP_GPIO {
+enum PinNumber {
   CHIP_PE0 = 128,
   CHIP_PE1 = 129,
   CHIP_PE2 = 130,
@@ -26,4 +25,4 @@ enum CHIP_GPIO {
   CHIP_D1 = CHIP_PE5
 };
 
-}}
+}

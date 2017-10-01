@@ -8,7 +8,6 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
-#include <thread>
 
 #include <stdlib.h>
 #include <signal.h>
@@ -19,7 +18,6 @@
 #include <sys/un.h>
 
 #include "missing_link/common.h"
-#include "missing_link/gpio.hpp"
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/link_engine.hpp"
 
@@ -27,18 +25,50 @@ using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
 
-LinkEngine::LinkEngine()
-  : m_link(120.0)
-  , m_pClockOut(unique_ptr<Pin>(new Pin(GPIO::CHIP_D0, Pin::OUT)))
-  , m_pResetOut(unique_ptr<Pin>(new Pin(GPIO::CHIP_D1, Pin::OUT)))
-  , m_lastOutputTime(0)
-{
-  m_link.enable(true);
-}
 
 LinkEngine::State::State()
   : running(true)
   , playState(Playing)
+  , link(120.0)
+{
+  link.enable(true);
+}
+
+LinkEngine::Process::Process(State &state)
+  : m_state(state)
+  , m_bStopped(true)
+{}
+
+LinkEngine::Process::~Process() {
+  Stop();
+}
+
+void LinkEngine::Process::Run() {
+  if (m_pThread != nullptr) { return; }
+  m_bStopped = false;
+  m_pThread = unique_ptr<thread>(new thread(&Process::run, this));
+}
+
+void LinkEngine::Process::Stop() {
+  if (m_pThread == nullptr) { return; }
+  m_bStopped = true;
+  m_pThread->join();
+  m_pThread = nullptr;
+}
+
+LinkEngine::UIProcess::UIProcess(State &state) : LinkEngine::Process(state) {}
+
+void LinkEngine::UIProcess::run() {
+  while (!m_bStopped) {
+    this_thread::sleep_for(chrono::milliseconds(10));
+  }
+}
+
+
+LinkEngine::LinkEngine()
+  : m_pIO(shared_ptr<IO>(new IO()))
+  , m_pUIProcess(unique_ptr<UIProcess>(new UIProcess(m_state)))
+  , m_lastOutputTime(0)
 {}
 
 void LinkEngine::Run() {
@@ -57,7 +87,7 @@ void LinkEngine::Run() {
 void LinkEngine::runOutput() {
   while (m_state.running) {
     const auto lastTime = m_lastOutputTime;
-    const auto currentTime = m_link.clock().micros();
+    const auto currentTime = m_state.link.clock().micros();
 
     m_lastOutputTime = currentTime;
 
@@ -65,7 +95,7 @@ void LinkEngine::runOutput() {
       continue;
     }
 
-    auto timeline = m_link.captureAudioTimeline();
+    auto timeline = m_state.link.captureAudioTimeline();
 
     const double tempo = timeline.tempo();
 
@@ -83,17 +113,17 @@ void LinkEngine::runOutput() {
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
         const bool resetHigh = (currentPhase <= resetHighFraction);
-        m_pResetOut->Write(resetHigh ? HIGH : LOW);
+        m_pIO->SetReset(resetHigh ? HIGH : LOW);
 
         if (floor(currentPulses) > floor(lastPulses)) {
           const bool clockHigh = (int)(floor(currentPulses)) % 2 == 0;
-          m_pClockOut->Write(clockHigh ? HIGH : LOW);
+          m_pIO->SetClock(clockHigh ? HIGH : LOW);
         }
         break;
       }
       default:
-        m_pClockOut->Write(LOW);
-        m_pResetOut->Write(LOW);
+        m_pIO->SetClock(LOW);
+        m_pIO->SetReset(LOW);
         break;
     }
 
@@ -125,7 +155,7 @@ void LinkEngine::runDisplaySocket() {
       continue;
     }
 
-    auto timeline = m_link.captureAppTimeline();
+    auto timeline = m_state.link.captureAppTimeline();
     const double tempo = timeline.tempo();
 
     char display_buf[8];

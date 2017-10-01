@@ -6,46 +6,79 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 #include <ableton/link.hpp>
+#include "missing_link/gpio.hpp"
+#include "missing_link/io.hpp"
 
 namespace MissingLink {
 
   class LinkEngine {
 
-  public:
+    public:
 
-    LinkEngine();
-    void Run();
+      LinkEngine();
+      void Run();
 
-  private:
+    private:
 
-    static constexpr double PULSES_PER_BEAT = 4.0;
-    static constexpr double PULSE_LENGTH = 0.030; // seconds
-    static constexpr double QUANTUM = 4;
+      static constexpr double PULSES_PER_BEAT = 4.0;
+      static constexpr double PULSE_LENGTH = 0.030; // seconds
+      static constexpr double QUANTUM = 4;
 
-    enum PlayState {
-        Stopped,
-        Cued,
-        Playing
-    };
+      enum PlayState {
+          Stopped,
+          Cued,
+          Playing
+      };
 
-    struct State {
-      std::atomic<bool> running;
-      std::atomic<PlayState> playState;
-      State();
-    };
+      struct State {
+        std::atomic<bool> running;
+        std::atomic<PlayState> playState;
+        ableton::Link link;
+        State();
+      };
 
-    State m_state;
+      class Process {
 
-    ableton::Link m_link;
+        public:
 
-    std::unique_ptr<GPIO::Pin> m_pClockOut;
-    std::unique_ptr<GPIO::Pin> m_pResetOut;
+          Process(State &state);
+          virtual ~Process();
 
-    std::chrono::microseconds m_lastOutputTime;
+          virtual void Run();
+          void Stop();
 
-    void runOutput();
-    void runDisplaySocket();
+        protected:
+
+          State &m_state;
+          std::atomic<bool> m_bStopped;
+          std::unique_ptr<std::thread> m_pThread;
+
+          virtual void run() = 0;
+      };
+
+      class UIProcess : public Process {
+
+        public:
+
+          UIProcess(State &state);
+
+        private:
+
+          std::unique_ptr<GPIO::Pin> m_pInterrupt;
+
+          void run() override;
+      };
+
+      State m_state;
+      std::shared_ptr<IO> m_pIO;
+      std::unique_ptr<UIProcess> m_pUIProcess;
+
+      std::chrono::microseconds m_lastOutputTime;
+
+      void runOutput();
+      void runDisplaySocket();
   };
 
 }

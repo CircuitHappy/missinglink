@@ -6,6 +6,7 @@
 #pragma once
 
 #include <memory>
+#include "missing_link/gpio.hpp"
 
 namespace MissingLink {
 
