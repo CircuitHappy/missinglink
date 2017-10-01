@@ -27,14 +27,11 @@ class Pin {
       OUT = 1
     };
 
-    Pin(int address, Direction direction, DigitalValue initial = LOW);
+    Pin(int address, Direction direction);
     virtual ~Pin();
 
-    int Export();
-    int Unexport();
-
-    int Read(DigitalValue *value);
-    int Write(DigitalValue value);
+    DigitalValue Read();
+    void Write(DigitalValue value);
 
   protected:
 
@@ -42,23 +39,18 @@ class Pin {
 
     const int m_address;
     const Direction m_direction;
-    const DigitalValue m_initialValue;
     const std::string m_pinInterfacePath;
 
-    int read(DigitalValue *value);
-    int write(DigitalValue value);
+    int m_fd;
 
-    int doExport();
-    int doUnexport();
-    int doSetDirection();
+    void open();
+    void close();
 
-    virtual int writeToFile(const std::string &strPath, const void *buf, size_t nBytes);
-    virtual int readFromFile(const std::string &strPath, void *buf, size_t nBytes);
+    DigitalValue read();
+    void write(DigitalValue value);
 
-  private:
-
-    DigitalValue m_lastValueWritten;
-
+    int writeToFile(const std::string &strPath, const std::string &strValue);
+    int readFromFile(const std::string &strPath, void *buf, int nBytes);
 };
 
 

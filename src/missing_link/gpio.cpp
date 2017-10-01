@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <cerrno>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -19,100 +20,105 @@ using namespace MissingLink::GPIO;
 
 const string Pin::s_rootInterfacePath = "/sys/class/gpio";
 
-Pin::Pin(int address, Direction direction, DigitalValue initial)
+Pin::Pin(int address, Direction direction)
   : m_address(address)
   , m_direction(direction)
-  , m_initialValue(initial)
   , m_pinInterfacePath(s_rootInterfacePath + "/gpio" + std::to_string(address))
-{}
+  , m_fd(-1)
+{
+  open();
+}
 
-Pin::~Pin() {}
+Pin::~Pin() {
+  close();
+}
 
-int Pin::Write(DigitalValue value) {
+void Pin::Write(DigitalValue value) {
   if (m_direction == IN) {
-    return -1;
+    std::cerr << "Attempt to write to input pin at " + m_address << std::endl;
+    return;
   }
-  if (m_lastValueWritten == value) {
-    return 0;
-  }
-  int result = write(value);
-  if (result == 0) {
-    m_lastValueWritten = value;
-  }
-  return result;
+  write(value);
 }
 
-int Pin::Read(DigitalValue *value) {
+DigitalValue Pin::Read() {
   if (m_direction == OUT) {
-    return -1;
+    std::cerr << "Attempt to read from output pin at " + m_address << std::endl;
+    return DigitalValue::LOW;
   }
-  return read(value);
+  return read();
 }
 
-int Pin::Export() {
-  if (doExport() < 0) { return -1; }
-  if (doSetDirection() < 0) { return -1; }
-  if (m_direction == OUT) {
-    return write(m_initialValue);
+void Pin::write(DigitalValue value) {
+  if (m_fd < 0) {
+    return;
   }
-  return 0;
+  std::string strValue = value == HIGH ? "1" : "0";
+  ::write(m_fd, strValue.c_str(), strValue.size());
 }
 
-int Pin::Unexport() {
-  return doUnexport();
-}
-
-int Pin::write(DigitalValue value) {
-  auto strValuePath = m_pinInterfacePath + "/value";
-  const char * charValue = value == HIGH ? "1" : "0";
-  return writeToFile(strValuePath, charValue, 1);
-}
-
-int Pin::read(DigitalValue *value) {
+DigitalValue Pin::read() {
+  if (m_fd < 0) {
+    return LOW;
+  }
   auto strValuePath = m_pinInterfacePath + "/value";
   char buf[2];
-  if (readFromFile(strValuePath, buf, 1) < 0) {
-    return -1;
-  }
-  *value = std::strcmp(buf, "1") == 0 ? HIGH : LOW;
-  return 0;
+  ::lseek(m_fd, 0, SEEK_SET);
+  ::read(m_fd, buf, 1);
+  return std::strcmp(buf, "1") == 0 ? HIGH : LOW;
 }
 
-int Pin::writeToFile(const std::string &strPath, const void *buf, size_t nBytes) {
+int Pin::writeToFile(const std::string &strPath, const std::string &strValue) {
   int fd = ::open(strPath.c_str(), O_WRONLY);
-  if (fd < 0) { return -1; }
-  int result = ::write(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
-  if (result < 0) {
-    std::cerr << "Error writing to value file\n";
+  if (fd < 0) {
+    return errno;
   }
+  int size = strValue.size();
+  int result = ::write(fd, strValue.c_str(), size);
   ::close(fd);
-  return result;
+  return (result == size) ? 0 : errno;
 }
 
-int Pin::readFromFile(const std::string &strPath, void *buf, size_t nBytes) {
+int Pin::readFromFile(const std::string &strPath, void *buf, int nBytes) {
   int fd = ::open(strPath.c_str(), O_RDONLY);
-  if (fd < 0) { return -1; }
-  int result = ::read(fd, buf, nBytes) == (int)nBytes ? 0 : -1;
+  if (fd < 0) {
+    return errno;
+  }
+  int result = ::read(fd, buf, nBytes);
   ::close(fd);
-  return result;
+  return (result == nBytes) ? 0 : errno;
 }
 
-int Pin::doExport() {
+void Pin::open() {
+  int result;
   auto strExportPath = s_rootInterfacePath + "/export";
   auto strAddress = std::to_string(m_address);
-  return writeToFile(strExportPath, strAddress.c_str(), strAddress.size());
-}
+  if((result = writeToFile(strExportPath, strAddress)) != 0) {
+    if (errno != EBUSY) {
+      std::cerr << "Failed to export interface for pin: " << std::strerror(result) << std::endl;
+    }
+  }
 
-int Pin::doUnexport() {
-  auto strUnexportPath = s_rootInterfacePath + "/unexport";
-  auto strAddress = std::to_string(m_address);
-  return writeToFile(strUnexportPath, strAddress.c_str(), strAddress.size());
-}
-
-int Pin::doSetDirection() {
   auto strDirectionPath = m_pinInterfacePath +  "/direction";
   string strDirection = m_direction == IN ? "in" : "out";
-  return writeToFile(strDirectionPath, strDirection.c_str(), strDirection.size());
+  if((result = writeToFile(strDirectionPath, strDirection)) != 0) {
+    std::cerr << "Failed to set direction for pin: " << std::strerror(result) << std::endl;
+  }
+
+  auto strValuePath = m_pinInterfacePath + "/value";
+  if ((m_fd = ::open(strValuePath.c_str(), O_RDWR)) < 0) {
+    std::cerr << "Failed to open value interface for pin: " << std::strerror(errno) << std::endl;
+  }
+}
+
+void Pin::close() {
+  if (m_fd >= 0) {
+    ::close(m_fd);
+    m_fd = -1;
+  }
+  auto strUnexportPath = s_rootInterfacePath + "/unexport";
+  auto strAddress = std::to_string(m_address);
+  writeToFile(strUnexportPath, strAddress);
 }
 
 //======================

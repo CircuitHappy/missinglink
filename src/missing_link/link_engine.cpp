@@ -33,8 +33,6 @@ LinkEngine::LinkEngine()
   , m_pResetOut(unique_ptr<Pin>(new Pin(GPIO::CHIP_D1, Pin::OUT)))
   , m_lastOutputTime(0)
 {
-  m_pClockOut->Export();
-  m_pResetOut->Export();
   m_link.enable(true);
 }
 
