@@ -31,9 +31,6 @@ class IOExpander {
       uint8_t iocEnabled;     // 0 = disabled, 1 = enabled
       uint8_t iocMode;        // 0 = compare with previous, 1 = compare with default
       uint8_t pullUpEnabled;  // 0 = disabled, 1 = enabled
-
-      // By default all pins will be configured as output
-      PortConfig();
     };
 
     // Abstraction for interrupt configuration bitmask
@@ -41,9 +38,6 @@ class IOExpander {
       bool activeHigh;
       bool openDrain;
       bool mirror;
-
-      // By default all are false
-      InterruptConfig();
     };
 
     IOExpander();

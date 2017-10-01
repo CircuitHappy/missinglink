@@ -35,21 +35,6 @@ enum IOExpander::ConfigOption : uint8_t {
   BANK_ADDRESSING = 0b10000000  // Bank mode config (1 = separate banks, 0 = interleaved)
 };
 
-IOExpander::PortConfig::PortConfig()
-  : direction(0x00)
-  , inputPolarity(0x00)
-  , defaultValue(0x00)
-  , iocEnabled(0x00)
-  , iocMode(0x00)
-  , pullUpEnabled(0x00)
-{}
-
-IOExpander::InterruptConfig::InterruptConfig()
-  : activeHigh(false)
-  , openDrain(false)
-  , mirror(false)
-{}
-
 IOExpander::IOExpander()
   : m_i2cDevice(std::unique_ptr<GPIO::I2CDevice>(new GPIO::I2CDevice(IO_EXP_I2C_BUS, IO_EXP_I2C_ADDR)))
 {
