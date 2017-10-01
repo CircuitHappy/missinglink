@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <memory>
 #include <ableton/link.hpp>
 
 namespace MissingLink {
@@ -38,8 +39,8 @@ namespace MissingLink {
 
     ableton::Link m_link;
 
-    GPIO::Pin m_clockOut;
-    GPIO::Pin m_resetOut;
+    std::unique_ptr<GPIO::Pin> m_pClockOut;
+    std::unique_ptr<GPIO::Pin> m_pResetOut;
 
     std::chrono::microseconds m_lastOutputTime;
 

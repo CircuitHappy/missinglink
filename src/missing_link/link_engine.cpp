@@ -29,18 +29,18 @@ using namespace MissingLink::GPIO;
 
 LinkEngine::LinkEngine()
   : m_link(120.0)
-  , m_clockOut(GPIO::CHIP_D0, GPIO::Pin::OUT)
-  , m_resetOut(GPIO::CHIP_D1, GPIO::Pin::OUT)
+  , m_pClockOut(unique_ptr<Pin>(new Pin(GPIO::CHIP_D0, Pin::OUT)))
+  , m_pResetOut(unique_ptr<Pin>(new Pin(GPIO::CHIP_D1, Pin::OUT)))
   , m_lastOutputTime(0)
 {
-  m_clockOut.Export();
-  m_resetOut.Export();
+  m_pClockOut->Export();
+  m_pResetOut->Export();
   m_link.enable(true);
 }
 
 LinkEngine::State::State()
   : running(true)
-  , playState(Stopped)
+  , playState(Playing)
 {}
 
 void LinkEngine::Run() {
@@ -85,17 +85,17 @@ void LinkEngine::runOutput() {
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
         const bool resetHigh = (currentPhase <= resetHighFraction);
-        m_resetOut.Write(resetHigh ? HIGH : LOW);
+        m_pResetOut->Write(resetHigh ? HIGH : LOW);
 
         if (floor(currentPulses) > floor(lastPulses)) {
           const bool clockHigh = (int)(floor(currentPulses)) % 2 == 0;
-          m_clockOut.Write(clockHigh ? HIGH : LOW);
+          m_pClockOut->Write(clockHigh ? HIGH : LOW);
         }
         break;
       }
       default:
-        m_clockOut.Write(LOW);
-        m_resetOut.Write(LOW);
+        m_pClockOut->Write(LOW);
+        m_pResetOut->Write(LOW);
         break;
     }
 
