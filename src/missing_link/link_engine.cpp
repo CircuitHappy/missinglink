@@ -72,6 +72,9 @@ LinkEngine::LinkEngine()
 {}
 
 void LinkEngine::Run() {
+  m_pIO->StartPollingInput();
+  m_pUIProcess->Run();
+
   std::thread outputThread(&LinkEngine::runOutput, this);
 
   sched_param param;
@@ -81,6 +84,9 @@ void LinkEngine::Run() {
   }
 
   runDisplaySocket();
+
+  m_pIO->StopPollingInput();
+  m_pUIProcess->Stop();
   outputThread.join();
 }
 
@@ -113,11 +119,11 @@ void LinkEngine::runOutput() {
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
         const bool resetHigh = (currentPhase <= resetHighFraction);
-        m_pIO->SetReset(resetHigh ? HIGH : LOW);
+        m_pIO->SetReset(resetHigh);
 
         if (floor(currentPulses) > floor(lastPulses)) {
           const bool clockHigh = (int)(floor(currentPulses)) % 2 == 0;
-          m_pIO->SetClock(clockHigh ? HIGH : LOW);
+          m_pIO->SetClock(clockHigh);
         }
         break;
       }

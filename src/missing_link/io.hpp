@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <thread>
 #include <mutex>
@@ -52,9 +53,16 @@ class IO {
 
     std::mutex m_expanderMutex;
     std::unique_ptr<IOExpander> m_pExpander;
+
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;
+
+    std::atomic<bool> m_bStopPolling;
+    std::unique_ptr<std::thread> m_pPollThread;
+
+    void runPollInput();
+    void handleInterrupt();
 
     void writeExpanderPin(IOExpander::Port port, int index, bool on);
 };

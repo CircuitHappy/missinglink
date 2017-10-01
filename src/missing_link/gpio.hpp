@@ -7,6 +7,7 @@
 
 #include <string>
 #include <memory>
+#include <poll.h>
 
 #include "missing_link/common.h"
 
@@ -27,11 +28,21 @@ class Pin {
       OUT = 1
     };
 
+    enum Edge {
+      RISING,
+      FALLING,
+      BOTH
+    };
+
     Pin(int address, Direction direction);
     virtual ~Pin();
 
     DigitalValue Read();
     void Write(DigitalValue value);
+
+    void SetEdgeMode(Edge edge);
+
+    pollfd GetPollInfo();
 
   protected:
 

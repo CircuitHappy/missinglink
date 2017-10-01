@@ -46,8 +46,18 @@ class IOExpander {
     void ConfigureInterrupt(const InterruptConfig &config);
     void ConfigurePort(Port port, const PortConfig &config);
 
+    // Read from the INTF register on the given port.
+    // A set bit indicates that the corresponding pin generated the interrupt.
+    uint8_t ReadInterruptFlag(Port port);
+
+    // Read from the INTCAP register on the given port.
+    // Indicates GPIO state at time of interrupt.
+    // Reading this will clear the interrupt.
+    uint8_t ReadCapturedInterruptState(Port port);
+
     // Read from the GPIO register on the given port.
     // This reflects the current state of all I/O pins, input or output.
+    // Reading this will clear the interrupt.
     uint8_t ReadPort(Port port);
 
     // Turn an output on or off. This will write directly to the output

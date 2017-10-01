@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <fcntl.h>
 #include <unistd.h>
+#include <poll.h>
 #include <sys/ioctl.h>
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
@@ -49,11 +50,44 @@ DigitalValue Pin::Read() {
   return read();
 }
 
+void Pin::SetEdgeMode(Edge edge) {
+  if (m_direction == OUT) {
+    std::cerr << "Attempt to set edge mode for output pin at " + m_address << std::endl;
+    return;
+  }
+  // toggle back to none first to fix buggy driver state
+  string strEdgePath = m_pinInterfacePath + "/edge";
+  writeToFile(strEdgePath, "none");
+
+  string strEdge;
+  switch (edge) {
+    case RISING:
+      strEdge = "rising";
+      break;
+    case FALLING:
+      strEdge = "falling";
+      break;
+    case BOTH:
+      strEdge = "both";
+      break;
+    default:
+      return;
+  }
+  int result;
+  if ((result = writeToFile(strEdgePath, strEdge)) != 0) {
+    std::cerr << "Failed to set edge mode for pin: " << std::strerror(result) << std::endl;
+  }
+}
+
+pollfd Pin::GetPollInfo() {
+  return { m_fd, POLLPRI, 0 };
+}
+
 void Pin::write(DigitalValue value) {
   if (m_fd < 0) {
     return;
   }
-  std::string strValue = value == HIGH ? "1" : "0";
+  string strValue = value == HIGH ? "1" : "0";
   ::write(m_fd, strValue.c_str(), strValue.size());
 }
 
@@ -62,10 +96,10 @@ DigitalValue Pin::read() {
     return LOW;
   }
   auto strValuePath = m_pinInterfacePath + "/value";
-  char buf[2];
+  char ch;
   ::lseek(m_fd, 0, SEEK_SET);
-  ::read(m_fd, buf, 1);
-  return std::strcmp(buf, "1") == 0 ? HIGH : LOW;
+  ::read(m_fd, &ch, 1);
+  return (ch == '1') ? HIGH : LOW;
 }
 
 int Pin::writeToFile(const std::string &strPath, const std::string &strValue) {

@@ -66,8 +66,6 @@ namespace MissingLink {
 
         private:
 
-          std::unique_ptr<GPIO::Pin> m_pInterrupt;
-
           void run() override;
       };
 

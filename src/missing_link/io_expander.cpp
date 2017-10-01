@@ -64,6 +64,14 @@ void IOExpander::ConfigurePort(Port port, const PortConfig &config) {
   m_i2cDevice->WriteByte(GPPU | port, config.pullUpEnabled);
 }
 
+uint8_t IOExpander::ReadInterruptFlag(Port port) {
+  return m_i2cDevice->ReadByte(INTF | port);
+}
+
+uint8_t IOExpander::ReadCapturedInterruptState(Port port) {
+  return m_i2cDevice->ReadByte(INTCAP | port);
+}
+
 uint8_t IOExpander::ReadPort(Port port) {
   return m_i2cDevice->ReadByte(GPIO | port);
 }
