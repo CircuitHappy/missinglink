@@ -4,15 +4,26 @@ namespace MissingLink {
 namespace GPIO {
 
 enum CHIP_GPIO {
-  CHIP_D0 = 132,
-  CHIP_D1 = 133,
-  CHIP_D2 = 134,
-  CHIP_D3 = 135,
-  CHIP_D4 = 136,
-  CHIP_D5 = 137,
-  CHIP_D6 = 138,
-  CHIP_D7 = 139,
-  CHIP_D8 = 140
+  CHIP_PE0 = 128,
+  CHIP_PE1 = 129,
+  CHIP_PE2 = 130,
+  CHIP_PE3 = 131,
+  CHIP_PE4 = 132,
+  CHIP_PE5 = 133,
+  CHIP_PE6 = 134,
+  CHIP_PE7 = 135,
+  CHIP_PE8 = 136,
+  CHIP_PE9 = 137,
+  CHIP_PE10 = 138,
+  CHIP_PE11 = 139,
+
+  CHIP_SPI_CS0 = CHIP_PE0,
+  CHIP_SPI_CLK = CHIP_PE1,
+  CHIP_SPI_MOSI = CHIP_PE2,
+  CHIP_SPI_MISO = CHIP_PE3,
+
+  CHIP_D0 = CHIP_PE4,
+  CHIP_D1 = CHIP_PE5
 };
 
 }}
