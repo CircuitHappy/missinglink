@@ -9,7 +9,7 @@
 #include <thread>
 #include <ableton/link.hpp>
 #include "missing_link/gpio.hpp"
-#include "missing_link/io.hpp"
+#include "missing_link/user_interface.hpp"
 
 namespace MissingLink {
 
@@ -70,7 +70,7 @@ namespace MissingLink {
       };
 
       State m_state;
-      std::shared_ptr<IO> m_pIO;
+      std::shared_ptr<UserInterface> m_pUI;
       std::unique_ptr<UIProcess> m_pUIProcess;
 
       std::chrono::microseconds m_lastOutputTime;

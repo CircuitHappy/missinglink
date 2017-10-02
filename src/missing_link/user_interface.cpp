@@ -9,7 +9,7 @@
 #include <chrono>
 #include <poll.h>
 #include "missing_link/pin_defs.hpp"
-#include "missing_link/io.hpp"
+#include "missing_link/user_interface.hpp"
 
 #define ML_INTERRUPT_PIN  CHIP_SPI_CS0
 #define ML_CLOCK_PIN      CHIP_PE4
@@ -65,7 +65,7 @@ namespace {
   };
 }
 
-IO::IO()
+UserInterface::UserInterface()
   : onInputEvent(nullptr)
   , m_pExpander(unique_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
@@ -87,49 +87,49 @@ IO::IO()
   m_pExpander->ReadCapturedInterruptState(IOExpander::PORTB);
 }
 
-IO::~IO() {
+UserInterface::~UserInterface() {
   StopPollingInput();
 }
 
-void IO::StartPollingInput() {
+void UserInterface::StartPollingInput() {
   if (m_pPollThread != nullptr) { return; }
   m_bStopPolling = false;
-  m_pPollThread = unique_ptr<thread>(new thread(&IO::runPollInput, this));
+  m_pPollThread = unique_ptr<thread>(new thread(&UserInterface::runPollInput, this));
 }
 
-void IO::StopPollingInput() {
+void UserInterface::StopPollingInput() {
   if (m_pPollThread == nullptr) { return; }
   m_bStopPolling = true;
   m_pPollThread->join();
   m_pPollThread = nullptr;
 }
 
-void IO::SetBPMModeLED(bool on) {
+void UserInterface::SetBPMModeLED(bool on) {
   m_pExpander->WritePin(BPMModeLEDPin, on);
 }
 
-void IO::SetLoopModeLED(bool on) {
+void UserInterface::SetLoopModeLED(bool on) {
   m_pExpander->WritePin(LoopModeLEDPin, on);
 }
 
-void IO::SetClockModeLED(bool on) {
+void UserInterface::SetClockModeLED(bool on) {
   m_pExpander->WritePin(ClockModeLEDPin, on);
 }
 
-void IO::SetAnimationLED(int index, bool on) {
+void UserInterface::SetAnimationLED(int index, bool on) {
   if (index > 5) { return; }
   m_pExpander->WritePin(AnimationLEDPin(index), on);
 }
 
-void IO::SetClock(bool on) {
+void UserInterface::SetClock(bool on) {
   m_pClockOut->Write(on ? HIGH : LOW);
 }
 
-void IO::SetReset(bool on) {
+void UserInterface::SetReset(bool on) {
   m_pResetOut->Write(on ? HIGH : LOW);
 }
 
-void IO::runPollInput() {
+void UserInterface::runPollInput() {
 
   // Clear initial interrupt event
   m_pInterruptIn->Read();
@@ -157,7 +157,7 @@ void IO::runPollInput() {
   }
 }
 
-void IO::handleInterrupt() {
+void UserInterface::handleInterrupt() {
   uint8_t flag = m_pExpander->ReadInterruptFlag(IOExpander::PORTA);
   uint8_t state = m_pExpander->ReadPort(IOExpander::PORTA);
 
@@ -200,13 +200,13 @@ void IO::handleInterrupt() {
   std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
-void IO::handleInputEvent(InputEvent event) {
+void UserInterface::handleInputEvent(InputEvent event) {
     if (onInputEvent != nullptr) {
       onInputEvent(event);
     }
 }
 
-void IO::decodeEncoder(bool aOn, bool bOn) {
+void UserInterface::decodeEncoder(bool aOn, bool bOn) {
   uint8_t aVal = aOn ? 0x01 : 0x00;
   uint8_t bVal = bOn ? 0x01 : 0x00;
 

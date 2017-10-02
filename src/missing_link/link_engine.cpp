@@ -66,20 +66,20 @@ void LinkEngine::UIProcess::run() {
 
 
 LinkEngine::LinkEngine()
-  : m_pIO(shared_ptr<IO>(new IO()))
+  : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
   , m_pUIProcess(unique_ptr<UIProcess>(new UIProcess(m_state)))
   , m_lastOutputTime(0)
 {
-  m_pIO->onInputEvent = [this](IO::InputEvent event) {
+  m_pUI->onInputEvent = [this](UserInterface::InputEvent event) {
     auto now = m_state.link.clock().micros();
     auto timeline = m_state.link.captureAppTimeline();
     auto tempo = timeline.tempo();
     switch (event) {
-      case IO::InputEvent::ENC_UP:
+      case UserInterface::InputEvent::ENC_UP:
         tempo += 1.0;
         timeline.setTempo(tempo, now);
         break;
-      case IO::InputEvent::ENC_DOWN:
+      case UserInterface::InputEvent::ENC_DOWN:
         tempo -= 1.0;
         timeline.setTempo(tempo, now);
         break;
@@ -91,7 +91,7 @@ LinkEngine::LinkEngine()
 }
 
 void LinkEngine::Run() {
-  m_pIO->StartPollingInput();
+  m_pUI->StartPollingInput();
   m_pUIProcess->Run();
 
   std::thread outputThread(&LinkEngine::runOutput, this);
@@ -104,7 +104,7 @@ void LinkEngine::Run() {
 
   runDisplaySocket();
 
-  m_pIO->StopPollingInput();
+  m_pUI->StopPollingInput();
   m_pUIProcess->Stop();
   outputThread.join();
 }
@@ -138,17 +138,17 @@ void LinkEngine::runOutput() {
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
         const bool resetHigh = (currentPhase <= resetHighFraction);
-        m_pIO->SetReset(resetHigh);
+        m_pUI->SetReset(resetHigh);
 
         if (floor(currentPulses) > floor(lastPulses)) {
           const bool clockHigh = (int)(floor(currentPulses)) % 2 == 0;
-          m_pIO->SetClock(clockHigh);
+          m_pUI->SetClock(clockHigh);
         }
         break;
       }
       default:
-        m_pIO->SetClock(LOW);
-        m_pIO->SetReset(LOW);
+        m_pUI->SetClock(LOW);
+        m_pUI->SetReset(LOW);
         break;
     }
 

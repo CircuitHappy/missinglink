@@ -16,7 +16,7 @@
 
 namespace MissingLink {
 
-class IO {
+class UserInterface {
 
   public:
 
@@ -28,8 +28,8 @@ class IO {
       ENC_PRESS
     };
 
-    IO();
-    virtual ~IO();
+    UserInterface();
+    virtual ~UserInterface();
 
     void StartPollingInput();
     void StopPollingInput();
