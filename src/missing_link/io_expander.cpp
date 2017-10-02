@@ -5,9 +5,6 @@
 
 #include "missing_link/io_expander.hpp"
 
-#define IO_EXP_I2C_BUS 1
-#define IO_EXP_I2C_ADDR 0x20
-
 using namespace MissingLink;
 
 // Register address in BANK=1 mode.
@@ -35,8 +32,8 @@ enum IOExpander::ConfigOption : uint8_t {
   BANK_ADDRESSING = 0b10000000  // Bank mode config (1 = separate banks, 0 = interleaved)
 };
 
-IOExpander::IOExpander()
-  : m_i2cDevice(std::unique_ptr<GPIO::I2CDevice>(new GPIO::I2CDevice(IO_EXP_I2C_BUS, IO_EXP_I2C_ADDR)))
+IOExpander::IOExpander(uint8_t i2cBus, uint8_t i2cAddress)
+  : m_i2cDevice(std::unique_ptr<GPIO::I2CDevice>(new GPIO::I2CDevice(i2cBus, i2cAddress)))
 {
   // If not in BANK mode (default state), the IOCON register is at 0x0A.
   // Once the option is set, it will be located at the enum lookup value.

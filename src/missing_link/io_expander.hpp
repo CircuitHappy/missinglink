@@ -45,7 +45,7 @@ class IOExpander {
       bool mirror;
     };
 
-    IOExpander();
+    IOExpander(uint8_t i2cBus = 1, uint8_t i2cAddress = 0x20);
     virtual ~IOExpander();
 
     void ConfigureInterrupt(const InterruptConfig &config);
