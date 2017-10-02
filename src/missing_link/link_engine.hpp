@@ -8,10 +8,10 @@
 #include <memory>
 #include <thread>
 #include <ableton/link.hpp>
-#include "missing_link/gpio.hpp"
-#include "missing_link/user_interface.hpp"
 
 namespace MissingLink {
+
+  class UserInterface;
 
   class LinkEngine {
 

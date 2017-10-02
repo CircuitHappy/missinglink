@@ -6,9 +6,10 @@
 #pragma once
 
 #include <memory>
-#include "missing_link/gpio.hpp"
 
 namespace MissingLink {
+
+namespace GPIO { class I2CDevice; }
 
 // i2c interface abstraction for MCP23017 in BANK=1 mode.
 // http://ww1.microchip.com/downloads/en/DeviceDoc/20001952C.pdf

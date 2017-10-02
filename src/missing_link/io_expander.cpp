@@ -3,6 +3,7 @@
  * Circuit Happy, LLC
  */
 
+#include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 
 using namespace MissingLink;

@@ -19,12 +19,13 @@
 
 #include "missing_link/common.h"
 #include "missing_link/pin_defs.hpp"
+#include "missing_link/gpio.hpp"
+#include "missing_link/user_interface.hpp"
 #include "missing_link/link_engine.hpp"
 
 using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
-
 
 LinkEngine::State::State()
   : running(true)

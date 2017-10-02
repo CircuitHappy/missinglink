@@ -8,7 +8,10 @@
 #include <vector>
 #include <chrono>
 #include <poll.h>
+
 #include "missing_link/pin_defs.hpp"
+#include "missing_link/gpio.hpp"
+#include "missing_link/io_expander.hpp"
 #include "missing_link/user_interface.hpp"
 
 #define ML_INTERRUPT_PIN  CHIP_SPI_CS0
