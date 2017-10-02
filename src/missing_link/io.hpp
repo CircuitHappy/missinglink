@@ -20,7 +20,7 @@ class IO {
 
   public:
 
-    enum InputEvent {
+    enum class InputEvent {
       PLAY_STOP,
       TAP_TEMPO,
       ENC_DOWN,
@@ -34,24 +34,21 @@ class IO {
     void StartPollingInput();
     void StopPollingInput();
 
+    // will be called on input polling thread
+    std::function<void(InputEvent)> onInputEvent;
+
     void SetBPMModeLED(bool on);
     void SetLoopModeLED(bool on);
     void SetClockModeLED(bool on);
 
-//    void Display(const std::string &string);
-
-    // will be called on input polling thread
-    std::function<void(InputEvent)> f_inputEvent;
-
-    // Below methods are NOT THREAD SAFE.
-    // Must be called from single thread or use external mutex.
+    // Index of animation LED starting from 0
+    void SetAnimationLED(int index, bool on);
 
     void SetClock(bool on);
     void SetReset(bool on);
 
   private:
 
-    std::mutex m_expanderMutex;
     std::unique_ptr<IOExpander> m_pExpander;
 
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
@@ -61,10 +58,14 @@ class IO {
     std::atomic<bool> m_bStopPolling;
     std::unique_ptr<std::thread> m_pPollThread;
 
+    unsigned int m_lastEncSeq;
+    long m_encVal;
+
     void runPollInput();
     void handleInterrupt();
+    void handleInputEvent(InputEvent event);
+    void decodeEncoder(bool a_on, bool b_on);
 
-    void writeExpanderPin(IOExpander::Port port, int index, bool on);
 };
 
 } // namespace

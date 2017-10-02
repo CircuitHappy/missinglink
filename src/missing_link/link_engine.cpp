@@ -69,7 +69,26 @@ LinkEngine::LinkEngine()
   : m_pIO(shared_ptr<IO>(new IO()))
   , m_pUIProcess(unique_ptr<UIProcess>(new UIProcess(m_state)))
   , m_lastOutputTime(0)
-{}
+{
+  m_pIO->onInputEvent = [this](IO::InputEvent event) {
+    auto now = m_state.link.clock().micros();
+    auto timeline = m_state.link.captureAppTimeline();
+    auto tempo = timeline.tempo();
+    switch (event) {
+      case IO::InputEvent::ENC_UP:
+        tempo += 1.0;
+        timeline.setTempo(tempo, now);
+        break;
+      case IO::InputEvent::ENC_DOWN:
+        tempo -= 1.0;
+        timeline.setTempo(tempo, now);
+        break;
+      default:
+        return;
+    }
+    m_state.link.commitAppTimeline(timeline);
+  };
+}
 
 void LinkEngine::Run() {
   m_pIO->StartPollingInput();

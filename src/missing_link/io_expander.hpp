@@ -21,6 +21,11 @@ class IOExpander {
       PORTB = 0x10
     };
 
+    struct PinDefinition {
+      Port port;
+      int index;
+    };
+
     // Abstraction for port configuration bitmasks.
     // Each bit in each field corresponds to the port pin at that position,
     // starting with pin 0 as the least significant bit.
@@ -44,6 +49,8 @@ class IOExpander {
     virtual ~IOExpander();
 
     void ConfigureInterrupt(const InterruptConfig &config);
+
+    // Configure port from
     void ConfigurePort(Port port, const PortConfig &config);
 
     // Read from the INTF register on the given port.
@@ -60,12 +67,23 @@ class IOExpander {
     // Reading this will clear the interrupt.
     uint8_t ReadPort(Port port);
 
+    // Read the value of a specific pin from the GPIO register.
+    // This will reset pending interrupts.
+    bool ReadPin(const PinDefinition &pin);
+    bool ReadPin(Port port, int index);
+
     // Turn an output on or off. This will write directly to the output
     // latch without modifying other pin states.
+    void WritePin(const PinDefinition &pin, bool on);
     void WritePin(Port port, int index, bool on);
 
     // Write a full byte to output latch.
     void WriteOutputs(Port port, uint8_t outputs);
+
+    static bool PinIsOn(int pinIndex, uint8_t portState) {
+      uint8_t mask = (1 << pinIndex);
+      return (mask & portState) != 0;
+    }
 
   private:
 

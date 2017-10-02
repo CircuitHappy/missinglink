@@ -4,6 +4,8 @@
  */
 
 #include <iostream>
+#include <iomanip>
+#include <vector>
 #include <chrono>
 #include <poll.h>
 #include "missing_link/pin_defs.hpp"
@@ -19,24 +21,20 @@ using namespace MissingLink::GPIO;
 
 namespace {
 
-  struct ExpanderPinDefinition {
-    IOExpander::Port port;
-    int index;
-
-    uint8_t bitmask() {
-      return 1 << index;
-    }
+  // Inputs all on PORT A
+  enum InputPinIndex {
+    PLAY_BUTTON   = 0,
+    TAP_BUTTON    = 1,
+    ENC_A         = 2,
+    ENC_B         = 3,
+    ENC_BUTTON    = 4
   };
 
-  static ExpanderPinDefinition PlayButtonPin    = { IOExpander::PORTA, 0 }; // in
-  static ExpanderPinDefinition TapButtonPin     = { IOExpander::PORTA, 1 }; // in
-  static ExpanderPinDefinition EncAPin          = { IOExpander::PORTA, 2 }; // in
-  static ExpanderPinDefinition EncBPin          = { IOExpander::PORTA, 3 }; // in
-  static ExpanderPinDefinition EncButtonPin     = { IOExpander::PORTA, 4 }; // in
-  static ExpanderPinDefinition BpmModeLEDPin    = { IOExpander::PORTA, 5 }; // out
-  static ExpanderPinDefinition LoopModeLEDPin   = { IOExpander::PORTB, 0 }; // out
-  static ExpanderPinDefinition ClockModeLEDPin  = { IOExpander::PORTB, 1 }; // out
-  static ExpanderPinDefinition AnimationLEDPin(int index) {
+  // Output pin definitions
+  static IOExpander::PinDefinition BPMModeLEDPin    = { IOExpander::PORTA, 5 };
+  static IOExpander::PinDefinition LoopModeLEDPin   = { IOExpander::PORTB, 0 };
+  static IOExpander::PinDefinition ClockModeLEDPin  = { IOExpander::PORTB, 1 };
+  static IOExpander::PinDefinition AnimationLEDPin(int index) {
     return { IOExpander::PORTB, index + 2 };
   }
 
@@ -49,11 +47,11 @@ namespace {
   // Port A is inputs except pins 5-7
   static IOExpander::PortConfig PortAConfig = {
     .direction      = 0b00011111,
-    .inputPolarity  = 0b00000000,
+    .inputPolarity  = 0b00011111,
     .defaultValue   = 0b00000000,
     .iocEnabled     = 0b00011111,
     .iocMode        = 0b00000000,
-    .pullUpEnabled  = 0b00000000,
+    .pullUpEnabled  = 0b00011111
   };
 
   // Port B is all outputs
@@ -63,16 +61,18 @@ namespace {
     .defaultValue   = 0b00000000,
     .iocEnabled     = 0b00000000,
     .iocMode        = 0b00000000,
-    .pullUpEnabled  = 0b00000000,
+    .pullUpEnabled  = 0b00000000
   };
 }
 
 IO::IO()
-  : f_inputEvent(nullptr)
+  : onInputEvent(nullptr)
   , m_pExpander(unique_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
   , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
+  , m_lastEncSeq(0)
+  , m_encVal(0)
 {
   // Configure Interrupt pin
   m_pInterruptIn->SetEdgeMode(Pin::FALLING);
@@ -105,18 +105,20 @@ void IO::StopPollingInput() {
 }
 
 void IO::SetBPMModeLED(bool on) {
-  auto pinDef = BpmModeLEDPin;
-  writeExpanderPin(pinDef.port, pinDef.index, on);
+  m_pExpander->WritePin(BPMModeLEDPin, on);
 }
 
 void IO::SetLoopModeLED(bool on) {
-  auto pinDef = LoopModeLEDPin;
-  writeExpanderPin(pinDef.port, pinDef.index, on);
+  m_pExpander->WritePin(LoopModeLEDPin, on);
 }
 
 void IO::SetClockModeLED(bool on) {
-  auto pinDef = ClockModeLEDPin;
-  writeExpanderPin(pinDef.port, pinDef.index, on);
+  m_pExpander->WritePin(ClockModeLEDPin, on);
+}
+
+void IO::SetAnimationLED(int index, bool on) {
+  if (index > 5) { return; }
+  m_pExpander->WritePin(AnimationLEDPin(index), on);
 }
 
 void IO::SetClock(bool on) {
@@ -157,11 +159,81 @@ void IO::runPollInput() {
 
 void IO::handleInterrupt() {
   uint8_t flag = m_pExpander->ReadInterruptFlag(IOExpander::PORTA);
-  uint8_t state = m_pExpander->ReadCapturedInterruptState(IOExpander::PORTA);
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  uint8_t state = m_pExpander->ReadPort(IOExpander::PORTA);
+
+  int pinIndex = 0;
+  while ((flag & 1) == 0) {
+    pinIndex++;
+    flag = flag >> 1;
+  }
+
+  // whether triggered pin is on
+  bool isOn = IOExpander::PinIsOn(pinIndex, state);
+
+  switch (pinIndex) {
+    case PLAY_BUTTON:
+      if (isOn) {
+        std::cout << "Play" << std::endl;
+        handleInputEvent(InputEvent::PLAY_STOP);
+      }
+      break;
+    case TAP_BUTTON:
+      if (isOn) {
+        std::cout << "Tap" << std::endl;
+        handleInputEvent(InputEvent::TAP_TEMPO);
+      }
+      break;
+    case ENC_BUTTON:
+      if (isOn) {
+        std::cout << "Encoder Press" << std::endl;
+        handleInputEvent(InputEvent::ENC_PRESS);
+      }
+      break;
+    case ENC_A:
+      decodeEncoder(isOn, IOExpander::PinIsOn(ENC_B, state));
+      break;
+    case ENC_B:
+      decodeEncoder(IOExpander::PinIsOn(ENC_A, state), isOn);
+      break;
+  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
-void IO::writeExpanderPin(IOExpander::Port port, int index, bool on) {
-  lock_guard<mutex> lock(m_expanderMutex);
-  m_pExpander->WritePin(port, index, on);
+void IO::handleInputEvent(InputEvent event) {
+    if (onInputEvent != nullptr) {
+      onInputEvent(event);
+    }
+}
+
+void IO::decodeEncoder(bool aOn, bool bOn) {
+  uint8_t aVal = aOn ? 0x01 : 0x00;
+  uint8_t bVal = bOn ? 0x01 : 0x00;
+
+  unsigned int seq = (aVal ^ bVal) | (bVal << 1);
+  unsigned int delta = (seq - m_lastEncSeq) & 0b11;
+
+  m_lastEncSeq = seq;
+
+  switch (delta) {
+    case 1:
+      m_encVal++;
+      break;
+    case 3:
+      m_encVal--;
+      break;
+    default:
+      break;
+  }
+
+  if (std::abs(m_encVal) >= 4) {
+    if (m_encVal > 0) {
+      std::cout << "Encoder up" << std::endl;
+      handleInputEvent(InputEvent::ENC_UP);
+    } else {
+      std::cout << "Encoder down" << std::endl;
+      handleInputEvent(InputEvent::ENC_DOWN);
+    }
+    m_encVal = 0;
+  }
 }

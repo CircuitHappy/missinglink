@@ -76,6 +76,18 @@ uint8_t IOExpander::ReadPort(Port port) {
   return m_i2cDevice->ReadByte(GPIO | port);
 }
 
+bool IOExpander::ReadPin(const PinDefinition &pin) {
+  return ReadPin(pin.port, pin.index);
+}
+
+bool IOExpander::ReadPin(Port port, int index) {
+  return PinIsOn(index, ReadPort(port));
+}
+
+void IOExpander::WritePin(const PinDefinition &pin, bool on) {
+  WritePin(pin.port, pin.index, on);
+}
+
 void IOExpander::WritePin(Port port, int index, bool on) {
   uint8_t reg = OLAT | port;
   uint8_t state = m_i2cDevice->ReadByte(reg);
