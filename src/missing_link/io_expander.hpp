@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
+#include <thread>
 
 namespace MissingLink {
 
@@ -92,6 +94,28 @@ class IOExpander {
     enum ConfigOption : uint8_t;
 
     std::unique_ptr<GPIO::I2CDevice> m_i2cDevice;
+};
+
+// Abstraction for handling single-pin interrupt based input from the IO expander
+class ExpandedInputHandler {
+
+  public:
+
+    ExpandedInputHandler(std::shared_ptr<IOExpander> m_pExpander, int interruptPinAddress);
+    virtual ~ExpandedInputHandler();
+
+    void StartPollingInput();
+    void StopPollingInput();
+
+  private:
+
+    std::shared_ptr<IOExpander> m_pExpander;
+    std::unique_ptr<GPIO::Pin> m_pInterruptIn;
+    std::atomic<bool> m_bStopPolling;
+    std::unique_ptr<std::thread> m_pPollThread;
+
+    void inputLoop();
+    void handleInterrupt();
 };
 
 }

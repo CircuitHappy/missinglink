@@ -102,3 +102,63 @@ void IOExpander::WriteOutputs(Port port, uint8_t outputs) {
   uint8_t reg = OLAT | port;
   m_i2cDevice->WriteByte(reg, outputs);
 }
+
+
+
+ExpandedInputHandler::ExpandedInputHandler(std::shared_ptr<IOExpander> pExpander, int interruptPinAddress)
+  : m_pExpander(pExpander)
+  , m_pInterruptIn(std::unique_ptr<GPIO::Pin>(new GPIO::Pin(interruptPinAddress, GPIO::Pin::IN)))
+  , m_pPollThread(nullptr)
+{
+  m_pInterruptIn->SetEdgeMode(GPIO::Pin::FALLING);
+}
+
+ExpandedInputHandler::~ExpandedInputHandler() {
+  StopPollingInput();
+}
+
+void ExpandedInputHandler::StartPollingInput() {
+  if (m_pPollThread != nullptr) { return; }
+  m_bStopPolling = false;
+  m_pPollThread = std::unique_ptr<std::thread>(new std::thread(&ExpandedInputHandler::inputLoop, this));
+}
+
+void ExpandedInputHandler::StopPollingInput() {
+  if (m_pPollThread == nullptr) { return; }
+  m_bStopPolling = true;
+  m_pPollThread->join();
+  m_pPollThread = nullptr;
+}
+
+
+void ExpandedInputHandler::inputLoop() {
+
+  // Clear initial interrupt event
+  m_pInterruptIn->Read();
+
+  pollfd pfd = m_pInterruptIn->GetPollInfo();
+  while (!m_bStopPolling) {
+
+    // If interrupt is already low, handle immediately
+    if (m_pInterruptIn->Read() == GPIO::LOW) {
+      handleInterrupt();
+      continue;
+    }
+
+    // Poll for 500ms
+    int result = ::poll(&pfd, 1, 500);
+
+    // No interrupts? try again
+    if (result == 0) { continue; }
+
+    // Clear interrupt event
+    m_pInterruptIn->Read();
+
+    // Handle it
+    handleInterrupt();
+  }
+}
+
+void ExpandedInputHandler::handleInterrupt() {
+
+}
