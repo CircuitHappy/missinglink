@@ -31,11 +31,15 @@ class UserInterface {
     UserInterface();
     virtual ~UserInterface();
 
+    // Inputs
+
     void StartPollingInput();
     void StopPollingInput();
 
-    // will be called on input polling thread
+    // This will be called from input polling thread
     std::function<void(InputEvent)> onInputEvent;
+
+    // Outputs
 
     void SetBPMModeLED(bool on);
     void SetLoopModeLED(bool on);
@@ -50,7 +54,6 @@ class UserInterface {
   private:
 
     std::unique_ptr<IOExpander> m_pExpander;
-
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;
@@ -61,7 +64,7 @@ class UserInterface {
     unsigned int m_lastEncSeq;
     long m_encVal;
 
-    void runPollInput();
+    void inputLoop();
     void handleInterrupt();
     void handleInputEvent(InputEvent event);
     void decodeEncoder(bool a_on, bool b_on);

@@ -97,7 +97,7 @@ UserInterface::~UserInterface() {
 void UserInterface::StartPollingInput() {
   if (m_pPollThread != nullptr) { return; }
   m_bStopPolling = false;
-  m_pPollThread = unique_ptr<thread>(new thread(&UserInterface::runPollInput, this));
+  m_pPollThread = unique_ptr<thread>(new thread(&UserInterface::inputLoop, this));
 }
 
 void UserInterface::StopPollingInput() {
@@ -132,7 +132,7 @@ void UserInterface::SetReset(bool on) {
   m_pResetOut->Write(on ? HIGH : LOW);
 }
 
-void UserInterface::runPollInput() {
+void UserInterface::inputLoop() {
 
   // Clear initial interrupt event
   m_pInterruptIn->Read();
