@@ -22,7 +22,7 @@ using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
 
-namespace {
+namespace MissingLink {
 
   // Inputs all on PORT A
   enum InputPinIndex {
@@ -66,20 +66,16 @@ namespace {
     .iocMode        = 0b00000000,
     .pullUpEnabled  = 0b00000000
   };
+
+
 }
 
 UserInterface::UserInterface()
   : onInputEvent(nullptr)
-  , m_pExpander(unique_ptr<IOExpander>(new IOExpander()))
-  , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
+  , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
-  , m_lastEncSeq(0)
-  , m_encVal(0)
 {
-  // Configure Interrupt pin
-  m_pInterruptIn->SetEdgeMode(Pin::FALLING);
-
   // Configure Expander
   m_pExpander->ConfigureInterrupt(IntConfig);
   m_pExpander->ConfigurePort(IOExpander::PORTA, PortAConfig);
@@ -95,16 +91,11 @@ UserInterface::~UserInterface() {
 }
 
 void UserInterface::StartPollingInput() {
-  if (m_pPollThread != nullptr) { return; }
-  m_bStopPolling = false;
-  m_pPollThread = unique_ptr<thread>(new thread(&UserInterface::inputLoop, this));
+
 }
 
 void UserInterface::StopPollingInput() {
-  if (m_pPollThread == nullptr) { return; }
-  m_bStopPolling = true;
-  m_pPollThread->join();
-  m_pPollThread = nullptr;
+
 }
 
 void UserInterface::SetBPMModeLED(bool on) {
@@ -130,113 +121,4 @@ void UserInterface::SetClock(bool on) {
 
 void UserInterface::SetReset(bool on) {
   m_pResetOut->Write(on ? HIGH : LOW);
-}
-
-void UserInterface::inputLoop() {
-
-  // Clear initial interrupt event
-  m_pInterruptIn->Read();
-
-  pollfd pfd = m_pInterruptIn->GetPollInfo();
-  while (!m_bStopPolling) {
-
-    // If interrupt is already low, handle immediately
-    if (m_pInterruptIn->Read() == GPIO::LOW) {
-      handleInterrupt();
-      continue;
-    }
-
-    // Poll for 500ms
-    int result = ::poll(&pfd, 1, 500);
-
-    // No interrupts? try again
-    if (result == 0) { continue; }
-
-    // Clear interrupt event
-    m_pInterruptIn->Read();
-
-    // Handle it
-    handleInterrupt();
-  }
-}
-
-void UserInterface::handleInterrupt() {
-  uint8_t flag = m_pExpander->ReadInterruptFlag(IOExpander::PORTA);
-  uint8_t state = m_pExpander->ReadPort(IOExpander::PORTA);
-
-  int pinIndex = 0;
-  while ((flag & 1) == 0) {
-    pinIndex++;
-    flag = flag >> 1;
-  }
-
-  // whether triggered pin is on
-  bool isOn = IOExpander::PinIsOn(pinIndex, state);
-
-  switch (pinIndex) {
-    case PLAY_BUTTON:
-      if (isOn) {
-        std::cout << "Play" << std::endl;
-        handleInputEvent(InputEvent::PLAY_STOP);
-      }
-      break;
-    case TAP_BUTTON:
-      if (isOn) {
-        std::cout << "Tap" << std::endl;
-        handleInputEvent(InputEvent::TAP_TEMPO);
-      }
-      break;
-    case ENC_BUTTON:
-      if (isOn) {
-        std::cout << "Encoder Press" << std::endl;
-        handleInputEvent(InputEvent::ENC_PRESS);
-      }
-      break;
-    case ENC_A:
-      decodeEncoder(isOn, IOExpander::PinIsOn(ENC_B, state));
-      break;
-    case ENC_B:
-      decodeEncoder(IOExpander::PinIsOn(ENC_A, state), isOn);
-      break;
-  }
-
-  std::this_thread::sleep_for(std::chrono::milliseconds(1));
-}
-
-void UserInterface::handleInputEvent(InputEvent event) {
-    if (onInputEvent != nullptr) {
-      onInputEvent(event);
-    }
-}
-
-void UserInterface::decodeEncoder(bool aOn, bool bOn) {
-  uint8_t aVal = aOn ? 0x01 : 0x00;
-  uint8_t bVal = bOn ? 0x01 : 0x00;
-
-  unsigned int seq = (aVal ^ bVal) | (bVal << 1);
-  unsigned int delta = (seq - m_lastEncSeq) & 0b11;
-
-  m_lastEncSeq = seq;
-
-  switch (delta) {
-    case 1:
-      m_encVal++;
-      break;
-    case 3:
-      m_encVal--;
-      break;
-    default:
-      break;
-  }
-
-  if (std::abs(m_encVal) >= 4) {
-    if (m_encVal > 0) {
-      std::cout << "Encoder up" << std::endl;
-      handleInputEvent(InputEvent::ENC_UP);
-    } else {
-      std::cout << "Encoder down" << std::endl;
-      handleInputEvent(InputEvent::ENC_DOWN);
-    }
-    m_encVal = 0;
-  }
 }

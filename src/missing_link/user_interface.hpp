@@ -11,21 +11,44 @@
 #include <mutex>
 #include <functional>
 #include <string>
+#include <vector>
 #include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 
 namespace MissingLink {
+
+//class ButtonInterruptHandler : public InterruptHandler {
+
+//  public:
+
+//    ButtonInterruptHandler(std::vector<int> pinIndices, IOExpander::Port port = IOExpander::PORTA)
+//      : InterruptHandler(pinIndices, port)
+//    {}
+
+//    bool HandleInterrupt(uint8_t flag, uint8_t state, IOExpander &expander) override {
+//        if ((flag & state) != 0) {
+//          // sleep
+//          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+//          // check again
+//          if ((expander.ReadPort(m_port) | flag) != 0) {
+//              std::cout << "Button on!" << std::endl;
+//              return true;
+//          }
+//        }
+//        return false;
+//    }
+//};
 
 class UserInterface {
 
   public:
 
     enum class InputEvent {
-      PLAY_STOP,
-      TAP_TEMPO,
-      ENC_DOWN,
-      ENC_UP,
-      ENC_PRESS
+      PlayStop,
+      TapTempo,
+      EncoderDown,
+      EncoderUp,
+      EncoderPress
     };
 
     UserInterface();
@@ -53,22 +76,9 @@ class UserInterface {
 
   private:
 
-    std::unique_ptr<IOExpander> m_pExpander;
-    std::unique_ptr<GPIO::Pin> m_pInterruptIn;
+    std::shared_ptr<IOExpander> m_pExpander;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;
-
-    std::atomic<bool> m_bStopPolling;
-    std::unique_ptr<std::thread> m_pPollThread;
-
-    unsigned int m_lastEncSeq;
-    long m_encVal;
-
-    void inputLoop();
-    void handleInterrupt();
-    void handleInputEvent(InputEvent event);
-    void decodeEncoder(bool a_on, bool b_on);
-
 };
 
 } // namespace

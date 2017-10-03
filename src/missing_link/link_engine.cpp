@@ -76,11 +76,11 @@ LinkEngine::LinkEngine()
     auto timeline = m_state.link.captureAppTimeline();
     auto tempo = timeline.tempo();
     switch (event) {
-      case UserInterface::InputEvent::ENC_UP:
+      case UserInterface::InputEvent::EncoderUp:
         tempo += 1.0;
         timeline.setTempo(tempo, now);
         break;
-      case UserInterface::InputEvent::ENC_DOWN:
+      case UserInterface::InputEvent::EncoderDown:
         tempo -= 1.0;
         timeline.setTempo(tempo, now);
         break;

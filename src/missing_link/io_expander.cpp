@@ -6,7 +6,9 @@
 #include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 
+using namespace std;
 using namespace MissingLink;
+using namespace MissingLink::GPIO;
 
 // Register address in BANK=1 mode.
 // Derive address for each port by OR-ing with port value.
@@ -34,7 +36,7 @@ enum IOExpander::ConfigOption : uint8_t {
 };
 
 IOExpander::IOExpander(uint8_t i2cBus, uint8_t i2cAddress)
-  : m_i2cDevice(std::unique_ptr<GPIO::I2CDevice>(new GPIO::I2CDevice(i2cBus, i2cAddress)))
+  : m_i2cDevice(unique_ptr<I2CDevice>(new I2CDevice(i2cBus, i2cAddress)))
 {
   // If not in BANK mode (default state), the IOCON register is at 0x0A.
   // Once the option is set, it will be located at the enum lookup value.
@@ -105,25 +107,29 @@ void IOExpander::WriteOutputs(Port port, uint8_t outputs) {
 
 
 
-ExpandedInputHandler::ExpandedInputHandler(std::shared_ptr<IOExpander> pExpander, int interruptPinAddress)
+ExpanderInputLoop::ExpanderInputLoop(shared_ptr<IOExpander> pExpander, int interruptPinAddress)
   : m_pExpander(pExpander)
-  , m_pInterruptIn(std::unique_ptr<GPIO::Pin>(new GPIO::Pin(interruptPinAddress, GPIO::Pin::IN)))
+  , m_pInterruptIn(unique_ptr<Pin>(new Pin(interruptPinAddress, Pin::IN)))
   , m_pPollThread(nullptr)
 {
-  m_pInterruptIn->SetEdgeMode(GPIO::Pin::FALLING);
+  m_pInterruptIn->SetEdgeMode(Pin::FALLING);
 }
 
-ExpandedInputHandler::~ExpandedInputHandler() {
-  StopPollingInput();
+ExpanderInputLoop::~ExpanderInputLoop() {
+  Stop();
 }
 
-void ExpandedInputHandler::StartPollingInput() {
+void ExpanderInputLoop::RegisterHandler(InterruptHandlerPtr handler) {
+  m_interruptHandlers.push_back(handler);
+}
+
+void ExpanderInputLoop::Start() {
   if (m_pPollThread != nullptr) { return; }
   m_bStopPolling = false;
-  m_pPollThread = std::unique_ptr<std::thread>(new std::thread(&ExpandedInputHandler::inputLoop, this));
+  m_pPollThread = unique_ptr<thread>(new thread(&ExpanderInputLoop::runLoop, this));
 }
 
-void ExpandedInputHandler::StopPollingInput() {
+void ExpanderInputLoop::Stop() {
   if (m_pPollThread == nullptr) { return; }
   m_bStopPolling = true;
   m_pPollThread->join();
@@ -131,7 +137,7 @@ void ExpandedInputHandler::StopPollingInput() {
 }
 
 
-void ExpandedInputHandler::inputLoop() {
+void ExpanderInputLoop::runLoop() {
 
   // Clear initial interrupt event
   m_pInterruptIn->Read();
@@ -159,6 +165,104 @@ void ExpandedInputHandler::inputLoop() {
   }
 }
 
-void ExpandedInputHandler::handleInterrupt() {
+void ExpanderInputLoop::handleInterrupt() {
+  uint8_t flag = m_pExpander->ReadInterruptFlag(IOExpander::PORTA);
+  uint8_t state = m_pExpander->ReadPort(IOExpander::PORTA);
+
+  for (auto handler : m_interruptHandlers) {
+    if (!handler->CanHandleInterrupt(flag)) {
+      continue;
+    }
+    handler->HandleInterrupt(flag, state, m_pExpander);
+  }
+
+  this_thread::sleep_for(chrono::milliseconds(1));
+
+  //int pinIndex = 0;
+  //while ((flag & 1) == 0) {
+  //  pinIndex++;
+  //  flag = flag >> 1;
+  //}
+
+  //// whether triggered pin is on
+  //bool isOn = IOExpander::PinIsOn(pinIndex, state);
+
+  //switch (pinIndex) {
+  //  case PLAY_BUTTON:
+  //    if (isOn) {
+  //      cout << "Play" << endl;
+  //      handleInputEvent(InputEvent::PLAY_STOP);
+  //    }
+  //    break;
+  //  case TAP_BUTTON:
+  //    if (isOn) {
+  //      std::cout << "Tap" << std::endl;
+  //      handleInputEvent(InputEvent::TAP_TEMPO);
+  //    }
+  //    break;
+  //  case ENC_BUTTON:
+  //    if (isOn) {
+  //      std::cout << "Encoder Press" << std::endl;
+  //      handleInputEvent(InputEvent::ENC_PRESS);
+  //    }
+  //    break;
+  //  case ENC_A:
+  //    decodeEncoder(isOn, IOExpander::PinIsOn(ENC_B, state));
+  //    break;
+  //  case ENC_B:
+  //    decodeEncoder(IOExpander::PinIsOn(ENC_A, state), isOn);
+  //    break;
+  //}
 
 }
+
+ExpanderInputLoop::InterruptHandler::InterruptHandler(vector<int> pinIndices,
+                                                      IOExpander::Port port) {
+  for (auto index : pinIndices) {
+    m_flagMask |= (1 << index);
+  }
+}
+
+bool ExpanderInputLoop::InterruptHandler::HandleInterrupt(uint8_t flag,
+                                                          uint8_t state,
+                                                          shared_ptr<IOExpander> pExpander) {
+  return handleInterrupt(flag, state, pExpander);
+}
+
+//void UserInterface::handleInputEvent(InputEvent event) {
+//    if (onInputEvent != nullptr) {
+//      onInputEvent(event);
+//    }
+//}
+
+//void UserInterface::decodeEncoder(bool aOn, bool bOn) {
+//  uint8_t aVal = aOn ? 0x01 : 0x00;
+//  uint8_t bVal = bOn ? 0x01 : 0x00;
+
+//  unsigned int seq = (aVal ^ bVal) | (bVal << 1);
+//  unsigned int delta = (seq - m_lastEncSeq) & 0b11;
+
+//  m_lastEncSeq = seq;
+
+//  switch (delta) {
+//    case 1:
+//      m_encVal++;
+//      break;
+//    case 3:
+//      m_encVal--;
+//      break;
+//    default:
+//      break;
+//  }
+
+//  if (std::abs(m_encVal) >= 4) {
+//    if (m_encVal > 0) {
+//      std::cout << "Encoder up" << std::endl;
+//      handleInputEvent(InputEvent::ENC_UP);
+//    } else {
+//      std::cout << "Encoder down" << std::endl;
+//      handleInputEvent(InputEvent::ENC_DOWN);
+//    }
+//    m_encVal = 0;
+//  }
+//}

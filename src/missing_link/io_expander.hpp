@@ -8,6 +8,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <vector>
 
 namespace MissingLink {
 
@@ -97,25 +98,62 @@ class IOExpander {
 };
 
 // Abstraction for handling single-pin interrupt based input from the IO expander
-class ExpandedInputHandler {
+class ExpanderInputLoop {
 
   public:
 
-    ExpandedInputHandler(std::shared_ptr<IOExpander> m_pExpander, int interruptPinAddress);
-    virtual ~ExpandedInputHandler();
+    class InterruptHandler;
 
-    void StartPollingInput();
-    void StopPollingInput();
+    typedef std::shared_ptr<InterruptHandler> InterruptHandlerPtr;
+
+    ExpanderInputLoop(std::shared_ptr<IOExpander> m_pExpander, int interruptPinAddress);
+    virtual ~ExpanderInputLoop();
+
+    void RegisterHandler(InterruptHandlerPtr handler);
+
+    void Start();
+    void Stop();
 
   private:
 
     std::shared_ptr<IOExpander> m_pExpander;
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
+
     std::atomic<bool> m_bStopPolling;
     std::unique_ptr<std::thread> m_pPollThread;
 
-    void inputLoop();
+    std::vector<InterruptHandlerPtr> m_interruptHandlers;
+
+    void runLoop();
     void handleInterrupt();
 };
+
+class ExpanderInputLoop::InterruptHandler {
+
+  public:
+
+    InterruptHandler(std::vector<int> pinIndices,
+                     IOExpander::Port port = IOExpander::PORTA);
+
+    virtual ~InterruptHandler() {};
+
+    bool CanHandleInterrupt(uint8_t flag) {
+      return (flag & m_flagMask) != 0;
+    }
+
+    bool HandleInterrupt(uint8_t flag,
+                         uint8_t state,
+                         std::shared_ptr<IOExpander> pExpander);
+
+  protected:
+
+    uint8_t m_flagMask;
+    IOExpander::Port m_port;
+
+    virtual bool handleInterrupt(uint8_t flag,
+                                 uint8_t state,
+                                 std::shared_ptr<IOExpander> pExpander) = 0;
+};
+
 
 }
