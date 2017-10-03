@@ -6,6 +6,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <thread>
 #include <mutex>
@@ -17,27 +18,25 @@
 
 namespace MissingLink {
 
-//class ButtonInterruptHandler : public InterruptHandler {
+class Button : public ExpanderInputLoop::InterruptHandler {
 
-//  public:
+  public:
 
-//    ButtonInterruptHandler(std::vector<int> pinIndices, IOExpander::Port port = IOExpander::PORTA)
-//      : InterruptHandler(pinIndices, port)
-//    {}
+    Button(int pinIndex,
+           IOExpander::Port port = IOExpander::PORTA,
+           std::chrono::milliseconds debounceInterval = std::chrono::milliseconds(2));
 
-//    bool HandleInterrupt(uint8_t flag, uint8_t state, IOExpander &expander) override {
-//        if ((flag & state) != 0) {
-//          // sleep
-//          std::this_thread::sleep_for(std::chrono::milliseconds(1));
-//          // check again
-//          if ((expander.ReadPort(m_port) | flag) != 0) {
-//              std::cout << "Button on!" << std::endl;
-//              return true;
-//          }
-//        }
-//        return false;
-//    }
-//};
+    virtual ~Button();
+
+  private:
+
+    std::chrono::milliseconds m_debounceInterval;
+    std::chrono::steady_clock::time_point m_lastTriggered;
+
+    bool handleInterrupt(uint8_t flag,
+                         uint8_t state,
+                         std::shared_ptr<IOExpander> pExpander) override;
+};
 
 class UserInterface {
 
@@ -77,8 +76,10 @@ class UserInterface {
   private:
 
     std::shared_ptr<IOExpander> m_pExpander;
+    std::unique_ptr<ExpanderInputLoop> m_pInputLoop;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;
+
 };
 
 } // namespace

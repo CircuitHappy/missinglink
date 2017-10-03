@@ -109,6 +109,7 @@ class ExpanderInputLoop {
     ExpanderInputLoop(std::shared_ptr<IOExpander> m_pExpander, int interruptPinAddress);
     virtual ~ExpanderInputLoop();
 
+    // Must register interrupt handlers before starting polling loop!
     void RegisterHandler(InterruptHandlerPtr handler);
 
     void Start();

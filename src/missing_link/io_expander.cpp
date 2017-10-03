@@ -3,6 +3,7 @@
  * Circuit Happy, LLC
  */
 
+#include <iostream>
 #include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 
@@ -218,6 +219,7 @@ void ExpanderInputLoop::handleInterrupt() {
 
 ExpanderInputLoop::InterruptHandler::InterruptHandler(vector<int> pinIndices,
                                                       IOExpander::Port port) {
+  m_flagMask = 0;
   for (auto index : pinIndices) {
     m_flagMask |= (1 << index);
   }

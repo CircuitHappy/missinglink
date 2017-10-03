@@ -6,7 +6,6 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <chrono>
 #include <poll.h>
 
 #include "missing_link/pin_defs.hpp"
@@ -67,12 +66,39 @@ namespace MissingLink {
     .pullUpEnabled  = 0b00000000
   };
 
+}
 
+Button::Button(int pinIndex, IOExpander::Port port, chrono::milliseconds debounceInterval)
+  : ExpanderInputLoop::InterruptHandler({ pinIndex }, port)
+  , m_debounceInterval(debounceInterval)
+{}
+
+Button::~Button() {}
+
+bool Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander> pExpander) {
+
+  // check change to ON
+  if ((flag & state) == 0) { return false; }
+
+  // maximum rate between ON is 5ms
+  auto now = chrono::steady_clock::now();
+  if ((now - m_lastTriggered) < chrono::milliseconds(5)) { return false; }
+
+  // sleep to debounce
+  this_thread::sleep_for(chrono::milliseconds(m_debounceInterval));
+
+  // check again to make sure it's still on
+  if ((pExpander->ReadPort(m_port) | flag) == 0) { return false; }
+
+  cout << "Button on!" << endl;
+  m_lastTriggered = chrono::steady_clock::now();
+  return true;
 }
 
 UserInterface::UserInterface()
   : onInputEvent(nullptr)
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
+  , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
   , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
@@ -84,6 +110,9 @@ UserInterface::UserInterface()
   // Clear interrupt states
   m_pExpander->ReadCapturedInterruptState(IOExpander::PORTA);
   m_pExpander->ReadCapturedInterruptState(IOExpander::PORTB);
+
+  auto button = shared_ptr<Button>(new Button(PLAY_BUTTON));
+  m_pInputLoop->RegisterHandler(button);
 }
 
 UserInterface::~UserInterface() {
@@ -91,11 +120,11 @@ UserInterface::~UserInterface() {
 }
 
 void UserInterface::StartPollingInput() {
-
+  m_pInputLoop->Start();
 }
 
 void UserInterface::StopPollingInput() {
-
+  m_pInputLoop->Stop();
 }
 
 void UserInterface::SetBPMModeLED(bool on) {
