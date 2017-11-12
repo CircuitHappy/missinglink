@@ -23,7 +23,6 @@ class Button : public ExpanderInputLoop::InterruptHandler {
   public:
 
     Button(int pinIndex,
-           IOExpander::Port port = IOExpander::PORTA,
            std::chrono::milliseconds debounceInterval = std::chrono::milliseconds(2));
 
     virtual ~Button();
