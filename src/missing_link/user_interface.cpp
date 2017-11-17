@@ -62,9 +62,9 @@ bool Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
   // check change to ON
   if ((flag & state) == 0) { return false; }
 
-  //// maximum rate between ON is 5ms
-  //auto now = chrono::steady_clock::now();
-  //if ((now - m_lastTriggered) < chrono::milliseconds(5)) { return false; }
+  // maximum rate between ON is 5ms
+  auto now = chrono::steady_clock::now();
+  if ((now - m_lastTriggered) < chrono::milliseconds(5)) { return false; }
 
   // sleep to debounce
   this_thread::sleep_for(chrono::milliseconds(m_debounceInterval));
