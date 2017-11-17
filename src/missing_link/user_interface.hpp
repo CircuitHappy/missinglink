@@ -32,9 +32,33 @@ class Button : public ExpanderInputLoop::InterruptHandler {
     std::chrono::milliseconds m_debounceInterval;
     std::chrono::steady_clock::time_point m_lastTriggered;
 
-    bool handleInterrupt(uint8_t flag,
+    void handleInterrupt(uint8_t flag,
                          uint8_t state,
                          std::shared_ptr<IOExpander> pExpander) override;
+};
+
+class RotaryEncoder : public ExpanderInputLoop::InterruptHandler {
+
+  public:
+
+    RotaryEncoder(int pinIndexA, int pinIndexB);
+    virtual ~RotaryEncoder();
+
+  private:
+
+    uint8_t m_aFlag;
+    uint8_t m_bFlag;
+
+    long m_encVal;
+    unsigned int m_lastEncSeq;
+
+    std::chrono::steady_clock::time_point m_lastTriggered;
+
+    void handleInterrupt(uint8_t flag,
+                         uint8_t state,
+                         std::shared_ptr<IOExpander> pExpander) override;
+
+    void decode(bool aOn, bool bOn);
 };
 
 class UserInterface {

@@ -128,7 +128,7 @@ class ExpanderInputLoop::InterruptHandler {
       return (flag & m_flagMask) != 0;
     }
 
-    bool HandleInterrupt(uint8_t flag,
+    void HandleInterrupt(uint8_t flag,
                          uint8_t state,
                          std::shared_ptr<IOExpander> pExpander);
 
@@ -136,7 +136,7 @@ class ExpanderInputLoop::InterruptHandler {
 
     uint8_t m_flagMask;
 
-    virtual bool handleInterrupt(uint8_t flag,
+    virtual void handleInterrupt(uint8_t flag,
                                  uint8_t state,
                                  std::shared_ptr<IOExpander> pExpander) = 0;
 };

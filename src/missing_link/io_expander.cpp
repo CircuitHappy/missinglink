@@ -155,43 +155,6 @@ void ExpanderInputLoop::handleInterrupt() {
   }
 
   this_thread::sleep_for(chrono::milliseconds(1));
-
-  //int pinIndex = 0;
-  //while ((flag & 1) == 0) {
-  //  pinIndex++;
-  //  flag = flag >> 1;
-  //}
-
-  //// whether triggered pin is on
-  //bool isOn = IOExpander::PinIsOn(pinIndex, state);
-
-  //switch (pinIndex) {
-  //  case PLAY_BUTTON:
-  //    if (isOn) {
-  //      cout << "Play" << endl;
-  //      handleInputEvent(InputEvent::PLAY_STOP);
-  //    }
-  //    break;
-  //  case TAP_BUTTON:
-  //    if (isOn) {
-  //      std::cout << "Tap" << std::endl;
-  //      handleInputEvent(InputEvent::TAP_TEMPO);
-  //    }
-  //    break;
-  //  case ENC_BUTTON:
-  //    if (isOn) {
-  //      std::cout << "Encoder Press" << std::endl;
-  //      handleInputEvent(InputEvent::ENC_PRESS);
-  //    }
-  //    break;
-  //  case ENC_A:
-  //    decodeEncoder(isOn, IOExpander::PinIsOn(ENC_B, state));
-  //    break;
-  //  case ENC_B:
-  //    decodeEncoder(IOExpander::PinIsOn(ENC_A, state), isOn);
-  //    break;
-  //}
-
 }
 
 ExpanderInputLoop::InterruptHandler::InterruptHandler(vector<int> pinIndices) {
@@ -201,46 +164,9 @@ ExpanderInputLoop::InterruptHandler::InterruptHandler(vector<int> pinIndices) {
   }
 }
 
-bool ExpanderInputLoop::InterruptHandler::HandleInterrupt(uint8_t flag,
+void ExpanderInputLoop::InterruptHandler::HandleInterrupt(uint8_t flag,
                                                           uint8_t state,
                                                           shared_ptr<IOExpander> pExpander) {
-  return handleInterrupt(flag, state, pExpander);
+  handleInterrupt(flag, state, pExpander);
 }
 
-//void UserInterface::handleInputEvent(InputEvent event) {
-//    if (onInputEvent != nullptr) {
-//      onInputEvent(event);
-//    }
-//}
-
-//void UserInterface::decodeEncoder(bool aOn, bool bOn) {
-//  uint8_t aVal = aOn ? 0x01 : 0x00;
-//  uint8_t bVal = bOn ? 0x01 : 0x00;
-
-//  unsigned int seq = (aVal ^ bVal) | (bVal << 1);
-//  unsigned int delta = (seq - m_lastEncSeq) & 0b11;
-
-//  m_lastEncSeq = seq;
-
-//  switch (delta) {
-//    case 1:
-//      m_encVal++;
-//      break;
-//    case 3:
-//      m_encVal--;
-//      break;
-//    default:
-//      break;
-//  }
-
-//  if (std::abs(m_encVal) >= 4) {
-//    if (m_encVal > 0) {
-//      std::cout << "Encoder up" << std::endl;
-//      handleInputEvent(InputEvent::ENC_UP);
-//    } else {
-//      std::cout << "Encoder down" << std::endl;
-//      handleInputEvent(InputEvent::ENC_DOWN);
-//    }
-//    m_encVal = 0;
-//  }
-//}
