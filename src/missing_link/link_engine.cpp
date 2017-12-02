@@ -72,24 +72,7 @@ LinkEngine::LinkEngine()
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
-  //m_pUI->onInputEvent = [this](UserInterface::InputEvent event) {
-  //  auto now = m_state.link.clock().micros();
-  //  auto timeline = m_state.link.captureAppTimeline();
-  //  auto tempo = timeline.tempo();
-  //  switch (event) {
-  //    case UserInterface::InputEvent::EncoderUp:
-  //      tempo += 1.0;
-  //      timeline.setTempo(tempo, now);
-  //      break;
-  //    case UserInterface::InputEvent::EncoderDown:
-  //      tempo -= 1.0;
-  //      timeline.setTempo(tempo, now);
-  //      break;
-  //    default:
-  //      return;
-  //  }
-  //  m_state.link.commitAppTimeline(timeline);
-  //};
+  m_pUI->onEncoderRotate = bind(&LinkEngine::tempoAdjust, this, placeholders::_1);
 }
 
 void LinkEngine::Run() {
@@ -215,4 +198,16 @@ void LinkEngine::playStop() {
     default:
       break;
   }
+}
+
+void LinkEngine::toggleMode() {
+
+}
+
+void LinkEngine::tempoAdjust(float amount) {
+  auto now = m_state.link.clock().micros();
+  auto timeline = m_state.link.captureAppTimeline();
+  auto tempo = timeline.tempo() + amount;
+  timeline.setTempo(tempo, now);
+  m_state.link.commitAppTimeline(timeline);
 }

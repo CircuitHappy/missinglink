@@ -80,6 +80,7 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
+      void tempoAdjust(float amount);
   };
 
 }
