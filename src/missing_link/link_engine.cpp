@@ -108,34 +108,38 @@ void LinkEngine::runOutput() {
     auto timeline = m_state.link.captureAudioTimeline();
 
     const double tempo = timeline.tempo();
-
     const double lastBeats = timeline.beatAtTime(lastTime, QUANTUM);
     const double currentBeats = timeline.beatAtTime(currentTime, QUANTUM);
-    const double lastPhase = timeline.phaseAtTime(lastTime, QUANTUM);
-    const double currentPhase = timeline.phaseAtTime(currentTime, QUANTUM);
+
+    const int edgesPerBeat = CLOCKS_PER_BEAT * 2;
+    const int edgesPerLoop = edgesPerBeat * QUANTUM;
+    const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
+    const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
+
+    const bool isNewEdge = currentEdges > lastEdges;
 
     switch ((PlayState)m_state.playState) {
+      case Cued:
+        if (isNewEdge && currentEdges % edgesPerLoop == 0) {
+          m_state.playState = Playing;
+          // Deliberate fallthrough here
+        } else {
+          break;
+        }
       case Playing: {
-        const auto lastPulses = lastBeats * PULSES_PER_BEAT * 2.0;
-        const auto currentPulses = currentBeats * PULSES_PER_BEAT * 2.0;
-
         const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
+        const double currentPhase = timeline.phaseAtTime(currentTime, QUANTUM);
         const bool resetHigh = (currentPhase <= resetHighFraction);
         m_pUI->SetReset(resetHigh);
 
-        if (floor(currentPulses) > floor(lastPulses)) {
-          const bool clockHigh = (int)(floor(currentPulses)) % 2 == 0;
+        if (isNewEdge) {
+          const bool clockHigh = currentEdges % 2 == 0;
           m_pUI->SetClock(clockHigh);
         }
         break;
       }
-      case Cued:
-        if (currentPhase < lastPhase) {
-          m_state.playState = Playing;
-        }
-        break;
       default:
         m_pUI->SetClock(LOW);
         m_pUI->SetReset(LOW);
@@ -198,6 +202,7 @@ void LinkEngine::playStop() {
     default:
       break;
   }
+  cout << "Play Stop " << m_state.playState << endl;
 }
 
 void LinkEngine::toggleMode() {

@@ -22,9 +22,9 @@ namespace MissingLink {
 
     private:
 
-      static constexpr double PULSES_PER_BEAT = 2.0;
+      static constexpr int CLOCKS_PER_BEAT = 2;
+      static constexpr int QUANTUM = 4;
       static constexpr double PULSE_LENGTH = 0.030; // seconds
-      static constexpr double QUANTUM = 4;
 
       enum PlayState {
           Stopped,
