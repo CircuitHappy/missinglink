@@ -1,7 +1,7 @@
 #!/bin/bash
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "ERROR: This command must be run from the linux VM"
-  exit 1
+  vagrant ssh -c "cd missinglink && bin/configure"
+  exit $? 
 fi
 
 MISSINGLINK_DIR=`pwd`
