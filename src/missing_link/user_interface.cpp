@@ -71,7 +71,8 @@ UserInterface::UserInterface()
   tapButton->onTriggered = []() {
     cout << "Tap" << endl;
   };
-  auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON));
+  auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON,
+        chrono::milliseconds(5), chrono::milliseconds(20)));
   encoderButton->onTriggered = []() {
     cout << "Select" << endl;
   };

@@ -57,7 +57,6 @@ class UserInterface {
     std::unique_ptr<ExpanderInputLoop> m_pInputLoop;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;
-
 };
 
 } // namespace

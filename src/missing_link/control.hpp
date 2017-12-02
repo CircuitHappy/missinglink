@@ -30,7 +30,8 @@ class Button : public Control {
   public:
 
     Button(int pinIndex,
-           std::chrono::milliseconds debounceInterval = std::chrono::milliseconds(2));
+           std::chrono::milliseconds debounceInterval = std::chrono::milliseconds(2),
+           std::chrono::milliseconds minRepeatInterval = std::chrono::milliseconds(5));
 
     virtual ~Button();
 
@@ -41,6 +42,7 @@ class Button : public Control {
   private:
 
     std::chrono::milliseconds m_debounceInterval;
+    std::chrono::milliseconds m_minRepeatInterval;
 
     void handleInterrupt(uint8_t flag,
                          uint8_t state,

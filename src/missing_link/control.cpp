@@ -10,9 +10,12 @@ Control::Control(vector<int> pinIndices)
 
 Control::~Control() {}
 
-Button::Button(int pinIndex, chrono::milliseconds debounceInterval)
+Button::Button(int pinIndex,
+               chrono::milliseconds debounceInterval,
+               chrono::milliseconds minRepeatInterval)
   : Control({ pinIndex })
   , m_debounceInterval(debounceInterval)
+  , m_minRepeatInterval(minRepeatInterval)
 {}
 
 Button::~Button() {}
@@ -24,9 +27,8 @@ void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
     return;
   }
 
-  // maximum rate between ON is 5ms
   auto now = chrono::steady_clock::now();
-  if ((now - m_lastTriggered) < chrono::milliseconds(5)) {
+  if ((now - m_lastTriggered) < m_minRepeatInterval) {
     return;
   }
 
