@@ -38,7 +38,10 @@ void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
     return;
   }
 
-  cout << "Button on!" << endl;
+  if (onTriggered) {
+    onTriggered();
+  }
+
   m_lastTriggered = chrono::steady_clock::now();
 }
 
@@ -78,14 +81,18 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
       break;
   }
 
+  float rotationAmount = 0.0;
   if (std::abs(m_encVal) >= 4) {
     if (m_encVal > 0) {
-      std::cout << "Encoder up" << std::endl;
+      rotationAmount = 1.0;
     } else {
-      std::cout << "Encoder down" << std::endl;
+      rotationAmount = -1.0;
     }
     m_encVal = 0;
   }
-}
 
+  if (rotationAmount && onRotated) {
+    onRotated(rotationAmount);
+  }
+}
 

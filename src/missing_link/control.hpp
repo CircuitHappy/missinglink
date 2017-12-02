@@ -1,7 +1,13 @@
+/**
+ * Copyright (c) 2017
+ * Circuit Happy, LLC
+ */
+
 #pragma once
 
 #include <chrono>
 #include <memory>
+#include <functional>
 #include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 
@@ -28,6 +34,10 @@ class Button : public Control {
 
     virtual ~Button();
 
+    // Press down detected once.
+    // TODO: break out into separate press states if needed.
+    std::function<void(void)> onTriggered;
+
   private:
 
     std::chrono::milliseconds m_debounceInterval;
@@ -43,6 +53,10 @@ class RotaryEncoder : public Control {
 
     RotaryEncoder(int pinIndexA, int pinIndexB);
     virtual ~RotaryEncoder();
+
+    // Float indicates rotation amount (1.0 == one notch up, -1.0 == one notch down)
+    // TODO: account for speed/acceleration
+    std::function<void(float)> onRotated;
 
   private:
 

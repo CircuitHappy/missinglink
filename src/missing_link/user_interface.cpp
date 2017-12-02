@@ -64,9 +64,22 @@ UserInterface::UserInterface()
 
   // Register handlers
   auto playButton = shared_ptr<Button>(new Button(PLAY_BUTTON));
+  playButton->onTriggered = []() {
+    cout << "Play" << endl;
+  };
   auto tapButton = shared_ptr<Button>(new Button(TAP_BUTTON));
+  tapButton->onTriggered = []() {
+    cout << "Tap" << endl;
+  };
   auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON));
+  encoderButton->onTriggered = []() {
+    cout << "Select" << endl;
+  };
   auto encoder = shared_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
+  encoder->onRotated = [](float amount) {
+    cout << "Rotate: " << amount << endl;
+  };
+
   m_pInputLoop->RegisterHandler(playButton);
   m_pInputLoop->RegisterHandler(tapButton);
   m_pInputLoop->RegisterHandler(encoderButton);
