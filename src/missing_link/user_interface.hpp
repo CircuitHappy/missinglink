@@ -5,61 +5,16 @@
 
 #pragma once
 
-#include <atomic>
-#include <chrono>
 #include <memory>
 #include <thread>
-#include <mutex>
 #include <functional>
 #include <string>
 #include <vector>
 #include "missing_link/gpio.hpp"
+#include "missing_link/control.hpp"
 #include "missing_link/io_expander.hpp"
 
 namespace MissingLink {
-
-class Button : public ExpanderInputLoop::InterruptHandler {
-
-  public:
-
-    Button(int pinIndex,
-           std::chrono::milliseconds debounceInterval = std::chrono::milliseconds(2));
-
-    virtual ~Button();
-
-  private:
-
-    std::chrono::milliseconds m_debounceInterval;
-    std::chrono::steady_clock::time_point m_lastTriggered;
-
-    void handleInterrupt(uint8_t flag,
-                         uint8_t state,
-                         std::shared_ptr<IOExpander> pExpander) override;
-};
-
-class RotaryEncoder : public ExpanderInputLoop::InterruptHandler {
-
-  public:
-
-    RotaryEncoder(int pinIndexA, int pinIndexB);
-    virtual ~RotaryEncoder();
-
-  private:
-
-    uint8_t m_aFlag;
-    uint8_t m_bFlag;
-
-    long m_encVal;
-    unsigned int m_lastEncSeq;
-
-    std::chrono::steady_clock::time_point m_lastTriggered;
-
-    void handleInterrupt(uint8_t flag,
-                         uint8_t state,
-                         std::shared_ptr<IOExpander> pExpander) override;
-
-    void decode(bool aOn, bool bOn);
-};
 
 class UserInterface {
 
