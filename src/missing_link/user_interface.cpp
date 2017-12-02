@@ -50,8 +50,7 @@ namespace MissingLink {
 }
 
 UserInterface::UserInterface()
-  : onInputEvent(nullptr)
-  , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
+  : m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
   , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
@@ -64,22 +63,17 @@ UserInterface::UserInterface()
 
   // Register handlers
   auto playButton = shared_ptr<Button>(new Button(PLAY_BUTTON));
-  playButton->onTriggered = []() {
-    cout << "Play" << endl;
-  };
+  playButton->onTriggered = [=]() { onPlayStop(); };
+
   auto tapButton = shared_ptr<Button>(new Button(TAP_BUTTON));
-  tapButton->onTriggered = []() {
-    cout << "Tap" << endl;
-  };
+  tapButton->onTriggered = [=]() { onTapTempo(); };
+
   auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON,
         chrono::milliseconds(5), chrono::milliseconds(20)));
-  encoderButton->onTriggered = []() {
-    cout << "Select" << endl;
-  };
+  encoderButton->onTriggered = [=]() { onEncoderPress(); };
+
   auto encoder = shared_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
-  encoder->onRotated = [](float amount) {
-    cout << "Rotate: " << amount << endl;
-  };
+  encoder->onRotated = [=](float amount) { onEncoderRotate(amount); };
 
   m_pInputLoop->RegisterHandler(playButton);
   m_pInputLoop->RegisterHandler(tapButton);

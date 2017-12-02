@@ -29,7 +29,7 @@ using namespace MissingLink::GPIO;
 
 LinkEngine::State::State()
   : running(true)
-  , playState(Playing)
+  , playState(Stopped)
   , link(120.0)
 {
   link.enable(true);
@@ -71,24 +71,25 @@ LinkEngine::LinkEngine()
   , m_pUIProcess(unique_ptr<UIProcess>(new UIProcess(m_state)))
   , m_lastOutputTime(0)
 {
-  m_pUI->onInputEvent = [this](UserInterface::InputEvent event) {
-    auto now = m_state.link.clock().micros();
-    auto timeline = m_state.link.captureAppTimeline();
-    auto tempo = timeline.tempo();
-    switch (event) {
-      case UserInterface::InputEvent::EncoderUp:
-        tempo += 1.0;
-        timeline.setTempo(tempo, now);
-        break;
-      case UserInterface::InputEvent::EncoderDown:
-        tempo -= 1.0;
-        timeline.setTempo(tempo, now);
-        break;
-      default:
-        return;
-    }
-    m_state.link.commitAppTimeline(timeline);
-  };
+  m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
+  //m_pUI->onInputEvent = [this](UserInterface::InputEvent event) {
+  //  auto now = m_state.link.clock().micros();
+  //  auto timeline = m_state.link.captureAppTimeline();
+  //  auto tempo = timeline.tempo();
+  //  switch (event) {
+  //    case UserInterface::InputEvent::EncoderUp:
+  //      tempo += 1.0;
+  //      timeline.setTempo(tempo, now);
+  //      break;
+  //    case UserInterface::InputEvent::EncoderDown:
+  //      tempo -= 1.0;
+  //      timeline.setTempo(tempo, now);
+  //      break;
+  //    default:
+  //      return;
+  //  }
+  //  m_state.link.commitAppTimeline(timeline);
+  //};
 }
 
 void LinkEngine::Run() {
@@ -127,7 +128,7 @@ void LinkEngine::runOutput() {
 
     const double lastBeats = timeline.beatAtTime(lastTime, QUANTUM);
     const double currentBeats = timeline.beatAtTime(currentTime, QUANTUM);
-
+    const double lastPhase = timeline.phaseAtTime(lastTime, QUANTUM);
     const double currentPhase = timeline.phaseAtTime(currentTime, QUANTUM);
 
     switch ((PlayState)m_state.playState) {
@@ -147,6 +148,11 @@ void LinkEngine::runOutput() {
         }
         break;
       }
+      case Cued:
+        if (currentPhase < lastPhase) {
+          m_state.playState = Playing;
+        }
+        break;
       default:
         m_pUI->SetClock(LOW);
         m_pUI->SetReset(LOW);
@@ -194,5 +200,19 @@ void LinkEngine::runDisplaySocket() {
     close(sd);
 
     this_thread::sleep_for(chrono::milliseconds(50));
+  }
+}
+
+void LinkEngine::playStop() {
+  switch (m_state.playState) {
+    case Stopped:
+      m_state.playState = Cued;
+      break;
+    case Playing:
+    case Cued:
+      m_state.playState = Stopped;
+      break;
+    default:
+      break;
   }
 }

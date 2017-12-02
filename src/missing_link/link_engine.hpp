@@ -22,7 +22,7 @@ namespace MissingLink {
 
     private:
 
-      static constexpr double PULSES_PER_BEAT = 4.0;
+      static constexpr double PULSES_PER_BEAT = 2.0;
       static constexpr double PULSE_LENGTH = 0.030; // seconds
       static constexpr double QUANTUM = 4;
 
@@ -77,6 +77,9 @@ namespace MissingLink {
 
       void runOutput();
       void runDisplaySocket();
+
+      void playStop();
+      void toggleMode();
   };
 
 }

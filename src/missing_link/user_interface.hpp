@@ -20,26 +20,18 @@ class UserInterface {
 
   public:
 
-    enum class InputEvent {
-      PlayStop,
-      TapTempo,
-      EncoderDown,
-      EncoderUp,
-      EncoderPress
-    };
-
     UserInterface();
     virtual ~UserInterface();
-
-    // Inputs
 
     void StartPollingInput();
     void StopPollingInput();
 
-    // This will be called from input polling thread
-    std::function<void(InputEvent)> onInputEvent;
-
     // Outputs
+    // These will be called from input polling thread
+    std::function<void()> onPlayStop;
+    std::function<void()> onTapTempo;
+    std::function<void()> onEncoderPress;
+    std::function<void(float)> onEncoderRotate;
 
     void SetBPMModeLED(bool on);
     void SetLoopModeLED(bool on);
