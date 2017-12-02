@@ -3,6 +3,7 @@ build/
 .vagrant/
 *.log
 *.pyc
+.DS_Store
 
 # Build dependencies (only applies to Ubuntu hosts)
 CHIP-buildroot
