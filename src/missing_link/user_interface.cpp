@@ -63,17 +63,32 @@ UserInterface::UserInterface()
 
   // Register handlers
   auto playButton = shared_ptr<Button>(new Button(PLAY_BUTTON));
-  playButton->onTriggered = [=]() { onPlayStop(); };
+  playButton->onTriggered = [=]() {
+    if (onPlayStop) {
+      onPlayStop();
+    }
+  };
 
   auto tapButton = shared_ptr<Button>(new Button(TAP_BUTTON));
-  tapButton->onTriggered = [=]() { onTapTempo(); };
+  tapButton->onTriggered = [=]() {
+    if (onTapTempo) {
+      onTapTempo();
+    }
+  };
 
-  auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON,
-        chrono::milliseconds(5), chrono::milliseconds(20)));
-  encoderButton->onTriggered = [=]() { onEncoderPress(); };
+  auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON, chrono::milliseconds(5), chrono::milliseconds(20)));
+  encoderButton->onTriggered = [=]() {
+    if (onEncoderPress) {
+      onEncoderPress();
+    }
+  };
 
   auto encoder = shared_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
-  encoder->onRotated = [=](float amount) { onEncoderRotate(amount); };
+  encoder->onRotated = [=](float amount) {
+    if (onEncoderRotate) {
+      onEncoderRotate(amount);
+    }
+  };
 
   m_pInputLoop->RegisterHandler(playButton);
   m_pInputLoop->RegisterHandler(tapButton);
