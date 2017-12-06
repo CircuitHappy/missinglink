@@ -15,6 +15,7 @@ using namespace MissingLink::GPIO;
 // Register address definitions
 enum LEDDriver::Register : uint8_t {
   MODE1     = 0x00, // Mode 1
+  PWMSTART  = 0x02, // Start of 16 consecutive PWM registers
   LEDOUT0   = 0x14, // LED Output state 0
   LEDOUT1   = 0x15, // LED Output state 1
   LEDOUT2   = 0x16, // LED Output state 2
@@ -37,10 +38,8 @@ void LEDDriver::Configure() {
   m_i2cDevice->WriteByte(LEDOUT3, 0xff);
 }
 
-void LEDDriver::WriteLED(int address, bool on) {
-  uint8_t state = 0x00;
-  if (on) {
-    state = 0xFF;
-  }
-  m_i2cDevice->WriteByte(address, state);
+void LEDDriver::SetBrightness(float brightness, int index) {
+  uint8_t address = PWMSTART + index;
+  uint8_t scaledBrightness = (uint8_t)(brightness * 255.0);
+  m_i2cDevice->WriteByte(address, scaledBrightness);
 }

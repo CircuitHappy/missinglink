@@ -27,8 +27,8 @@ class LEDDriver {
     // Defaults to oscillator on, all LEDs under individual/group PWM control
     void Configure();
 
-    // Turn on or off LED, no PWM values allowed for now
-    void WriteLED(int address, bool on);
+    // Set brightness (0 - 1) for an individual LED
+    void SetBrightness(float brightness, int index);
 
   private:
 
@@ -36,6 +36,5 @@ class LEDDriver {
 
     std::unique_ptr<GPIO::I2CDevice> m_i2cDevice;
 };
-
 
 }
