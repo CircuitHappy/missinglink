@@ -13,6 +13,7 @@
 #include "missing_link/gpio.hpp"
 #include "missing_link/control.hpp"
 #include "missing_link/io_expander.hpp"
+#include "missing_link/led_driver.hpp"
 
 namespace MissingLink {
 
@@ -46,6 +47,7 @@ class UserInterface {
   private:
 
     std::shared_ptr<IOExpander> m_pExpander;
+    std::shared_ptr<LEDDriver> m_pLEDDriver;
     std::unique_ptr<ExpanderInputLoop> m_pInputLoop;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;

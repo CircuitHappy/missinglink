@@ -32,6 +32,16 @@ namespace MissingLink {
     TAP_BUTTON    = 4
   };
 
+  enum OutputLEDIndex {
+    CLOCK_LED       = 0,
+    RESET_LED       = 1,
+    BPM_MODE_LED    = 2,
+    LOOP_MODE_LED   = 3,
+    CLK_MODE_LED    = 4,
+    WIFI_LED        = 5,
+    ANIM_LED_START  = 8 // start of 6 consecutive animation LEDs
+  };
+
   static IOExpander::InterruptConfiguration ExpanderIntConfig = {
     .activeHigh = false,
     .openDrain  = false
@@ -51,12 +61,16 @@ namespace MissingLink {
 
 UserInterface::UserInterface()
   : m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
+  , m_pLEDDriver(shared_ptr<LEDDriver>(new LEDDriver()))
   , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
   , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
   // Configure Expander
   m_pExpander->Configure(ExpanderConfig);
+
+  // Configure LED Driver
+  m_pLEDDriver->Configure();
 
   // Clear interrupt state
   m_pExpander->ReadCapturedInterruptState();
@@ -108,26 +122,12 @@ void UserInterface::StopPollingInput() {
   m_pInputLoop->Stop();
 }
 
-void UserInterface::SetBPMModeLED(bool on) {
-
-}
-
-void UserInterface::SetLoopModeLED(bool on) {
-
-}
-
-void UserInterface::SetClockModeLED(bool on) {
-
-}
-
-void UserInterface::SetAnimationLED(int index, bool on) {
-
-}
-
 void UserInterface::SetClock(bool on) {
   m_pClockOut->Write(on ? HIGH : LOW);
+  m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, CLOCK_LED);
 }
 
 void UserInterface::SetReset(bool on) {
   m_pResetOut->Write(on ? HIGH : LOW);
+  m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, RESET_LED);
 }
