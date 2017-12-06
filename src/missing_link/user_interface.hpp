@@ -21,6 +21,13 @@ class UserInterface {
 
   public:
 
+    enum EncoderMode {
+      BPM,
+      LOOP,
+      CLOCK,
+      NUM_MODES
+    };
+
     UserInterface();
     virtual ~UserInterface();
 
@@ -34,12 +41,10 @@ class UserInterface {
     std::function<void()> onEncoderPress;
     std::function<void(float)> onEncoderRotate;
 
-    void SetBPMModeLED(bool on);
-    void SetLoopModeLED(bool on);
-    void SetClockModeLED(bool on);
+    void SetModeLED(EncoderMode mode);
 
     // Index of animation LED starting from 0
-    void SetAnimationLED(int index, bool on);
+    //void SetAnimationLED(int index, bool on);
 
     void SetClock(bool on);
     void SetReset(bool on);

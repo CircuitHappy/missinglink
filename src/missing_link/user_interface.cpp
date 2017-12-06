@@ -122,6 +122,29 @@ void UserInterface::StopPollingInput() {
   m_pInputLoop->Stop();
 }
 
+void UserInterface::SetModeLED(EncoderMode mode) {
+   // turn off all modes first
+   m_pLEDDriver->SetBrightness(0.0, BPM_MODE_LED);
+   m_pLEDDriver->SetBrightness(0.0, LOOP_MODE_LED);
+   m_pLEDDriver->SetBrightness(0.0, CLK_MODE_LED);
+
+   int ledIndex;
+   switch (mode) {
+     case BPM:
+       ledIndex = BPM_MODE_LED;
+       break;
+     case LOOP:
+       ledIndex = LOOP_MODE_LED;
+       break;
+     case CLOCK:
+       ledIndex = CLK_MODE_LED;
+       break;
+     default:
+       return;
+   };
+   m_pLEDDriver->SetBrightness(0.25, ledIndex);
+}
+
 void UserInterface::SetClock(bool on) {
   m_pClockOut->Write(on ? HIGH : LOW);
   m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, CLOCK_LED);
