@@ -20,7 +20,6 @@
 #include "missing_link/common.h"
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/gpio.hpp"
-#include "missing_link/user_interface.hpp"
 #include "missing_link/link_engine.hpp"
 
 using namespace std;
@@ -30,6 +29,7 @@ using namespace MissingLink::GPIO;
 LinkEngine::State::State()
   : running(true)
   , playState(Stopped)
+  , encoderMode(UserInterface::BPM)
   , link(120.0)
 {
   link.enable(true);
@@ -73,6 +73,8 @@ LinkEngine::LinkEngine()
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
   m_pUI->onEncoderRotate = bind(&LinkEngine::tempoAdjust, this, placeholders::_1);
+  m_pUI->onEncoderPress = bind(&LinkEngine::toggleMode, this);
+  m_pUI->SetModeLED(m_state.encoderMode);
 }
 
 void LinkEngine::Run() {
@@ -202,11 +204,13 @@ void LinkEngine::playStop() {
     default:
       break;
   }
-  cout << "Play Stop " << m_state.playState << endl;
 }
 
 void LinkEngine::toggleMode() {
-
+  int mode = m_state.encoderMode;
+  mode = (mode + 1) % (int)UserInterface::NUM_MODES;
+  m_state.encoderMode = (UserInterface::EncoderMode)mode;
+  m_pUI->SetModeLED((UserInterface::EncoderMode)mode);
 }
 
 void LinkEngine::tempoAdjust(float amount) {

@@ -8,10 +8,9 @@
 #include <memory>
 #include <thread>
 #include <ableton/link.hpp>
+#include "missing_link/user_interface.hpp"
 
 namespace MissingLink {
-
-  class UserInterface;
 
   class LinkEngine {
 
@@ -35,6 +34,7 @@ namespace MissingLink {
       struct State {
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
+        std::atomic<UserInterface::EncoderMode> encoderMode;
         ableton::Link link;
         State();
       };
