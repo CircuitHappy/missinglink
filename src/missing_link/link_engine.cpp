@@ -221,3 +221,7 @@ void LinkEngine::tempoAdjust(float amount) {
   timeline.setTempo(tempo, now);
   m_state.link.commitAppTimeline(timeline);
 }
+
+void LinkEngine::loopAdjust(int amount) {
+  m_state.quantum = std::max(1, m_state.quantum + amount);
+}
