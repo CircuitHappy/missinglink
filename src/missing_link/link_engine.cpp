@@ -177,12 +177,9 @@ void LinkEngine::runDisplaySocket() {
       this_thread::sleep_for(chrono::seconds(1));
       continue;
     }
-
-    auto timeline = m_state.link.captureAppTimeline();
-    const double tempo = timeline.tempo();
-
+    
     char display_buf[8];
-    sprintf(display_buf, "%.1f", tempo);
+    formatDisplayValue(display_buf);
 
     if (send(sd, display_buf, 8, 0) < 0) {
       cerr << "failed to send to display socket\n";
@@ -191,6 +188,25 @@ void LinkEngine::runDisplaySocket() {
     close(sd);
 
     this_thread::sleep_for(chrono::milliseconds(50));
+  }
+}
+
+void LinkEngine::formatDisplayValue(char *display) {
+  auto timeline = m_state.link.captureAppTimeline();
+  const double tempo = timeline.tempo();
+
+  switch (m_state.encoderMode) {
+    case UserInterface::BPM:
+      sprintf(display, "%.1f", tempo);
+      break;
+    case UserInterface::LOOP:
+      sprintf(display, "%d", (int)m_state.quantum);
+      break;
+    case UserInterface::CLOCK:
+      sprintf(display, "%d", (int)m_state.pulsesPerQuarterNote);
+      break;
+    default:
+      break;
   }
 }
 

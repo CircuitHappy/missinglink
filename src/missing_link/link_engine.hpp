@@ -80,6 +80,7 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
+      void formatDisplayValue(char *display);
       void routeEncoderAdjust(float amount);
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
