@@ -36,6 +36,7 @@ namespace MissingLink {
         std::atomic<UserInterface::EncoderMode> encoderMode;
         ableton::Link link;
         std::atomic<int> quantum;
+        std::atomic<int> pulsesPerQuarterNote;
         State();
       };
 
@@ -82,6 +83,7 @@ namespace MissingLink {
       void toggleMode();
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
+      void ppqnAdjust(int amount);
   };
 
 }

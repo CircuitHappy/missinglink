@@ -32,6 +32,7 @@ LinkEngine::State::State()
   , encoderMode(UserInterface::BPM)
   , link(120.0)
   , quantum(4)
+  , pulsesPerQuarterNote(2)
 {
   link.enable(true);
 }
@@ -224,4 +225,7 @@ void LinkEngine::tempoAdjust(float amount) {
 
 void LinkEngine::loopAdjust(int amount) {
   m_state.quantum = std::max(1, m_state.quantum + amount);
+}
+void LinkEngine::ppqnAdjust(int amount) {
+  m_state.pulsesPerQuarterNote = std::min(24, std::max(1, m_state.pulsesPerQuarterNote + amount));
 }
