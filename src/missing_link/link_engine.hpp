@@ -21,7 +21,6 @@ namespace MissingLink {
 
     private:
 
-      static constexpr int CLOCKS_PER_BEAT = 2;
       static constexpr double PULSE_LENGTH = 0.030; // seconds
 
       enum PlayState {
@@ -81,6 +80,8 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
+      void formatDisplayValue(char *display);
+      void routeEncoderAdjust(float amount);
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);

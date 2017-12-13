@@ -32,7 +32,7 @@ LinkEngine::State::State()
   , encoderMode(UserInterface::BPM)
   , link(120.0)
   , quantum(4)
-  , pulsesPerQuarterNote(2)
+  , pulsesPerQuarterNote(4)
 {
   link.enable(true);
 }
@@ -74,7 +74,7 @@ LinkEngine::LinkEngine()
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
-  m_pUI->onEncoderRotate = bind(&LinkEngine::tempoAdjust, this, placeholders::_1);
+  m_pUI->onEncoderRotate = bind(&LinkEngine::routeEncoderAdjust, this, placeholders::_1);
   m_pUI->onEncoderPress = bind(&LinkEngine::toggleMode, this);
   m_pUI->SetModeLED(m_state.encoderMode);
 }
@@ -115,7 +115,7 @@ void LinkEngine::runOutput() {
     const double lastBeats = timeline.beatAtTime(lastTime, m_state.quantum);
     const double currentBeats = timeline.beatAtTime(currentTime, m_state.quantum);
 
-    const int edgesPerBeat = CLOCKS_PER_BEAT * 2;
+    const int edgesPerBeat = m_state.pulsesPerQuarterNote * 2;
     const int edgesPerLoop = edgesPerBeat * m_state.quantum;
     const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
     const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
@@ -177,12 +177,9 @@ void LinkEngine::runDisplaySocket() {
       this_thread::sleep_for(chrono::seconds(1));
       continue;
     }
-
-    auto timeline = m_state.link.captureAppTimeline();
-    const double tempo = timeline.tempo();
-
+    
     char display_buf[8];
-    sprintf(display_buf, "%.1f", tempo);
+    formatDisplayValue(display_buf);
 
     if (send(sd, display_buf, 8, 0) < 0) {
       cerr << "failed to send to display socket\n";
@@ -191,6 +188,25 @@ void LinkEngine::runDisplaySocket() {
     close(sd);
 
     this_thread::sleep_for(chrono::milliseconds(50));
+  }
+}
+
+void LinkEngine::formatDisplayValue(char *display) {
+  auto timeline = m_state.link.captureAppTimeline();
+  const double tempo = timeline.tempo();
+
+  switch (m_state.encoderMode) {
+    case UserInterface::BPM:
+      sprintf(display, "%.1f", tempo);
+      break;
+    case UserInterface::LOOP:
+      sprintf(display, "%d", (int)m_state.quantum);
+      break;
+    case UserInterface::CLOCK:
+      sprintf(display, "%d", (int)m_state.pulsesPerQuarterNote);
+      break;
+    default:
+      break;
   }
 }
 
@@ -213,6 +229,22 @@ void LinkEngine::toggleMode() {
   mode = (mode + 1) % (int)UserInterface::NUM_MODES;
   m_state.encoderMode = (UserInterface::EncoderMode)mode;
   m_pUI->SetModeLED((UserInterface::EncoderMode)mode);
+}
+
+void LinkEngine::routeEncoderAdjust(float amount) {
+  switch (m_state.encoderMode) {
+    case UserInterface::BPM:
+      tempoAdjust(amount);
+      break;
+    case UserInterface::LOOP:
+      loopAdjust((int)amount);
+      break;
+    case UserInterface::CLOCK:
+      ppqnAdjust((int)amount);
+      break;
+    default:
+      break;
+  }
 }
 
 void LinkEngine::tempoAdjust(float amount) {
