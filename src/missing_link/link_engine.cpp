@@ -115,7 +115,7 @@ void LinkEngine::runOutput() {
     const double lastBeats = timeline.beatAtTime(lastTime, m_state.quantum);
     const double currentBeats = timeline.beatAtTime(currentTime, m_state.quantum);
 
-    const int edgesPerBeat = m_state.pulsesPerQuarterNote;
+    const int edgesPerBeat = m_state.pulsesPerQuarterNote * 2;
     const int edgesPerLoop = edgesPerBeat * m_state.quantum;
     const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
     const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
@@ -234,13 +234,13 @@ void LinkEngine::toggleMode() {
 void LinkEngine::routeEncoderAdjust(float amount) {
   switch (m_state.encoderMode) {
     case UserInterface::BPM:
-      LinkEngine::tempoAdjust(amount);
+      tempoAdjust(amount);
       break;
     case UserInterface::LOOP:
-      LinkEngine::loopAdjust((int)amount);
+      loopAdjust((int)amount);
       break;
     case UserInterface::CLOCK:
-      LinkEngine::ppqnAdjust((int)amount);
+      ppqnAdjust((int)amount);
       break;
     default:
       break;
