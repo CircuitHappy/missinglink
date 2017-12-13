@@ -31,6 +31,7 @@ LinkEngine::State::State()
   , playState(Stopped)
   , encoderMode(UserInterface::BPM)
   , link(120.0)
+  , quantum(4)
 {
   link.enable(true);
 }
@@ -110,11 +111,11 @@ void LinkEngine::runOutput() {
     auto timeline = m_state.link.captureAudioTimeline();
 
     const double tempo = timeline.tempo();
-    const double lastBeats = timeline.beatAtTime(lastTime, QUANTUM);
-    const double currentBeats = timeline.beatAtTime(currentTime, QUANTUM);
+    const double lastBeats = timeline.beatAtTime(lastTime, m_state.quantum);
+    const double currentBeats = timeline.beatAtTime(currentTime, m_state.quantum);
 
     const int edgesPerBeat = CLOCKS_PER_BEAT * 2;
-    const int edgesPerLoop = edgesPerBeat * QUANTUM;
+    const int edgesPerLoop = edgesPerBeat * m_state.quantum;
     const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
     const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
 
@@ -129,10 +130,10 @@ void LinkEngine::runOutput() {
           break;
         }
       case Playing: {
-        const double secondsPerPhrase = 60.0 / (tempo / QUANTUM);
+        const double secondsPerPhrase = 60.0 / (tempo / m_state.quantum);
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
-        const double currentPhase = timeline.phaseAtTime(currentTime, QUANTUM);
+        const double currentPhase = timeline.phaseAtTime(currentTime, m_state.quantum);
         const bool resetHigh = (currentPhase <= resetHighFraction);
         m_pUI->SetReset(resetHigh);
 

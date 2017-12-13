@@ -22,7 +22,6 @@ namespace MissingLink {
     private:
 
       static constexpr int CLOCKS_PER_BEAT = 2;
-      static constexpr int QUANTUM = 4;
       static constexpr double PULSE_LENGTH = 0.030; // seconds
 
       enum PlayState {
@@ -36,6 +35,7 @@ namespace MissingLink {
         std::atomic<PlayState> playState;
         std::atomic<UserInterface::EncoderMode> encoderMode;
         ableton::Link link;
+        std::atomic<int> quantum;
         State();
       };
 
@@ -81,6 +81,7 @@ namespace MissingLink {
       void playStop();
       void toggleMode();
       void tempoAdjust(float amount);
+      void loopAdjust(int amount);
   };
 
 }
