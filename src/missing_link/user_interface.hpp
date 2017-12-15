@@ -27,7 +27,7 @@ class UserInterface {
       CLOCK,
       NUM_MODES
     };
-    
+
     static float CueAnimation[4][6];
     static float PlayAnimation[4][6];
 
@@ -48,9 +48,9 @@ class UserInterface {
 
     void SetClock(bool on);
     void SetReset(bool on);
-    
+
     // Index of animation LED starting from 0
-    void SetAnimationLEDs(float phase, float *anim);
+    void SetAnimationLEDs(float phase, const float frames[][6]);
     void SetPlayingAnimation(float phase); //this one goes away once I figure out how to point to the array
     void ClearAnimationLEDs();
 

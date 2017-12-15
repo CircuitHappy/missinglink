@@ -155,22 +155,21 @@ void UserInterface::SetReset(bool on) {
   m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, RESET_LED);
 }
 
- void UserInterface::SetAnimationLEDs(float phase, float *anim) {
-  int scaledPhase = 0;
+void UserInterface::SetAnimationLEDs(float phase, const float frames[][6]) {
+  int scaledPhase = max(0, min(3, (int)(phase * 3)));
   for (int i = 0; i < 6; i ++) {
-  	scaledPhase = max(0, min(3, (int)(phase*3)));
-    m_pLEDDriver->SetBrightness(anim[scaledPhase][i], ANIM_LED_START + i);
+    m_pLEDDriver->SetBrightness(frames[scaledPhase][i], ANIM_LED_START + i);
   }
 }
 
 void UserInterface::SetPlayingAnimation(float phase) {
 	//this needs to be declared in the header, once I know how to pass it in from link engine
-	float anim [4][6] = 
+	float anim [4][6] =
 	{
 	  {1, 0, 0, 0, 0, 0},
-      {0.5, 1, 1, 0, 0, 0},
-      {0, 0, 0.5, 1, 0, 0},
-      {0, 0, 0, 0.5, 1, 1}
+    {0.5, 1, 1, 0, 0, 0},
+    {0, 0, 0.5, 1, 0, 0},
+    {0, 0, 0, 0.5, 1, 1}
 	};
 
   for (int i = 0; i < 6; i ++) {
