@@ -50,8 +50,7 @@ class UserInterface {
     void SetReset(bool on);
 
     // Index of animation LED starting from 0
-    void SetAnimationLEDs(float phase, const float frames[][6]);
-    void SetPlayingAnimation(float phase); //this one goes away once I figure out how to point to the array
+    void SetAnimationLEDs(const float frame[6]);
     void ClearAnimationLEDs();
 
   private:

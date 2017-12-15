@@ -18,6 +18,8 @@
 #define ML_CLOCK_PIN      CHIP_PE4
 #define ML_RESET_PIN      CHIP_PE5
 
+#define NUM_ANIM_LEDS     6
+
 using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
@@ -155,30 +157,14 @@ void UserInterface::SetReset(bool on) {
   m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, RESET_LED);
 }
 
-void UserInterface::SetAnimationLEDs(float phase, const float frames[][6]) {
-  int scaledPhase = max(0, min(3, (int)(phase * 3)));
-  for (int i = 0; i < 6; i ++) {
-    m_pLEDDriver->SetBrightness(frames[scaledPhase][i], ANIM_LED_START + i);
-  }
-}
-
-void UserInterface::SetPlayingAnimation(float phase) {
-	//this needs to be declared in the header, once I know how to pass it in from link engine
-	float anim [4][6] =
-	{
-	  {1, 0, 0, 0, 0, 0},
-    {0.5, 1, 1, 0, 0, 0},
-    {0, 0, 0.5, 1, 0, 0},
-    {0, 0, 0, 0.5, 1, 1}
-	};
-
-  for (int i = 0; i < 6; i ++) {
-    m_pLEDDriver->SetBrightness(anim[(int)(phase*3)][i], ANIM_LED_START + i);
+void UserInterface::SetAnimationLEDs(const float frame[6]) {
+  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
+    m_pLEDDriver->SetBrightness(frame[i], ANIM_LED_START + i);
   }
 }
 
 void UserInterface::ClearAnimationLEDs() {
-  for (int i = 0; i < 6; i ++) {
+  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
     m_pLEDDriver->SetBrightness(0.0, ANIM_LED_START + i);
   }
 }

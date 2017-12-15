@@ -26,6 +26,8 @@ using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
 
+#define NUM_ANIM_FRAMES 4
+
 namespace MissingLink {
 
   static const float CueAnimationFrames[][6] =  {
@@ -133,21 +135,23 @@ void LinkEngine::runOutput() {
     const double lastBeats = timeline.beatAtTime(lastTime, m_state.quantum);
     const double currentBeats = timeline.beatAtTime(currentTime, m_state.quantum);
     const double currentPhase = timeline.phaseAtTime(currentTime, m_state.quantum);
+    const double normalizedPhase = min(1.0, max(0.0, currentPhase / (double)m_state.quantum));
 
     const int edgesPerBeat = m_state.pulsesPerQuarterNote * 2;
     const int edgesPerLoop = edgesPerBeat * m_state.quantum;
     const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
     const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
-
     const bool isNewEdge = currentEdges > lastEdges;
+
+    const int animFrameIndex = (int)floor(normalizedPhase * NUM_ANIM_FRAMES);
 
     switch ((PlayState)m_state.playState) {
       case Cued:
-        m_pUI->SetAnimationLEDs(currentPhase/m_state.quantum, CueAnimationFrames);
         if (isNewEdge && currentEdges % edgesPerLoop == 0) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
         } else {
+          m_pUI->SetAnimationLEDs(CueAnimationFrames[animFrameIndex]);
           break;
         }
       case Playing: {
@@ -160,8 +164,8 @@ void LinkEngine::runOutput() {
         if (isNewEdge) {
           const bool clockHigh = currentEdges % 2 == 0;
           m_pUI->SetClock(clockHigh);
+          m_pUI->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
         }
-        m_pUI->SetPlayingAnimation(currentPhase/m_state.quantum);
 
         break;
       }
