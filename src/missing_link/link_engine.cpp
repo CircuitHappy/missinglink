@@ -26,6 +26,22 @@ using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
 
+float UserInterface::CueAnimation [4][6] = 
+{
+  {1, 0, 0, 0, 0, 0},
+  {1, 1, 0, 0, 0, 1},
+  {1, 1, 1, 0, 1, 1},
+  {1, 1, 1, 1, 1, 1}
+};
+
+float UserInterface::PlayAnimation [4][6] = 
+{
+  {1, 0, 0, 0, 0, 0.5},
+  {0.5, 1, 1, 0, 0, 0},
+  {0, 0, 0.5, 1, 0, 0},
+  {0, 0, 0, 0.5, 1, 1}
+};
+
 LinkEngine::State::State()
   : running(true)
   , playState(Stopped)
@@ -114,6 +130,7 @@ void LinkEngine::runOutput() {
     const double tempo = timeline.tempo();
     const double lastBeats = timeline.beatAtTime(lastTime, m_state.quantum);
     const double currentBeats = timeline.beatAtTime(currentTime, m_state.quantum);
+    const double currentPhase = timeline.phaseAtTime(currentTime, m_state.quantum);
 
     const int edgesPerBeat = m_state.pulsesPerQuarterNote * 2;
     const int edgesPerLoop = edgesPerBeat * m_state.quantum;
@@ -124,6 +141,7 @@ void LinkEngine::runOutput() {
 
     switch ((PlayState)m_state.playState) {
       case Cued:
+        m_pUI->SetAnimationLEDs(currentPhase/m_state.quantum, UserInterface::CueAnimation); //I want to pass in pointer to array, but need to know how to refer to array in User Interface header
         if (isNewEdge && currentEdges % edgesPerLoop == 0) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
@@ -134,7 +152,6 @@ void LinkEngine::runOutput() {
         const double secondsPerPhrase = 60.0 / (tempo / m_state.quantum);
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
-        const double currentPhase = timeline.phaseAtTime(currentTime, m_state.quantum);
         const bool resetHigh = (currentPhase <= resetHighFraction);
         m_pUI->SetReset(resetHigh);
 
@@ -142,11 +159,15 @@ void LinkEngine::runOutput() {
           const bool clockHigh = currentEdges % 2 == 0;
           m_pUI->SetClock(clockHigh);
         }
+        
+        m_pUI->SetPlayingAnimation(currentPhase/m_state.quantum); //I want to pass in pointer to array, but need to know how to refer to array in User Interface header
+        
         break;
       }
       default:
         m_pUI->SetClock(LOW);
         m_pUI->SetReset(LOW);
+        m_pUI->ClearAnimationLEDs();
         break;
     }
 
