@@ -38,7 +38,7 @@ namespace MissingLink {
   };
 
   static const float PlayAnimationFrames[][6] = {
-    {1, 0.1, 0.1, 0.1, 0.1, 0.5},
+    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
     {0.1, 1, 1, 0.1, 0.1, 0.1},
     {0.1, 0.1, 0.1, 1, 0.1, 0.1},
     {0.1, 0.1, 0.1, 0.1, 1, 1}
@@ -143,7 +143,7 @@ void LinkEngine::runOutput() {
     const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
     const bool isNewEdge = currentEdges > lastEdges;
 
-    const int animFrameIndex = (int)floor(normalizedPhase * NUM_ANIM_FRAMES);
+    const int animFrameIndex = min(NUM_ANIM_FRAMES - 1, max(0, (int)floor(normalizedPhase * NUM_ANIM_FRAMES)));
 
     switch ((PlayState)m_state.playState) {
       case Cued:
