@@ -28,6 +28,9 @@ class UserInterface {
       NUM_MODES
     };
 
+    static float CueAnimation[4][6];
+    static float PlayAnimation[4][6];
+
     UserInterface();
     virtual ~UserInterface();
 
@@ -43,11 +46,12 @@ class UserInterface {
 
     void SetModeLED(EncoderMode mode);
 
-    // Index of animation LED starting from 0
-    //void SetAnimationLED(int index, bool on);
-
     void SetClock(bool on);
     void SetReset(bool on);
+
+    // Index of animation LED starting from 0
+    void SetAnimationLEDs(const float frame[6]);
+    void ClearAnimationLEDs();
 
   private:
 

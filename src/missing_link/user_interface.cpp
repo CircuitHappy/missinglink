@@ -18,6 +18,8 @@
 #define ML_CLOCK_PIN      CHIP_PE4
 #define ML_RESET_PIN      CHIP_PE5
 
+#define NUM_ANIM_LEDS     6
+
 using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
@@ -153,4 +155,16 @@ void UserInterface::SetClock(bool on) {
 void UserInterface::SetReset(bool on) {
   m_pResetOut->Write(on ? HIGH : LOW);
   m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, RESET_LED);
+}
+
+void UserInterface::SetAnimationLEDs(const float frame[6]) {
+  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
+    m_pLEDDriver->SetBrightness(frame[i], ANIM_LED_START + i);
+  }
+}
+
+void UserInterface::ClearAnimationLEDs() {
+  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
+    m_pLEDDriver->SetBrightness(0.0, ANIM_LED_START + i);
+  }
 }
