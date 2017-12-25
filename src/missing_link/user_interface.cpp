@@ -165,6 +165,6 @@ void UserInterface::SetAnimationLEDs(const float frame[6]) {
 
 void UserInterface::ClearAnimationLEDs() {
   for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
-    m_pLEDDriver->SetBrightness(0.0, ANIM_LED_START + i);
+    m_pLEDDriver->SetBrightness(0.1, ANIM_LED_START + i);
   }
 }
