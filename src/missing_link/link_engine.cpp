@@ -147,6 +147,8 @@ void LinkEngine::runOutput() {
 
     switch ((PlayState)m_state.playState) {
       case Cued:
+      	//m_state.playState = Playing;
+        timeline.requestBeatAtTime(0, currentTime, m_state.quantum);
         if (isNewEdge && currentEdges % edgesPerLoop == 0) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
@@ -170,6 +172,11 @@ void LinkEngine::runOutput() {
         break;
       }
       default:
+//       	if (m_state.link.numPeers() > 0) {
+//       		m_state.link.enable(true);
+//       	} else {
+//       		m_state.link.enable(false);
+//       	}
         m_pUI->SetClock(LOW);
         m_pUI->SetReset(LOW);
         m_pUI->ClearAnimationLEDs();
