@@ -31,9 +31,9 @@ using namespace MissingLink::GPIO;
 namespace MissingLink {
 
   static const float CueAnimationFrames[][6] =  {
-    {1, 0, 0, 0, 0, 0},
-    {1, 1, 0, 0, 0, 1},
-    {1, 1, 1, 0, 1, 1},
+    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
+    {1, 1, 0.1, 0.1, 0.1, 1},
+    {1, 1, 1, 0.1, 1, 1},
     {1, 1, 1, 1, 1, 1}
   };
 
@@ -147,9 +147,12 @@ void LinkEngine::runOutput() {
 
     switch ((PlayState)m_state.playState) {
       case Cued:
-      	//m_state.playState = Playing;
-        timeline.requestBeatAtTime(0, currentTime, m_state.quantum);
-        if (isNewEdge && currentEdges % edgesPerLoop == 0) {
+      	//reset the timeline to zero if there are no peers
+		timeline.requestBeatAtTime(0, currentTime, m_state.quantum);
+		timeline.setTempo(tempo, currentTime);
+	    m_state.link.commitAppTimeline(timeline);
+		  
+		if (isNewEdge && currentEdges % edgesPerLoop == 0) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
         } else {
