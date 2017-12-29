@@ -82,6 +82,7 @@ namespace MissingLink {
       void toggleMode();
       void formatDisplayValue(char *display);
       void routeEncoderAdjust(float amount);
+      void resetTimeline(const std::chrono::microseconds hostTime);
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
