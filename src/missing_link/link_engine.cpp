@@ -57,40 +57,9 @@ LinkEngine::State::State()
   link.enable(true);
 }
 
-LinkEngine::Process::Process(State &state)
-  : m_state(state)
-  , m_bStopped(true)
-{}
-
-LinkEngine::Process::~Process() {
-  Stop();
-}
-
-void LinkEngine::Process::Run() {
-  if (m_pThread != nullptr) { return; }
-  m_bStopped = false;
-  m_pThread = unique_ptr<thread>(new thread(&Process::run, this));
-}
-
-void LinkEngine::Process::Stop() {
-  if (m_pThread == nullptr) { return; }
-  m_bStopped = true;
-  m_pThread->join();
-  m_pThread = nullptr;
-}
-
-LinkEngine::UIProcess::UIProcess(State &state) : LinkEngine::Process(state) {}
-
-void LinkEngine::UIProcess::run() {
-  while (!m_bStopped) {
-    this_thread::sleep_for(chrono::milliseconds(10));
-  }
-}
-
 
 LinkEngine::LinkEngine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
-  , m_pUIProcess(unique_ptr<UIProcess>(new UIProcess(m_state)))
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
@@ -101,7 +70,6 @@ LinkEngine::LinkEngine()
 
 void LinkEngine::Run() {
   m_pUI->StartPollingInput();
-  m_pUIProcess->Run();
 
   std::thread outputThread(&LinkEngine::runOutput, this);
 
@@ -114,7 +82,6 @@ void LinkEngine::Run() {
   runDisplaySocket();
 
   m_pUI->StopPollingInput();
-  m_pUIProcess->Stop();
   outputThread.join();
 }
 
@@ -149,7 +116,7 @@ void LinkEngine::runOutput() {
       case Cued:
       	//reset the timeline to zero either immediately (if there are no peers) or in time with other peers
 		resetTimeline(currentTime);
-		//set state to playing if there are no peers or we are at the starting edge of loop 	  
+		//set state to playing if there are no peers or we are at the starting edge of loop
 		if ( (m_state.link.numPeers() == 0) || (isNewEdge && currentEdges % edgesPerLoop == 0) ) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
