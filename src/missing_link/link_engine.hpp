@@ -36,6 +36,9 @@ namespace MissingLink {
         ableton::Link link;
         std::atomic<int> quantum;
         std::atomic<int> pulsesPerQuarterNote;
+        std::atomic<std::chrono::microseconds> startTapTime;
+        std::atomic<std::chrono::microseconds> previousTapTime;
+        std::atomic<int> tapCount;
         State();
       };
 
@@ -49,6 +52,7 @@ namespace MissingLink {
       void runDisplayLoop();
 
       void playStop();
+      void tapTempo();
       void toggleMode();
       void formatDisplayValue(char *display);
       void routeEncoderAdjust(float amount);
@@ -56,6 +60,7 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+      void setBPM(float tempo);
   };
 
 }

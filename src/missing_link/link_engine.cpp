@@ -50,6 +50,9 @@ LinkEngine::State::State()
   , link(120.0)
   , quantum(4)
   , pulsesPerQuarterNote(4)
+  , startTapTime(0)
+  , previousTapTime(0)
+  , tapCount(0)
 {
   link.enable(true);
 }
@@ -60,6 +63,7 @@ LinkEngine::LinkEngine()
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
+  m_pUI->onTapTempo = bind(&LinkEngine::tapTempo, this);
   m_pUI->onEncoderRotate = bind(&LinkEngine::routeEncoderAdjust, this, placeholders::_1);
   m_pUI->onEncoderPress = bind(&LinkEngine::toggleMode, this);
   m_pUI->SetModeLED(m_state.encoderMode);
@@ -192,6 +196,27 @@ void LinkEngine::playStop() {
   }
 }
 
+void LinkEngine::tapTempo() {
+  const auto currentTime = m_state.link.clock().micros();
+  auto timeline = m_state.link.captureAppTimeline();
+  auto tempo = timeline.tempo();
+  std::chrono::microseconds prevTapTime = m_state.previousTapTime;
+  int tapCount = m_state.tapCount;
+  tapCount ++;
+  long long int timeSinceLastTap = currentTime - prevTapTime;
+  if (timeSinceLastTap > ((60/tempo) * 4)) {
+    tapCount = 1;
+  }
+  if (tapCount == 1) {
+    m_state.startTapTime = currentTime;
+  }
+  if (tapCount >= 2) {
+    float quarterNoteSeconds = ((currentTime - m_state.startTapTime) / tapCount) * 0.000001;
+    setBPM((float)(60/quarterNoteSeconds));
+  }
+  m_state.tapCount = tapCount;
+}
+
 void LinkEngine::toggleMode() {
   int mode = m_state.encoderMode;
   mode = (mode + 1) % (int)UserInterface::NUM_MODES;
@@ -237,4 +262,11 @@ void LinkEngine::loopAdjust(int amount) {
 
 void LinkEngine::ppqnAdjust(int amount) {
   m_state.pulsesPerQuarterNote = std::min(24, std::max(1, m_state.pulsesPerQuarterNote + amount));
+}
+
+void LinkEngine::setBPM(float tempo) {
+  auto now = m_state.link.clock().micros();
+  auto timeline = m_state.link.captureAppTimeline();
+  timeline.setTempo(tempo, now);
+  m_state.link.commitAppTimeline(timeline);
 }
