@@ -25,18 +25,9 @@ include_directories(${link_HEADERS})
 file(
   GLOB_RECURSE
   missing_link_sources
-  "${CMAKE_CURRENT_LIST_DIR}/src/missing_link/*.cpp"
-)
-
-file(
-  GLOB_RECURSE
-  missing_link_display_sources
-  "${CMAKE_CURRENT_LIST_DIR}/src/missing_link_display/*.c"
+  "src/missing_link/*.cpp"
+  "src/missing_link_display/*.c"
 )
 
 add_executable(missing_link ${missing_link_sources})
-add_executable(missing_link_display ${missing_link_display_sources})
-
-set(missing_link_libs pthread Ableton::Link)
-
-target_link_libraries(missing_link ${missing_link_libs})
+target_link_libraries(missing_link pthread Ableton::Link)

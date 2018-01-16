@@ -14,13 +14,11 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
-#include "missing_link/common.h"
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/gpio.hpp"
 #include "missing_link/link_engine.hpp"
+#include "missing_link_display/ht16k33.h"
 
 using namespace std;
 using namespace MissingLink;
@@ -43,7 +41,6 @@ namespace MissingLink {
     {0.1, 0.1, 0.1, 1, 0.1, 0.1},
     {0.1, 0.1, 0.1, 0.1, 1, 1}
   };
-
 }
 
 LinkEngine::State::State()
@@ -79,7 +76,7 @@ void LinkEngine::Run() {
     std::cerr << "Failed to set output thread priority\n";
   }
 
-  runDisplaySocket();
+  runDisplayLoop();
 
   m_pUI->StopPollingInput();
   outputThread.join();
@@ -150,39 +147,11 @@ void LinkEngine::runOutput() {
   }
 }
 
-void LinkEngine::runDisplaySocket() {
-  // Proof of concept display code
-  int sd;
-  struct sockaddr_un remote;
-
-  remote.sun_family = AF_UNIX;
-  strcpy(remote.sun_path, ML_DISPLAY_SOCK_PATH);
-  int sd_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-
+void LinkEngine::runDisplayLoop() {
   while (m_state.running) {
-
-    if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-      cerr << "failed to create display socket\n";
-      this_thread::sleep_for(chrono::seconds(1));
-      continue;
-    }
-
-    if (connect(sd, (struct sockaddr *)&remote, sd_len) == -1) {
-      cerr << "failed to connect to display socket\n";
-      close(sd);
-      this_thread::sleep_for(chrono::seconds(1));
-      continue;
-    }
-
-    char display_buf[8];
-    formatDisplayValue(display_buf);
-
-    if (send(sd, display_buf, 8, 0) < 0) {
-      cerr << "failed to send to display socket\n";
-    }
-
-    close(sd);
-
+    char buf[8];
+    formatDisplayValue(buf);
+    ht16k33_write_string(buf);
     this_thread::sleep_for(chrono::milliseconds(50));
   }
 }

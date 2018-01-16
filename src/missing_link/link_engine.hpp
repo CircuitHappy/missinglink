@@ -46,7 +46,7 @@ namespace MissingLink {
       std::chrono::microseconds m_lastOutputTime;
 
       void runOutput();
-      void runDisplaySocket();
+      void runDisplayLoop();
 
       void playStop();
       void toggleMode();
