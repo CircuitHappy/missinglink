@@ -36,9 +36,9 @@ namespace MissingLink {
         ableton::Link link;
         std::atomic<int> quantum;
         std::atomic<int> pulsesPerQuarterNote;
-        std::atomic<std::chrono::microseconds> startTapTime;
-        std::atomic<std::chrono::microseconds> previousTapTime;
         std::atomic<int> tapCount;
+        std::chrono::microseconds startTapTime;
+        std::chrono::microseconds previousTapTime;
         State();
       };
 

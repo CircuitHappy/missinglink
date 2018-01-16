@@ -50,9 +50,9 @@ LinkEngine::State::State()
   , link(120.0)
   , quantum(4)
   , pulsesPerQuarterNote(4)
-  , startTapTime(0)
-  , previousTapTime(0)
   , tapCount(0)
+  , startTapTime(std::chrono::microseconds(0))
+  , previousTapTime(std::chrono::microseconds(0))
 {
   link.enable(true);
 }
@@ -200,21 +200,19 @@ void LinkEngine::tapTempo() {
   const auto currentTime = m_state.link.clock().micros();
   auto timeline = m_state.link.captureAppTimeline();
   auto tempo = timeline.tempo();
-  std::chrono::microseconds prevTapTime = m_state.previousTapTime;
-  int tapCount = m_state.tapCount;
-  tapCount ++;
-  long long int timeSinceLastTap = currentTime - prevTapTime;
-  if (timeSinceLastTap > ((60/tempo) * 4)) {
-    tapCount = 1;
+  m_state.tapCount += 1;
+  //if enough time has gone by (4*1 beat of tempo), this is the first tap
+  if (((float)currentTime.count() * 0.000001) - ((float)m_state.previousTapTime.count() * 0.000001) > (60.0/tempo) * 4.0) {
+    m_state.tapCount = 1;
   }
-  if (tapCount == 1) {
+  if (m_state.tapCount == 1) {
     m_state.startTapTime = currentTime;
   }
-  if (tapCount >= 2) {
-    float quarterNoteSeconds = ((currentTime - m_state.startTapTime) / tapCount) * 0.000001;
-    setBPM((float)(60/quarterNoteSeconds));
+  if (m_state.tapCount >= 2) {
+    float quarterNoteSeconds = (((float)currentTime.count() - (float)m_state.startTapTime.count()) / (float)m_state.tapCount) * 0.000001;
+    setBPM((float)(60.0/quarterNoteSeconds));
   }
-  m_state.tapCount = tapCount;
+  m_state.previousTapTime = currentTime;
 }
 
 void LinkEngine::toggleMode() {
