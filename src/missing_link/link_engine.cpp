@@ -148,6 +148,7 @@ void LinkEngine::runOutput() {
 }
 
 void LinkEngine::runDisplayLoop() {
+  ht16k33_init();
   while (m_state.running) {
     char buf[8];
     formatDisplayValue(buf);
