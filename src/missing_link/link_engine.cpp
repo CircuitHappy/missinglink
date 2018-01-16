@@ -200,18 +200,27 @@ void LinkEngine::tapTempo() {
   const auto currentTime = m_state.link.clock().micros();
   auto timeline = m_state.link.captureAppTimeline();
   auto tempo = timeline.tempo();
+
   m_state.tapCount += 1;
+
   //if enough time has gone by (4*1 beat of tempo), this is the first tap
   if (((float)currentTime.count() * 0.000001) - ((float)m_state.previousTapTime.count() * 0.000001) > (60.0/tempo) * 4.0) {
     m_state.tapCount = 1;
   }
+  //restart tapCount to stop averaging across too long a time
+  // if (m_state.tapCount > 8) {
+  //   m_state.tapCount = 1;
+  // }
+
   if (m_state.tapCount == 1) {
     m_state.startTapTime = currentTime;
   }
+
   if (m_state.tapCount >= 2) {
-    float quarterNoteSeconds = (((float)currentTime.count() - (float)m_state.startTapTime.count()) / (float)m_state.tapCount) * 0.000001;
+    float quarterNoteSeconds = (((float)currentTime.count() - (float)m_state.startTapTime.count()) / (float)(m_state.tapCount - 1)) * 0.000001;
     setBPM((float)(60.0/quarterNoteSeconds));
   }
+
   m_state.previousTapTime = currentTime;
 }
 
