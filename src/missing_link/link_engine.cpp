@@ -281,7 +281,7 @@ void LinkEngine::routeEncoderAdjust(float amount) {
 void LinkEngine::resetTimeline() {
   // Reset to beat zero in 1 ms
   auto timeline = m_state.link.captureAppTimeline();
-  auto resetTime = m_state.link.clock().micros() + std::chrono::microseconds(1000);
+  auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
   timeline.forceBeatAtTime(0, resetTime, m_state.quantum);
   m_state.link.commitAppTimeline(timeline);
 }
