@@ -147,8 +147,8 @@ void LinkEngine::runOutput() {
 
     switch ((PlayState)m_state.playState) {
       case Cued:
-	    	//set state to playing if there are no peers or we are at the starting edge of loop
-		    if ( isNewEdge && currentEdges % edgesPerLoop == 0 ) {
+        //set state to playing if there are no peers or we are at the starting edge of loop
+        if ( isNewEdge && currentEdges % edgesPerLoop == 0 ) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
         } else {
@@ -242,7 +242,7 @@ void LinkEngine::playStop() {
     case Stopped:
       // reset the timeline to zero if there are no peers
       if (m_state.link.numPeers() == 0) {
-    		resetTimeline();
+        resetTimeline();
       }
       m_state.playState = Cued;
       break;
