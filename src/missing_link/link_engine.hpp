@@ -7,7 +7,8 @@
 
 #include <memory>
 #include <thread>
-#include <ableton/link.hpp>
+#include <ableton/Link.hpp>
+#include "missing_link/tap_tempo.hpp"
 #include "missing_link/user_interface.hpp"
 
 namespace MissingLink {
@@ -36,23 +37,18 @@ namespace MissingLink {
         ableton::Link link;
         std::atomic<int> quantum;
         std::atomic<int> pulsesPerQuarterNote;
-        std::atomic<int> tapCount;
-        std::chrono::microseconds startTapTime;
-        std::chrono::microseconds previousTapTime;
         State();
       };
 
-
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;
-
+      std::unique_ptr<TapTempo> m_pTapTempo;
       std::chrono::microseconds m_lastOutputTime;
 
       void runOutput();
       void runDisplayLoop();
 
       void playStop();
-      void tapTempo();
       void toggleMode();
       void formatDisplayValue(char *display);
       void routeEncoderAdjust(float amount);
@@ -60,7 +56,7 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
-      void setBPM(float tempo);
+      void setTempo(double tempo);
   };
 
 }

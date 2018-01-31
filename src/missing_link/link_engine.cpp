@@ -50,9 +50,6 @@ LinkEngine::State::State()
   , link(120.0)
   , quantum(4)
   , pulsesPerQuarterNote(4)
-  , tapCount(0)
-  , startTapTime(std::chrono::microseconds(0))
-  , previousTapTime(std::chrono::microseconds(0))
 {
   link.enable(true);
 }
@@ -60,13 +57,15 @@ LinkEngine::State::State()
 
 LinkEngine::LinkEngine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
+  , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
-  m_pUI->onTapTempo = bind(&LinkEngine::tapTempo, this);
+  m_pUI->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   m_pUI->onEncoderRotate = bind(&LinkEngine::routeEncoderAdjust, this, placeholders::_1);
   m_pUI->onEncoderPress = bind(&LinkEngine::toggleMode, this);
   m_pUI->SetModeLED(m_state.encoderMode);
+  m_pTapTempo->onNewTempo = bind(&LinkEngine::setTempo, this, placeholders::_1);
 }
 
 void LinkEngine::Run() {
@@ -196,34 +195,6 @@ void LinkEngine::playStop() {
   }
 }
 
-void LinkEngine::tapTempo() {
-  const auto currentTime = m_state.link.clock().micros();
-  auto timeline = m_state.link.captureAppTimeline();
-  auto tempo = timeline.tempo();
-
-  m_state.tapCount += 1;
-
-  //if enough time has gone by (4*1 beat of tempo), this is the first tap
-  if (((float)currentTime.count() * 0.000001) - ((float)m_state.previousTapTime.count() * 0.000001) > (60.0/tempo) * 4.0) {
-    m_state.tapCount = 1;
-  }
-  //restart tapCount to stop averaging across too long a time
-  // if (m_state.tapCount > 8) {
-  //   m_state.tapCount = 1;
-  // }
-
-  if (m_state.tapCount == 1) {
-    m_state.startTapTime = currentTime;
-  }
-
-  if (m_state.tapCount >= 2) {
-    float quarterNoteSeconds = (((float)currentTime.count() - (float)m_state.startTapTime.count()) / (float)(m_state.tapCount - 1)) * 0.000001;
-    setBPM((float)(60.0/quarterNoteSeconds));
-  }
-
-  m_state.previousTapTime = currentTime;
-}
-
 void LinkEngine::toggleMode() {
   int mode = m_state.encoderMode;
   mode = (mode + 1) % (int)UserInterface::NUM_MODES;
@@ -271,7 +242,7 @@ void LinkEngine::ppqnAdjust(int amount) {
   m_state.pulsesPerQuarterNote = std::min(24, std::max(1, m_state.pulsesPerQuarterNote + amount));
 }
 
-void LinkEngine::setBPM(float tempo) {
+void LinkEngine::setTempo(double tempo) {
   auto now = m_state.link.clock().micros();
   auto timeline = m_state.link.captureAppTimeline();
   timeline.setTempo(tempo, now);
