@@ -190,7 +190,7 @@ void ht16k33_write_string(const char *string) {
   bool dot;
   int digit = start;
   int str_offset = 0;
-  while (digit < 4, str_offset < rawlen) {
+  while (digit < 4 && str_offset < rawlen) {
     a = string[str_offset];
     if (str_offset < rawlen - 1 && string[str_offset + 1] == '.') {
       dot = true;
@@ -207,7 +207,7 @@ void ht16k33_write_string(const char *string) {
 };
 
 void ht16k33_commit() {
-  char tmpbuf[9];
+  unsigned char tmpbuf[9];
   tmpbuf[0] = 0x00;
   memcpy(tmpbuf + 1, display_buf, 8);
   i2c_write(HTK16K33_I2C_BUS, HTK16K33_I2C_ADDR, tmpbuf, 9);

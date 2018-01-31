@@ -14,13 +14,11 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
 
-#include "missing_link/common.h"
 #include "missing_link/pin_defs.hpp"
 #include "missing_link/gpio.hpp"
 #include "missing_link/link_engine.hpp"
+#include "missing_link_display/ht16k33.h"
 
 using namespace std;
 using namespace MissingLink;
@@ -43,7 +41,6 @@ namespace MissingLink {
     {0.1, 0.1, 0.1, 1, 0.1, 0.1},
     {0.1, 0.1, 0.1, 0.1, 1, 1}
   };
-
 }
 
 LinkEngine::State::State()
@@ -57,40 +54,9 @@ LinkEngine::State::State()
   link.enable(true);
 }
 
-LinkEngine::Process::Process(State &state)
-  : m_state(state)
-  , m_bStopped(true)
-{}
-
-LinkEngine::Process::~Process() {
-  Stop();
-}
-
-void LinkEngine::Process::Run() {
-  if (m_pThread != nullptr) { return; }
-  m_bStopped = false;
-  m_pThread = unique_ptr<thread>(new thread(&Process::run, this));
-}
-
-void LinkEngine::Process::Stop() {
-  if (m_pThread == nullptr) { return; }
-  m_bStopped = true;
-  m_pThread->join();
-  m_pThread = nullptr;
-}
-
-LinkEngine::UIProcess::UIProcess(State &state) : LinkEngine::Process(state) {}
-
-void LinkEngine::UIProcess::run() {
-  while (!m_bStopped) {
-    this_thread::sleep_for(chrono::milliseconds(10));
-  }
-}
-
 
 LinkEngine::LinkEngine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
-  , m_pUIProcess(unique_ptr<UIProcess>(new UIProcess(m_state)))
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
@@ -101,7 +67,6 @@ LinkEngine::LinkEngine()
 
 void LinkEngine::Run() {
   m_pUI->StartPollingInput();
-  m_pUIProcess->Run();
 
   std::thread outputThread(&LinkEngine::runOutput, this);
 
@@ -111,10 +76,9 @@ void LinkEngine::Run() {
     std::cerr << "Failed to set output thread priority\n";
   }
 
-  runDisplaySocket();
+  runDisplayLoop();
 
   m_pUI->StopPollingInput();
-  m_pUIProcess->Stop();
   outputThread.join();
 }
 
@@ -181,39 +145,12 @@ void LinkEngine::runOutput() {
   }
 }
 
-void LinkEngine::runDisplaySocket() {
-  // Proof of concept display code
-  int sd;
-  struct sockaddr_un remote;
-
-  remote.sun_family = AF_UNIX;
-  strcpy(remote.sun_path, ML_DISPLAY_SOCK_PATH);
-  int sd_len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-
+void LinkEngine::runDisplayLoop() {
+  ht16k33_init();
   while (m_state.running) {
-
-    if ((sd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-      cerr << "failed to create display socket\n";
-      this_thread::sleep_for(chrono::seconds(1));
-      continue;
-    }
-
-    if (connect(sd, (struct sockaddr *)&remote, sd_len) == -1) {
-      cerr << "failed to connect to display socket\n";
-      close(sd);
-      this_thread::sleep_for(chrono::seconds(1));
-      continue;
-    }
-
-    char display_buf[8];
-    formatDisplayValue(display_buf);
-
-    if (send(sd, display_buf, 8, 0) < 0) {
-      cerr << "failed to send to display socket\n";
-    }
-
-    close(sd);
-
+    char buf[8];
+    formatDisplayValue(buf);
+    ht16k33_write_string(buf);
     this_thread::sleep_for(chrono::milliseconds(50));
   }
 }

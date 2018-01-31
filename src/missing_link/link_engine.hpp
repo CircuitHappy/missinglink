@@ -39,44 +39,14 @@ namespace MissingLink {
         State();
       };
 
-      class Process {
-
-        public:
-
-          Process(State &state);
-          virtual ~Process();
-
-          virtual void Run();
-          void Stop();
-
-        protected:
-
-          State &m_state;
-          std::atomic<bool> m_bStopped;
-          std::unique_ptr<std::thread> m_pThread;
-
-          virtual void run() = 0;
-      };
-
-      class UIProcess : public Process {
-
-        public:
-
-          UIProcess(State &state);
-
-        private:
-
-          void run() override;
-      };
 
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;
-      std::unique_ptr<UIProcess> m_pUIProcess;
 
       std::chrono::microseconds m_lastOutputTime;
 
       void runOutput();
-      void runDisplaySocket();
+      void runDisplayLoop();
 
       void playStop();
       void toggleMode();

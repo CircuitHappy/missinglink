@@ -9,8 +9,6 @@
 #include <memory>
 #include <poll.h>
 
-#include "missing_link/common.h"
-
 namespace MissingLink {
 namespace GPIO {
 

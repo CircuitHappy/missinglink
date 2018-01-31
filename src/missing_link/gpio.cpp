@@ -164,7 +164,7 @@ static inline void i2c_smbus_transaction(int fd, char rw, uint8_t regAddr, union
   args.size = size;
   args.data = data;
   if (::ioctl(fd, I2C_SMBUS, &args)) {
-    std::cerr << "[ERROR] i2c SMBUS failed" << std::endl;
+    std::cerr << "[ERROR] i2c SMBUS failed: " << std::strerror(errno) << std::endl;
   }
 }
 
