@@ -247,4 +247,8 @@ void LinkEngine::setTempo(double tempo) {
   auto timeline = m_state.link.captureAppTimeline();
   timeline.setTempo(tempo, now);
   m_state.link.commitAppTimeline(timeline);
+
+  // switch back to tempo mode
+  m_state.encoderMode = UserInterface::BPM;
+  m_pUI->SetModeLED(UserInterface::BPM);
 }
