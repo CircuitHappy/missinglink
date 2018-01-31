@@ -111,10 +111,8 @@ void LinkEngine::runOutput() {
 
     switch ((PlayState)m_state.playState) {
       case Cued:
-      	//reset the timeline to zero either immediately (if there are no peers) or in time with other peers
-		resetTimeline(currentTime);
-		//set state to playing if there are no peers or we are at the starting edge of loop
-		if ( (m_state.link.numPeers() == 0) || (isNewEdge && currentEdges % edgesPerLoop == 0) ) {
+        //set state to playing if there are no peers or we are at the starting edge of loop
+        if ( isNewEdge && currentEdges % edgesPerLoop == 0 ) {
           m_state.playState = Playing;
           // Deliberate fallthrough here
         } else {
@@ -179,6 +177,10 @@ void LinkEngine::formatDisplayValue(char *display) {
 void LinkEngine::playStop() {
   switch (m_state.playState) {
     case Stopped:
+      // reset the timeline to zero if there are no peers
+      if (m_state.link.numPeers() == 0) {
+        resetTimeline();
+      }
       m_state.playState = Cued;
       break;
     case Playing:
@@ -213,9 +215,11 @@ void LinkEngine::routeEncoderAdjust(float amount) {
   }
 }
 
-void LinkEngine::resetTimeline(const std::chrono::microseconds hostTime) {
+void LinkEngine::resetTimeline() {
+  // Reset to beat zero in 1 ms
   auto timeline = m_state.link.captureAppTimeline();
-  timeline.requestBeatAtTime(0, hostTime, m_state.quantum);
+  auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
+  timeline.forceBeatAtTime(0, resetTime, m_state.quantum);
   m_state.link.commitAppTimeline(timeline);
 }
 
@@ -230,6 +234,7 @@ void LinkEngine::tempoAdjust(float amount) {
 void LinkEngine::loopAdjust(int amount) {
   m_state.quantum = std::max(1, m_state.quantum + amount);
 }
+
 void LinkEngine::ppqnAdjust(int amount) {
   m_state.pulsesPerQuarterNote = std::min(24, std::max(1, m_state.pulsesPerQuarterNote + amount));
 }
