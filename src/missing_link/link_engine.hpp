@@ -7,7 +7,8 @@
 
 #include <memory>
 #include <thread>
-#include <ableton/link.hpp>
+#include <ableton/Link.hpp>
+#include "missing_link/tap_tempo.hpp"
 #include "missing_link/user_interface.hpp"
 
 namespace MissingLink {
@@ -39,10 +40,9 @@ namespace MissingLink {
         State();
       };
 
-
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;
-
+      std::unique_ptr<TapTempo> m_pTapTempo;
       std::chrono::microseconds m_lastOutputTime;
 
       void runOutput();
@@ -56,6 +56,7 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+      void setTempo(double tempo);
   };
 
 }

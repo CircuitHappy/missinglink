@@ -57,12 +57,15 @@ LinkEngine::State::State()
 
 LinkEngine::LinkEngine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
+  , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_lastOutputTime(0)
 {
   m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
+  m_pUI->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   m_pUI->onEncoderRotate = bind(&LinkEngine::routeEncoderAdjust, this, placeholders::_1);
   m_pUI->onEncoderPress = bind(&LinkEngine::toggleMode, this);
   m_pUI->SetModeLED(m_state.encoderMode);
+  m_pTapTempo->onNewTempo = bind(&LinkEngine::setTempo, this, placeholders::_1);
 }
 
 void LinkEngine::Run() {
@@ -237,4 +240,15 @@ void LinkEngine::loopAdjust(int amount) {
 
 void LinkEngine::ppqnAdjust(int amount) {
   m_state.pulsesPerQuarterNote = std::min(24, std::max(1, m_state.pulsesPerQuarterNote + amount));
+}
+
+void LinkEngine::setTempo(double tempo) {
+  auto now = m_state.link.clock().micros();
+  auto timeline = m_state.link.captureAppTimeline();
+  timeline.setTempo(tempo, now);
+  m_state.link.commitAppTimeline(timeline);
+
+  // switch back to tempo mode
+  m_state.encoderMode = UserInterface::BPM;
+  m_pUI->SetModeLED(UserInterface::BPM);
 }
