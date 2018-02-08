@@ -4,9 +4,6 @@ cmake_minimum_required(VERSION 3.0)
 # Toolchain
 ############
 
-set(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc)
-set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
-
 set(
   CMAKE_FIND_ROOT_PATH 
   ${TARGET_DIR}
@@ -31,6 +28,7 @@ project(missing_link)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Os")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Os")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(vendor/link/AbletonLinkConfig.cmake)
 
