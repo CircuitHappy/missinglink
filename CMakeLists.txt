@@ -4,8 +4,24 @@ cmake_minimum_required(VERSION 3.0)
 # Toolchain
 ############
 
-set(_BUILDROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/.." CACHE STRING "Directory containing CHIP-buildroot")
-set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
+set(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc)
+set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
+
+set(
+  CMAKE_FIND_ROOT_PATH 
+  ${TARGET_DIR}
+  ${TARGET_DIR}/usr/lib
+)
+
+include_directories(
+  /usr/include
+  /usr/include
+  /usr/arm-buildroot-linux-gnueabihf/sysroot/usr/include
+)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 ##########
 # Project
@@ -13,13 +29,12 @@ set(CMAKE_TOOLCHAIN_FILE cmake_includes/ChipToolchain.cmake)
 
 project(missing_link)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Os")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Os")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(vendor/link/AbletonLinkConfig.cmake)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
+include_directories(src)
 include_directories(${link_HEADERS})
 
 file(
