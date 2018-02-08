@@ -1,9 +1,6 @@
-[submodule "lib/link"]
-	path = lib/link
-	url = https://github.com/Ableton/link.git
 [submodule "vendor/link"]
 	path = vendor/link
 	url = https://github.com/Ableton/link.git
-[submodule "vendor/googletest"]
-	path = vendor/googletest
-	url = https://github.com/google/googletest
+[submodule "vendor/dockcross"]
+	path = vendor/dockcross
+	url = https://github.com/dockcross/dockcross.git
