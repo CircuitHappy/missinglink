@@ -4,9 +4,3 @@ build/
 *.log
 *.pyc
 .DS_Store
-
-# Build dependencies (only applies to Ubuntu hosts)
-CHIP-buildroot
-chip-mtd-utils
-CHIP-tools
-sunxi-tools
