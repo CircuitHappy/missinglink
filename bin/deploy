@@ -1,3 +1,11 @@
 #!/bin/bash
-ML_HOSTNAME=ml-nanopi-1.local
+set -euo pipefail
+ML_HOSTNAME=${ML_HOSTNAME:-$@}
+if [ -z $ML_HOSTNAME ]
+then
+  echo "usage: bin/deploy <hostname>"
+  echo ""
+  echo "   or set ML_HOSTNAME environment variable"
+  exit 1
+fi
 scp build/bin/* root@${ML_HOSTNAME}:/usr/bin
