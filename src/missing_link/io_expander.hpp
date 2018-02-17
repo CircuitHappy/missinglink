@@ -9,6 +9,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include "missing_link/hw_defs.h"
 
 namespace MissingLink {
 
@@ -40,7 +41,7 @@ class IOExpander {
       InterruptConfiguration intConfig;
     };
 
-    IOExpander(uint8_t i2cBus = 1, uint8_t i2cAddress = 0x20);
+    IOExpander(uint8_t i2cBus = ML_DEFAULT_I2C_BUS, uint8_t i2cAddress = 0x20);
     virtual ~IOExpander();
 
     // Configure expander options

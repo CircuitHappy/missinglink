@@ -7,16 +7,10 @@
 #include <iomanip>
 #include <vector>
 
-#include "missing_link/pin_defs.hpp"
+#include "missing_link/hw_defs.h"
 #include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 #include "missing_link/user_interface.hpp"
-
-// FIXME: This SHOULD be CHIP_SPI_CS0 according to the schematic
-#define ML_INTERRUPT_PIN  CHIP_SPI_CLK
-
-#define ML_CLOCK_PIN      CHIP_PE4
-#define ML_RESET_PIN      CHIP_PE5
 
 #define NUM_ANIM_LEDS     6
 

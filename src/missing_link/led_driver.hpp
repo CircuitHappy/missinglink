@@ -9,6 +9,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include "missing_link/hw_defs.h"
 
 namespace MissingLink {
 
@@ -20,7 +21,7 @@ class LEDDriver {
 
   public:
 
-    LEDDriver(uint8_t i2cBus = 1, uint8_t i2cAddress = 0x60);
+    LEDDriver(uint8_t i2cBus = ML_DEFAULT_I2C_BUS, uint8_t i2cAddress = 0x60);
     virtual ~LEDDriver();
 
     // Configure expander options

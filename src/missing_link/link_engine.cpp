@@ -15,7 +15,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-#include "missing_link/pin_defs.hpp"
+#include "missing_link/hw_defs.h"
 #include "missing_link/gpio.hpp"
 #include "missing_link/link_engine.hpp"
 #include "missing_link_display/ht16k33.h"
