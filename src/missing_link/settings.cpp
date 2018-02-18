@@ -51,6 +51,18 @@ Settings Settings::Load() {
   return settings;
 }
 
-void Settings::Save(Settings settings) {
+void Settings::Save(const Settings settings) {
 
+  Config config;
+
+  Setting &root = config.getRoot();
+  root.add("tempo", Setting::TypeFloat) = settings.tempo;
+  root.add("quantum", Setting::TypeInt) = settings.quantum;
+  root.add("ppqn", Setting::TypeInt) = settings.ppqn;
+
+  try {
+    config.writeFile(ML_CONFIG_FILE);
+  } catch (const FileIOException &exc) {
+    std::cerr << "Failed to write settings to config file" << std::endl;
+  }
 }

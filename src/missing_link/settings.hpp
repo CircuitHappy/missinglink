@@ -21,7 +21,7 @@ struct Settings {
   static Settings Load();
 
   // Save to config file
-  static void Save(Settings settings);
+  static void Save(const Settings settings);
 };
 
 }

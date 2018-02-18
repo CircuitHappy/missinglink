@@ -71,17 +71,23 @@ void LinkEngine::Run() {
   m_pUI->StartPollingInput();
 
   std::thread outputThread(&LinkEngine::runOutput, this);
-
   sched_param param;
   param.sched_priority = 90;
   if(::pthread_setschedparam(outputThread.native_handle(), SCHED_FIFO, &param) < 0) {
     std::cerr << "Failed to set output thread priority\n";
   }
 
-  runDisplayLoop();
+  std::thread displayThread(&LinkEngine::runDisplayLoop, this);
+
+  while (m_state.running) {
+    Settings settings = m_state.settings.load();
+    Settings::Save(settings);
+    this_thread::sleep_for(chrono::seconds(1));
+  }
 
   m_pUI->StopPollingInput();
   outputThread.join();
+  displayThread.join();
 }
 
 void LinkEngine::runOutput() {
@@ -231,7 +237,6 @@ void LinkEngine::resetTimeline() {
 }
 
 void LinkEngine::tempoAdjust(float amount) {
-  auto now = m_state.link.clock().micros();
   auto timeline = m_state.link.captureAppTimeline();
   double tempo = timeline.tempo() + amount;
   setTempo(tempo);
@@ -254,6 +259,10 @@ void LinkEngine::setTempo(double tempo) {
   auto timeline = m_state.link.captureAppTimeline();
   timeline.setTempo(tempo, now);
   m_state.link.commitAppTimeline(timeline);
+
+  auto settings = m_state.settings.load();
+  settings.tempo = tempo;
+  m_state.settings = settings;
 
   // switch back to tempo mode
   if (m_state.encoderMode != UserInterface::BPM) {
