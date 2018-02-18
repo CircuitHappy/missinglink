@@ -12,7 +12,6 @@ set(
 
 include_directories(
   /usr/include
-  /usr/include
   /usr/arm-buildroot-linux-gnueabihf/sysroot/usr/include
 )
 
@@ -41,4 +40,4 @@ file(
 )
 
 add_executable(missing_link ${missing_link_sources})
-target_link_libraries(missing_link pthread Ableton::Link)
+target_link_libraries(missing_link pthread config++ Ableton::Link)
