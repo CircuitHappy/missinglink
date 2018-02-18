@@ -70,8 +70,13 @@ class I2CDevice {
     I2CDevice(uint8_t bus, uint8_t devAddr);
     virtual ~I2CDevice();
 
+    void Command(uint8_t cmd);
+
     uint8_t ReadByte(uint8_t regAddr);
+//    void ReadBlock(uint8_t regAddr, uint8_t *data, int nBytes);
+
     void WriteByte(uint8_t regAddr, uint8_t value);
+    void WriteBlock(uint8_t regAddr, const uint8_t *values, int nBytes);
 
   private:
 
