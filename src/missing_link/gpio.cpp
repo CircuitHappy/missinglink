@@ -200,7 +200,7 @@ void I2CDevice::WriteBlock(uint8_t regAddr, const uint8_t *values, int nBytes) {
   for (int i = 1; i <= length; i++) {
     data.block[i] = values[i - 1];
   }
-  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, regAddr, &data, I2C_SMBUS_BLOCK_DATA);
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, regAddr, &data, I2C_SMBUS_I2C_BLOCK_DATA);
 }
 
 void I2CDevice::open(uint8_t bus, uint8_t devAddr) {

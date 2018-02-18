@@ -57,7 +57,8 @@ namespace MissingLink {
 
 UserInterface::UserInterface()
   : m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
-  , m_pLEDDriver(shared_ptr<LEDDriver>(new LEDDriver()))
+  , m_pLEDDriver(unique_ptr<LEDDriver>(new LEDDriver()))
+  , m_pDisplay(unique_ptr<SegmentDisplay>(new SegmentDisplay()))
   , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
   , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
@@ -67,6 +68,9 @@ UserInterface::UserInterface()
 
   // Configure LED Driver
   m_pLEDDriver->Configure();
+
+  // Init Display
+  m_pDisplay->Init();
 
   // Clear interrupt state
   m_pExpander->ReadCapturedInterruptState();
@@ -161,4 +165,12 @@ void UserInterface::ClearAnimationLEDs() {
   for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
     m_pLEDDriver->SetBrightness(0.1, ANIM_LED_START + i);
   }
+}
+
+void UserInterface::WriteDisplay(std::string const &string) {
+  m_pDisplay->Write(string);
+}
+
+void UserInterface::ClearDisplay() {
+  m_pDisplay->Clear();
 }

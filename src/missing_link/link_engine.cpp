@@ -18,7 +18,6 @@
 #include "missing_link/hw_defs.h"
 #include "missing_link/gpio.hpp"
 #include "missing_link/link_engine.hpp"
-#include "missing_link_display/ht16k33.h"
 
 using namespace std;
 using namespace MissingLink;
@@ -149,11 +148,11 @@ void LinkEngine::runOutput() {
 }
 
 void LinkEngine::runDisplayLoop() {
-  ht16k33_init();
+  //ht16k33_init();
   while (m_state.running) {
     char buf[8];
     formatDisplayValue(buf);
-    ht16k33_write_string(buf);
+    //ht16k33_write_string(buf);
     this_thread::sleep_for(chrono::milliseconds(50));
   }
 }

@@ -12,6 +12,7 @@
 #include <vector>
 #include "missing_link/gpio.hpp"
 #include "missing_link/control.hpp"
+#include "missing_link/display.hpp"
 #include "missing_link/io_expander.hpp"
 #include "missing_link/led_driver.hpp"
 
@@ -53,10 +54,14 @@ class UserInterface {
     void SetAnimationLEDs(const float frame[6]);
     void ClearAnimationLEDs();
 
+    void WriteDisplay(std::string const &string);
+    void ClearDisplay();
+
   private:
 
     std::shared_ptr<IOExpander> m_pExpander;
-    std::shared_ptr<LEDDriver> m_pLEDDriver;
+    std::unique_ptr<LEDDriver> m_pLEDDriver;
+    std::unique_ptr<SegmentDisplay> m_pDisplay;
     std::unique_ptr<ExpanderInputLoop> m_pInputLoop;
     std::unique_ptr<GPIO::Pin> m_pClockOut;
     std::unique_ptr<GPIO::Pin> m_pResetOut;
