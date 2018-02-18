@@ -10,6 +10,7 @@
 #include <thread>
 #include <ableton/Link.hpp>
 #include "missing_link/tap_tempo.hpp"
+#include "missing_link/settings.hpp"
 #include "missing_link/user_interface.hpp"
 
 namespace MissingLink {
@@ -35,9 +36,8 @@ namespace MissingLink {
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
         std::atomic<UserInterface::EncoderMode> encoderMode;
+        std::atomic<Settings> settings;
         ableton::Link link;
-        std::atomic<int> quantum;
-        std::atomic<int> pulsesPerQuarterNote;
         State();
       };
 
