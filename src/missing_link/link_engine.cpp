@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <sstream>
 
 #include <stdlib.h>
 #include <signal.h>
@@ -148,32 +149,36 @@ void LinkEngine::runOutput() {
 }
 
 void LinkEngine::runDisplayLoop() {
-  //ht16k33_init();
   while (m_state.running) {
-    char buf[8];
-    formatDisplayValue(buf);
-    //ht16k33_write_string(buf);
+    auto value = formatDisplayValue();
+    m_pUI->WriteDisplay(value);
     this_thread::sleep_for(chrono::milliseconds(50));
   }
 }
 
-void LinkEngine::formatDisplayValue(char *display) {
-  auto timeline = m_state.link.captureAppTimeline();
-  const double tempo = timeline.tempo();
+std::string LinkEngine::formatDisplayValue() {
+
+  ostringstream stringStream;
+  stringStream.setf(ios::fixed, ios::floatfield);
+  stringStream.precision(1);
 
   switch (m_state.encoderMode) {
-    case UserInterface::BPM:
-      sprintf(display, "%.1f", tempo);
+    case UserInterface::BPM: {
+      auto timeline = m_state.link.captureAppTimeline();
+      stringStream << timeline.tempo();
       break;
+    }
     case UserInterface::LOOP:
-      sprintf(display, "%d", (int)m_state.quantum);
+      stringStream << (int)m_state.quantum;
       break;
     case UserInterface::CLOCK:
-      sprintf(display, "%d", (int)m_state.pulsesPerQuarterNote);
+      stringStream << (int)m_state.pulsesPerQuarterNote;
       break;
     default:
       break;
   }
+
+  return stringStream.str();
 }
 
 void LinkEngine::playStop() {

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <thread>
 #include <ableton/Link.hpp>
 #include "missing_link/tap_tempo.hpp"
@@ -50,7 +51,7 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
-      void formatDisplayValue(char *display);
+      std::string formatDisplayValue();
       void routeEncoderAdjust(float amount);
       void resetTimeline();
       void tempoAdjust(float amount);
