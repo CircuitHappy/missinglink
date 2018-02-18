@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdio>
+#include <unistd.h>
 #include <libconfig.h++>
 #include "missing_link/settings.hpp"
 
@@ -52,6 +53,11 @@ Settings Settings::Load() {
 }
 
 void Settings::Save(const Settings settings) {
+  FILE *file = fopen(ML_CONFIG_FILE, "wt");
+  if (file == NULL) {
+    std::cerr << "Failed to open config file for writing" << std::endl;
+    return;
+  }
 
   Config config;
 
@@ -61,8 +67,17 @@ void Settings::Save(const Settings settings) {
   root.add("ppqn", Setting::TypeInt) = settings.ppqn;
 
   try {
-    config.writeFile(ML_CONFIG_FILE);
+    config.write(file);
   } catch (const FileIOException &exc) {
     std::cerr << "Failed to write settings to config file" << std::endl;
   }
+
+  // Explicitly synchronize file
+  fflush(file);
+  int fd = fileno(file);
+  if (fd >= 0) {
+    fsync(fd);
+  }
+
+  fclose(file);
 }
