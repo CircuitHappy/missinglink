@@ -5,10 +5,7 @@
 
 #pragma once
 
-#include <atomic>
 #include <memory>
-#include <thread>
-#include <vector>
 #include "missing_link/hw_defs.h"
 
 namespace MissingLink {

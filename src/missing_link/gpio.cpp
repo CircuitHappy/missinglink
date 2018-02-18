@@ -4,6 +4,7 @@
  */
 
 #include <iostream>
+#include <algorithm>
 #include <cstring>
 #include <cerrno>
 #include <fcntl.h>
@@ -178,14 +179,28 @@ I2CDevice::~I2CDevice() {
 
 uint8_t I2CDevice::ReadByte(uint8_t regAddr) {
   i2c_smbus_data data;
-  i2c_smbus_transaction(m_fd, I2C_SMBUS_READ, regAddr, &data, 2);
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_READ, regAddr, &data, I2C_SMBUS_BYTE_DATA);
   return data.byte;
+}
+
+void I2CDevice::Command(uint8_t cmd) {
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, cmd, nullptr, I2C_SMBUS_BYTE);
 }
 
 void I2CDevice::WriteByte(uint8_t regAddr, uint8_t value) {
   i2c_smbus_data data;
   data.byte = value;
-  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, regAddr, &data, 2);
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, regAddr, &data, I2C_SMBUS_BYTE_DATA);
+}
+
+void I2CDevice::WriteBlock(uint8_t regAddr, const uint8_t *values, int nBytes) {
+  i2c_smbus_data data;
+  uint8_t length = std::min(nBytes, 32);
+  data.block[0] = length;
+  for (int i = 1; i <= length; i++) {
+    data.block[i] = values[i - 1];
+  }
+  i2c_smbus_transaction(m_fd, I2C_SMBUS_WRITE, regAddr, &data, I2C_SMBUS_I2C_BLOCK_DATA);
 }
 
 void I2CDevice::open(uint8_t bus, uint8_t devAddr) {

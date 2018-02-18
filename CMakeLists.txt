@@ -26,7 +26,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 project(missing_link)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Os")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Os -Wno-psabi")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
@@ -39,7 +38,6 @@ file(
   GLOB_RECURSE
   missing_link_sources
   "src/missing_link/*.cpp"
-  "src/missing_link_display/*.c"
 )
 
 add_executable(missing_link ${missing_link_sources})
