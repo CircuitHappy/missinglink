@@ -1,0 +1,56 @@
+/**
+ * Copyright (c) 2018
+ * Circuit Happy, LLC
+ */
+
+#include <iostream>
+#include <iomanip>
+#include <cstdio>
+#include <libconfig.h++>
+#include "missing_link/settings.hpp"
+
+#define ML_CONFIG_FILE "/etc/missing_link.cfg"
+
+using namespace libconfig;
+using namespace MissingLink;
+
+Settings Settings::Load() {
+  Settings settings;
+  Config config;
+  bool valid = false;
+
+  try {
+    config.readFile(ML_CONFIG_FILE);
+    valid = true;
+  } catch (const FileIOException &exc) {
+    std::cerr << "Failed to read config file" << std::endl;
+  } catch (const ParseException &exc) {
+    std::cerr << "Failed to parse config file" << std::endl;
+  }
+
+  if (!valid) {
+    // indiscriminately delete file and return defaults
+    ::remove(ML_CONFIG_FILE);
+    return settings;
+  }
+
+  try {
+    settings.tempo = config.lookup("tempo");
+    settings.quantum = config.lookup("quantum");
+    settings.ppqn = config.lookup("ppqn");
+  } catch (const SettingNotFoundException &exc) {
+    std::cerr << "One or more settings missing from config file" << std::endl;
+  }
+
+  std::cout << std::setprecision(1) << std::setiosflags(std::ios::fixed) <<
+    "Loaded Settings:" <<
+    "\n  tempo: " << settings.tempo <<
+    "\n  quantum: " << settings.quantum <<
+    "\n  ppqn: " << settings.ppqn << std::endl;
+
+  return settings;
+}
+
+void Settings::Save(Settings settings) {
+
+}

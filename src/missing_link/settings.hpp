@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <libconfig.h++>
-
 namespace MissingLink {
 
 /// POD struct represeting persistent link engine settings
@@ -20,17 +18,10 @@ struct Settings {
   Settings() : tempo(120.0), quantum(4), ppqn(4) {}
 
   // Load from config file
-  static Settings Load() {
-    return Settings();
-  }
+  static Settings Load();
 
   // Save to config file
-  static void Save(Settings settings) {
-
-  }
-
-  private:
-
+  static void Save(Settings settings);
 };
 
 }
