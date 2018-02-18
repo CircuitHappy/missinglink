@@ -47,9 +47,8 @@ LinkEngine::State::State()
   : running(true)
   , playState(Stopped)
   , encoderMode(UserInterface::BPM)
-  , link(120.0)
-  , quantum(4)
-  , pulsesPerQuarterNote(4)
+  , settings(Settings::Load())
+  , link(settings.load().tempo)
 {
   link.enable(true);
 }
@@ -72,17 +71,23 @@ void LinkEngine::Run() {
   m_pUI->StartPollingInput();
 
   std::thread outputThread(&LinkEngine::runOutput, this);
-
   sched_param param;
   param.sched_priority = 90;
   if(::pthread_setschedparam(outputThread.native_handle(), SCHED_FIFO, &param) < 0) {
     std::cerr << "Failed to set output thread priority\n";
   }
 
-  runDisplayLoop();
+  std::thread displayThread(&LinkEngine::runDisplayLoop, this);
+
+  while (m_state.running) {
+    Settings settings = m_state.settings.load();
+    Settings::Save(settings);
+    this_thread::sleep_for(chrono::seconds(1));
+  }
 
   m_pUI->StopPollingInput();
   outputThread.join();
+  displayThread.join();
 }
 
 void LinkEngine::runOutput() {
@@ -97,15 +102,16 @@ void LinkEngine::runOutput() {
     }
 
     auto timeline = m_state.link.captureAudioTimeline();
+    auto settings = m_state.settings.load();
 
     const double tempo = timeline.tempo();
-    const double lastBeats = timeline.beatAtTime(lastTime, m_state.quantum);
-    const double currentBeats = timeline.beatAtTime(currentTime, m_state.quantum);
-    const double currentPhase = timeline.phaseAtTime(currentTime, m_state.quantum);
-    const double normalizedPhase = min(1.0, max(0.0, currentPhase / (double)m_state.quantum));
+    const double lastBeats = timeline.beatAtTime(lastTime, settings.quantum);
+    const double currentBeats = timeline.beatAtTime(currentTime, settings.quantum);
+    const double currentPhase = timeline.phaseAtTime(currentTime, settings.quantum);
+    const double normalizedPhase = min(1.0, max(0.0, currentPhase / (double)settings.quantum));
 
-    const int edgesPerBeat = m_state.pulsesPerQuarterNote * 2;
-    const int edgesPerLoop = edgesPerBeat * m_state.quantum;
+    const int edgesPerBeat = settings.ppqn * 2;
+    const int edgesPerLoop = edgesPerBeat * settings.quantum;
     const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
     const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
     const bool isNewEdge = currentEdges > lastEdges;
@@ -123,7 +129,7 @@ void LinkEngine::runOutput() {
           break;
         }
       case Playing: {
-        const double secondsPerPhrase = 60.0 / (tempo / m_state.quantum);
+        const double secondsPerPhrase = 60.0 / (tempo / settings.quantum);
         const double resetHighFraction = PULSE_LENGTH / secondsPerPhrase;
 
         const bool resetHigh = (currentPhase <= resetHighFraction);
@@ -169,10 +175,10 @@ std::string LinkEngine::formatDisplayValue() {
       break;
     }
     case UserInterface::LOOP:
-      stringStream << (int)m_state.quantum;
+      stringStream << (int)m_state.settings.load().quantum;
       break;
     case UserInterface::CLOCK:
-      stringStream << (int)m_state.pulsesPerQuarterNote;
+      stringStream << (int)m_state.settings.load().ppqn;
       break;
     default:
       break;
@@ -226,24 +232,26 @@ void LinkEngine::resetTimeline() {
   // Reset to beat zero in 1 ms
   auto timeline = m_state.link.captureAppTimeline();
   auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
-  timeline.forceBeatAtTime(0, resetTime, m_state.quantum);
+  timeline.forceBeatAtTime(0, resetTime, m_state.settings.load().quantum);
   m_state.link.commitAppTimeline(timeline);
 }
 
 void LinkEngine::tempoAdjust(float amount) {
-  auto now = m_state.link.clock().micros();
   auto timeline = m_state.link.captureAppTimeline();
-  auto tempo = timeline.tempo() + amount;
-  timeline.setTempo(tempo, now);
-  m_state.link.commitAppTimeline(timeline);
+  double tempo = timeline.tempo() + amount;
+  setTempo(tempo);
 }
 
 void LinkEngine::loopAdjust(int amount) {
-  m_state.quantum = std::max(1, m_state.quantum + amount);
+  auto settings = m_state.settings.load();
+  settings.quantum = std::max(1, settings.quantum + amount);
+  m_state.settings = settings;
 }
 
 void LinkEngine::ppqnAdjust(int amount) {
-  m_state.pulsesPerQuarterNote = std::min(24, std::max(1, m_state.pulsesPerQuarterNote + amount));
+  auto settings = m_state.settings.load();
+  settings.ppqn = std::min(24, std::max(1, settings.ppqn + amount));
+  m_state.settings = settings;
 }
 
 void LinkEngine::setTempo(double tempo) {
@@ -252,7 +260,13 @@ void LinkEngine::setTempo(double tempo) {
   timeline.setTempo(tempo, now);
   m_state.link.commitAppTimeline(timeline);
 
+  auto settings = m_state.settings.load();
+  settings.tempo = tempo;
+  m_state.settings = settings;
+
   // switch back to tempo mode
-  m_state.encoderMode = UserInterface::BPM;
-  m_pUI->SetModeLED(UserInterface::BPM);
+  if (m_state.encoderMode != UserInterface::BPM) {
+    m_state.encoderMode = UserInterface::BPM;
+    m_pUI->SetModeLED(UserInterface::BPM);
+  }
 }
