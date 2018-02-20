@@ -4,5 +4,5 @@
 
 #define ML_DEFAULT_I2C_BUS  0
 #define ML_INTERRUPT_PIN    14
-#define ML_CLOCK_PIN        6
-#define ML_RESET_PIN        1
+#define ML_CLOCK_PIN        15
+#define ML_RESET_PIN        16
