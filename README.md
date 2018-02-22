@@ -141,3 +141,16 @@ This will copy the built executables to the CHIP via scp. The default hostname i
 ```
 CHIP_HOSTNAME=192.168.0.43 bin/deploy
 ```
+**Installing updated init script**
+
+From host shell:
+
+`scp init/missing-link root@<nanopi>:/etc/init.d`
+
+From nanopi shell:
+
+`chmod 755 /etc/init.d/missing-link`
+`sudo update-rc.d missing-link defaults`
+Reboot and missing link should start automatically.
+
+Note: this means that you must run sudo service missing-link stop on the nanopi before deploying new dev binaries
