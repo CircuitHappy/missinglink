@@ -20,11 +20,8 @@ namespace MissingLink {
     public:
 
       Engine();
+
       void Run();
-
-    private:
-
-      static constexpr double PULSE_LENGTH = 0.030; // seconds
 
       enum PlayState {
           Stopped,
@@ -40,6 +37,29 @@ namespace MissingLink {
         ableton::Link link;
         State();
       };
+
+      class Process {
+
+        public:
+
+          Process(State &state);
+          virtual ~Process();
+
+          virtual void Run();
+          void Stop();
+
+        protected:
+
+          State &m_state;
+          std::atomic<bool> m_bStopped;
+          std::unique_ptr<std::thread> m_pThread;
+
+          virtual void run() = 0;
+      };
+
+    private:
+
+      static constexpr double PULSE_LENGTH = 0.030; // seconds
 
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;

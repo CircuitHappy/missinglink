@@ -53,6 +53,28 @@ Engine::State::State()
   link.enable(true);
 }
 
+Engine::Process::Process(State &state)
+  : m_state(state)
+  , m_bStopped(true)
+{}
+
+Engine::Process::~Process() {
+  Stop();
+}
+
+void Engine::Process::Run() {
+  if (m_pThread != nullptr) { return; }
+  m_bStopped = false;
+  m_pThread = unique_ptr<thread>(new thread(&Process::run, this));
+}
+
+void Engine::Process::Stop() {
+  if (m_pThread == nullptr) { return; }
+  m_bStopped = true;
+  m_pThread->join();
+  m_pThread = nullptr;
+}
+
 
 Engine::Engine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
