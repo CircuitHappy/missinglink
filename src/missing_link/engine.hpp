@@ -15,11 +15,11 @@
 
 namespace MissingLink {
 
-  class LinkEngine {
+  class Engine {
 
     public:
 
-      LinkEngine();
+      Engine();
       void Run();
 
     private:

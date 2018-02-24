@@ -4,12 +4,10 @@
  */
 
 #include <iostream>
-#include "missing_link/link_engine.hpp"
-
-using namespace MissingLink;
+#include "missing_link/engine.hpp"
 
 int main(void) {
-  LinkEngine engine;
+  MissingLink::Engine engine;
   engine.Run();
   return 0;
 }

@@ -18,7 +18,7 @@
 
 #include "missing_link/hw_defs.h"
 #include "missing_link/gpio.hpp"
-#include "missing_link/link_engine.hpp"
+#include "missing_link/engine.hpp"
 
 using namespace std;
 using namespace MissingLink;
@@ -43,7 +43,7 @@ namespace MissingLink {
   };
 }
 
-LinkEngine::State::State()
+Engine::State::State()
   : running(true)
   , playState(Stopped)
   , encoderMode(UserInterface::BPM)
@@ -54,30 +54,30 @@ LinkEngine::State::State()
 }
 
 
-LinkEngine::LinkEngine()
+Engine::Engine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_lastOutputTime(0)
 {
-  m_pUI->onPlayStop = bind(&LinkEngine::playStop, this);
+  m_pUI->onPlayStop = bind(&Engine::playStop, this);
   m_pUI->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
-  m_pUI->onEncoderRotate = bind(&LinkEngine::routeEncoderAdjust, this, placeholders::_1);
-  m_pUI->onEncoderPress = bind(&LinkEngine::toggleMode, this);
+  m_pUI->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
+  m_pUI->onEncoderPress = bind(&Engine::toggleMode, this);
   m_pUI->SetModeLED(m_state.encoderMode);
-  m_pTapTempo->onNewTempo = bind(&LinkEngine::setTempo, this, placeholders::_1);
+  m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 }
 
-void LinkEngine::Run() {
+void Engine::Run() {
   m_pUI->StartPollingInput();
 
-  std::thread outputThread(&LinkEngine::runOutput, this);
+  std::thread outputThread(&Engine::runOutput, this);
   sched_param param;
   param.sched_priority = 90;
   if(::pthread_setschedparam(outputThread.native_handle(), SCHED_FIFO, &param) < 0) {
     std::cerr << "Failed to set output thread priority\n";
   }
 
-  std::thread displayThread(&LinkEngine::runDisplayLoop, this);
+  std::thread displayThread(&Engine::runDisplayLoop, this);
 
   while (m_state.running) {
     Settings settings = m_state.settings.load();
@@ -90,7 +90,7 @@ void LinkEngine::Run() {
   displayThread.join();
 }
 
-void LinkEngine::runOutput() {
+void Engine::runOutput() {
   while (m_state.running) {
     const auto lastTime = m_lastOutputTime;
     const auto currentTime = m_state.link.clock().micros();
@@ -154,7 +154,7 @@ void LinkEngine::runOutput() {
   }
 }
 
-void LinkEngine::runDisplayLoop() {
+void Engine::runDisplayLoop() {
   while (m_state.running) {
     auto value = formatDisplayValue();
     m_pUI->WriteDisplay(value);
@@ -162,7 +162,7 @@ void LinkEngine::runDisplayLoop() {
   }
 }
 
-std::string LinkEngine::formatDisplayValue() {
+std::string Engine::formatDisplayValue() {
 
   ostringstream stringStream;
   stringStream.setf(ios::fixed, ios::floatfield);
@@ -187,7 +187,7 @@ std::string LinkEngine::formatDisplayValue() {
   return stringStream.str();
 }
 
-void LinkEngine::playStop() {
+void Engine::playStop() {
   switch (m_state.playState) {
     case Stopped:
       // reset the timeline to zero if there are no peers
@@ -205,14 +205,14 @@ void LinkEngine::playStop() {
   }
 }
 
-void LinkEngine::toggleMode() {
+void Engine::toggleMode() {
   int mode = m_state.encoderMode;
   mode = (mode + 1) % (int)UserInterface::NUM_MODES;
   m_state.encoderMode = (UserInterface::EncoderMode)mode;
   m_pUI->SetModeLED((UserInterface::EncoderMode)mode);
 }
 
-void LinkEngine::routeEncoderAdjust(float amount) {
+void Engine::routeEncoderAdjust(float amount) {
   switch (m_state.encoderMode) {
     case UserInterface::BPM:
       tempoAdjust(amount);
@@ -228,7 +228,7 @@ void LinkEngine::routeEncoderAdjust(float amount) {
   }
 }
 
-void LinkEngine::resetTimeline() {
+void Engine::resetTimeline() {
   // Reset to beat zero in 1 ms
   auto timeline = m_state.link.captureAppTimeline();
   auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
@@ -236,25 +236,25 @@ void LinkEngine::resetTimeline() {
   m_state.link.commitAppTimeline(timeline);
 }
 
-void LinkEngine::tempoAdjust(float amount) {
+void Engine::tempoAdjust(float amount) {
   auto timeline = m_state.link.captureAppTimeline();
   double tempo = timeline.tempo() + amount;
   setTempo(tempo);
 }
 
-void LinkEngine::loopAdjust(int amount) {
+void Engine::loopAdjust(int amount) {
   auto settings = m_state.settings.load();
   settings.quantum = std::max(1, settings.quantum + amount);
   m_state.settings = settings;
 }
 
-void LinkEngine::ppqnAdjust(int amount) {
+void Engine::ppqnAdjust(int amount) {
   auto settings = m_state.settings.load();
   settings.ppqn = std::min(24, std::max(1, settings.ppqn + amount));
   m_state.settings = settings;
 }
 
-void LinkEngine::setTempo(double tempo) {
+void Engine::setTempo(double tempo) {
   auto now = m_state.link.clock().micros();
   auto timeline = m_state.link.captureAppTimeline();
   timeline.setTempo(tempo, now);
