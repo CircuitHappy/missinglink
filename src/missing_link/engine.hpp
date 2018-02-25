@@ -10,9 +10,11 @@
 #include <string>
 #include <thread>
 #include <ableton/Link.hpp>
+#include "missing_link/types.hpp"
 #include "missing_link/tap_tempo.hpp"
 #include "missing_link/settings.hpp"
 #include "missing_link/user_interface.hpp"
+#include "missing_link/view.hpp"
 
 namespace MissingLink {
 
@@ -24,24 +26,9 @@ namespace MissingLink {
 
       void Run();
 
-      enum PlayState {
-        Stopped,
-        Cued,
-        Playing,
-        NUM_PLAY_STATES
-      };
-
-      enum InputMode {
-        BPM,
-        Loop,
-        Clock,
-        NUM_INPUT_MODES
-      };
-
       struct State {
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
-        std::atomic<InputMode> inputMode;
         std::atomic<Settings> settings;
         ableton::Link link;
         State();
@@ -78,7 +65,9 @@ namespace MissingLink {
 
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;
+      std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
+      std::atomic<InputMode> m_inputMode;
 
       void runDisplayLoop();
 

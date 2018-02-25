@@ -12,8 +12,6 @@
 #include "missing_link/io_expander.hpp"
 #include "missing_link/user_interface.hpp"
 
-#define NUM_ANIM_LEDS     6
-
 using namespace std;
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
@@ -26,16 +24,6 @@ namespace MissingLink {
     ENC_BUTTON    = 2,
     PLAY_BUTTON   = 3,
     TAP_BUTTON    = 4
-  };
-
-  enum OutputLEDIndex {
-    CLOCK_LED       = 0,
-    RESET_LED       = 1,
-    BPM_MODE_LED    = 2,
-    LOOP_MODE_LED   = 3,
-    CLK_MODE_LED    = 4,
-    WIFI_LED        = 5,
-    ANIM_LED_START  = 8 // start of 6 consecutive animation LEDs
   };
 
   static IOExpander::InterruptConfiguration ExpanderIntConfig = {
@@ -57,18 +45,10 @@ namespace MissingLink {
 
 UserInterface::UserInterface()
   : m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
-  , m_pLEDDriver(unique_ptr<LEDDriver>(new LEDDriver()))
-  , m_pDisplay(unique_ptr<SegmentDisplay>(new SegmentDisplay()))
   , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
 {
   // Configure Expander
   m_pExpander->Configure(ExpanderConfig);
-
-  // Configure LED Driver
-  m_pLEDDriver->Configure();
-
-  // Init Display
-  m_pDisplay->Init();
 
   // Clear interrupt state
   m_pExpander->ReadCapturedInterruptState();
@@ -118,47 +98,4 @@ void UserInterface::StartPollingInput() {
 
 void UserInterface::StopPollingInput() {
   m_pInputLoop->Stop();
-}
-
-void UserInterface::SetModeLED(EncoderMode mode) {
-   // turn off all modes first
-   m_pLEDDriver->SetBrightness(0.0, BPM_MODE_LED);
-   m_pLEDDriver->SetBrightness(0.0, LOOP_MODE_LED);
-   m_pLEDDriver->SetBrightness(0.0, CLK_MODE_LED);
-
-   int ledIndex;
-   switch (mode) {
-     case BPM:
-       ledIndex = BPM_MODE_LED;
-       break;
-     case LOOP:
-       ledIndex = LOOP_MODE_LED;
-       break;
-     case CLOCK:
-       ledIndex = CLK_MODE_LED;
-       break;
-     default:
-       return;
-   };
-   m_pLEDDriver->SetBrightness(0.25, ledIndex);
-}
-
-void UserInterface::SetAnimationLEDs(const float frame[6]) {
-  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
-    m_pLEDDriver->SetBrightness(frame[i], ANIM_LED_START + i);
-  }
-}
-
-void UserInterface::ClearAnimationLEDs() {
-  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
-    m_pLEDDriver->SetBrightness(0.1, ANIM_LED_START + i);
-  }
-}
-
-void UserInterface::WriteDisplay(std::string const &string) {
-  m_pDisplay->Write(string);
-}
-
-void UserInterface::ClearDisplay() {
-  m_pDisplay->Clear();
 }

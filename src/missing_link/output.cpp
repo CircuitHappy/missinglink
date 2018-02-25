@@ -8,7 +8,9 @@
 #include <pthread.h>
 #include <ableton/Link.hpp>
 #include "missing_link/hw_defs.h"
+#include "missing_link/types.hpp"
 #include "missing_link/gpio.hpp"
+#include "missing_link/view.hpp"
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
 
@@ -39,10 +41,10 @@ namespace MissingLink {
 
   struct OutputModel {
 
-    bool firstClock;
+    bool isFirstClock;
     bool clockHigh;
     bool resetHigh;
-    bool frameIndex;
+    int animFrameIndex;
 
     OutputModel(ableton::Link &link, Settings &settings) {
       auto timeline = link.captureAudioTimeline();
@@ -55,7 +57,7 @@ namespace MissingLink {
       const int edgesPerBeat = settings.ppqn * 2;
       const int edgesPerLoop = edgesPerBeat * settings.quantum;
       const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
-      firstClock = (currentEdges % edgesPerLoop) == 0;
+      isFirstClock = (currentEdges % edgesPerLoop) == 0;
       clockHigh = currentEdges % 2 == 0;
 
       const double secondsPerPhrase = 60.0 / (tempo / settings.quantum);
@@ -63,16 +65,17 @@ namespace MissingLink {
       resetHigh = (phase <= resetHighFraction);
 
       const double normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
-      frameIndex = min(NumAnimationFrames - 1, max(0, (int)floor(normalizedPhase * NumAnimationFrames)));
+      const int totalFrames = NumAnimationFrames;
+      animFrameIndex = min(totalFrames - 1, max(0, (int)floor(normalizedPhase * totalFrames)));
     }
   };
-
 }
 
-OutputLoop::OutputLoop(Engine::State &state)
+OutputLoop::OutputLoop(Engine::State &state, std::shared_ptr<MainView> pView)
   : Engine::Process(state)
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
+  , m_pView(pView)
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
@@ -89,10 +92,10 @@ void OutputLoop::Run() {
 
 void OutputLoop::process() {
 
-  if (m_state.playState == Engine::PlayState::Stopped) {
+  if (m_state.playState == PlayState::Stopped) {
     setClock(false);
     setReset(false);
-    //m_pUI->ClearAnimationLEDs();
+    m_pView->ClearAnimationLEDs();
     sleep();
     return;
   }
@@ -100,20 +103,20 @@ void OutputLoop::process() {
   auto settings = m_state.settings.load();
   OutputModel model(m_state.link, settings);
 
-  switch ((Engine::PlayState)m_state.playState) {
-    case Engine::PlayState::Cued:
+  switch (m_state.playState) {
+    case Cued:
       // start playing on first clock of loop
-      if (model.firstClock) {
-        m_state.playState = Engine::PlayState::Playing;
+      if (model.isFirstClock) {
+        m_state.playState = Playing;
         // Deliberate fallthrough here
       } else {
-        //m_pUI->SetAnimationLEDs(CueAnimationFrames[animFrameIndex]);
+        m_pView->SetAnimationLEDs(CueAnimationFrames[model.animFrameIndex]);
         break;
       }
-    case Engine::PlayState::Playing: {
+    case Playing: {
       setReset(model.resetHigh);
       setClock(model.clockHigh);
-        //m_pUI->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
+      m_pView->SetAnimationLEDs(PlayAnimationFrames[model.animFrameIndex]);
       break;
     }
     default:
@@ -132,10 +135,12 @@ void OutputLoop::setClock(bool high) {
   if (m_clockHigh == high) { return; }
   m_clockHigh = high;
   m_pClockOut->Write(high ? HIGH : LOW);
+  m_pView->SetClockLED(high);
 }
 
 void OutputLoop::setReset(bool high) {
   if (m_resetHigh == high) { return; }
   m_resetHigh = high;
   m_pResetOut->Write(high ? HIGH : LOW);
+  m_pView->SetResetLED(high);
 }

@@ -14,7 +14,6 @@ using namespace MissingLink;
 Engine::State::State()
   : running(true)
   , playState(Stopped)
-  , inputMode(BPM)
   , settings(Settings::Load())
   , link(settings.load().tempo)
 {
@@ -49,21 +48,22 @@ void Engine::Process::run() {
   }
 }
 
-
 Engine::Engine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
+  , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
+  , m_inputMode(BPM)
 {
   m_pUI->onPlayStop = bind(&Engine::playStop, this);
   m_pUI->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   m_pUI->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   m_pUI->onEncoderPress = bind(&Engine::toggleMode, this);
-  m_pUI->SetModeLED((UserInterface::EncoderMode)m_state.inputMode.load());
+  m_pView->SetInputModeLED(m_inputMode);
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 }
 
 void Engine::Run() {
-  OutputLoop output(m_state);
+  OutputLoop output(m_state, m_pView);
 
   output.Run();
   m_pUI->StartPollingInput();
@@ -84,7 +84,7 @@ void Engine::Run() {
 void Engine::runDisplayLoop() {
   while (m_state.running) {
     auto value = formatDisplayValue();
-    m_pUI->WriteDisplay(value);
+    m_pView->WriteDisplay(value);
     this_thread::sleep_for(chrono::milliseconds(50));
   }
 }
@@ -95,7 +95,7 @@ std::string Engine::formatDisplayValue() {
   stringStream.setf(ios::fixed, ios::floatfield);
   stringStream.precision(1);
 
-  switch (m_state.inputMode) {
+  switch (m_inputMode) {
     case BPM: {
       auto timeline = m_state.link.captureAppTimeline();
       stringStream << timeline.tempo();
@@ -133,14 +133,12 @@ void Engine::playStop() {
 }
 
 void Engine::toggleMode() {
-  int mode = m_state.inputMode;
-  mode = (mode + 1) % (int)NUM_INPUT_MODES;
-  m_state.inputMode = (InputMode)mode;
-  m_pUI->SetModeLED((UserInterface::EncoderMode)mode);
+  m_inputMode = (InputMode)((m_inputMode + 1) % (int)NUM_INPUT_MODES);
+  m_pView->SetInputModeLED(m_inputMode);
 }
 
 void Engine::routeEncoderAdjust(float amount) {
-  switch (m_state.inputMode) {
+  switch (m_inputMode) {
     case BPM:
       tempoAdjust(amount);
       break;
@@ -192,8 +190,8 @@ void Engine::setTempo(double tempo) {
   m_state.settings = settings;
 
   // switch back to tempo mode
-  if (m_state.inputMode != BPM) {
-    m_state.inputMode = BPM;
-    m_pUI->SetModeLED(UserInterface::BPM);
+  if (m_inputMode != BPM) {
+    m_inputMode = BPM;
+    m_pView->SetInputModeLED(BPM);
   }
 }

@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <memory>
+#include "missing_link/view.hpp"
 
 namespace MissingLink {
 
@@ -14,7 +15,7 @@ namespace MissingLink {
 
     public:
 
-      OutputLoop(Engine::State &state);
+      OutputLoop(Engine::State &state, std::shared_ptr<MainView> pView);
       void Run() override;
 
     private:
@@ -29,6 +30,8 @@ namespace MissingLink {
       std::unique_ptr<GPIO::Pin> m_pResetOut;
       bool m_clockHigh = false;
       bool m_resetHigh = false;
+
+      std::shared_ptr<MainView> m_pView;
   };
 
 };
