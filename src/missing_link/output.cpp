@@ -21,9 +21,7 @@ using std::max;
 
 namespace MissingLink {
 
-  static const double ResetPulseLength = 0.050; // seconds
-
-  static const int NumAnimationFrames = 4;
+  static const int NUM_ANIM_FRAMES = 4;
 
   static const float CueAnimationFrames[][6] =  {
     {1, 0.1, 0.1, 0.1, 0.1, 0.1},
@@ -39,36 +37,6 @@ namespace MissingLink {
     {0.1, 0.1, 0.1, 0.1, 1, 1}
   };
 
-  struct OutputModel {
-
-    bool isFirstClock;
-    bool clockHigh;
-    bool resetHigh;
-    int animFrameIndex;
-
-    OutputModel(ableton::Link &link, Settings &settings) {
-      auto timeline = link.captureAudioTimeline();
-
-      const auto now = link.clock().micros();
-      const double tempo = timeline.tempo();
-      const double beats = timeline.beatAtTime(now, settings.quantum);
-      const double phase = timeline.phaseAtTime(now, settings.quantum);
-
-      const int edgesPerBeat = settings.ppqn * 2;
-      const int edgesPerLoop = edgesPerBeat * settings.quantum;
-      const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
-      isFirstClock = (currentEdges % edgesPerLoop) == 0;
-      clockHigh = currentEdges % 2 == 0;
-
-      const double secondsPerPhrase = 60.0 / (tempo / settings.quantum);
-      const double resetHighFraction = ResetPulseLength / secondsPerPhrase;
-      resetHigh = (phase <= resetHighFraction);
-
-      const double normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
-      const int totalFrames = NumAnimationFrames;
-      animFrameIndex = min(totalFrames - 1, max(0, (int)floor(normalizedPhase * totalFrames)));
-    }
-  };
 }
 
 OutputProcess::OutputProcess(Engine::State &state, std::shared_ptr<MainView> pView)
@@ -100,8 +68,9 @@ void OutputProcess::process() {
     return;
   }
 
-  auto settings = m_state.settings.load();
-  OutputModel model(m_state.link, settings);
+  const auto settings = m_state.settings.load();
+  const auto model = OutputModel(m_state.link, settings, true);
+  const int animFrameIndex = min(NUM_ANIM_FRAMES - 1, max(0, (int)floor(model.normalizedPhase * NUM_ANIM_FRAMES)));
 
   switch (m_state.playState) {
     case Cued:
@@ -110,13 +79,13 @@ void OutputProcess::process() {
         m_state.playState = Playing;
         // Deliberate fallthrough here
       } else {
-        m_pView->SetAnimationLEDs(CueAnimationFrames[model.animFrameIndex]);
+        m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex]);
         break;
       }
     case Playing: {
       setReset(model.resetHigh);
       setClock(model.clockHigh);
-      m_pView->SetAnimationLEDs(PlayAnimationFrames[model.animFrameIndex]);
+      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
       break;
     }
     default:

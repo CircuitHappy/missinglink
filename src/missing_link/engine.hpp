@@ -82,4 +82,17 @@ namespace MissingLink {
       void setTempo(double tempo);
   };
 
+  /// Model for engine output processes
+  struct OutputModel {
+
+    bool isFirstClock;
+    bool clockHigh;
+    bool resetHigh;
+    double normalizedPhase;
+
+    OutputModel(ableton::Link &link,
+                const Settings &settings,
+                bool audioThread);
+  };
+
 }

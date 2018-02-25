@@ -195,3 +195,25 @@ void Engine::setTempo(double tempo) {
     m_pView->SetInputModeLED(BPM);
   }
 }
+
+
+OutputModel::OutputModel(ableton::Link &link, const Settings &settings, bool audioThread) {
+  auto timeline = audioThread ? link.captureAudioTimeline() : link.captureAppTimeline();
+
+  const auto now = link.clock().micros();
+  const double tempo = timeline.tempo();
+  const double beats = timeline.beatAtTime(now, settings.quantum);
+  const double phase = timeline.phaseAtTime(now, settings.quantum);
+  normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
+
+  const int edgesPerBeat = settings.ppqn * 2;
+  const int edgesPerLoop = edgesPerBeat * settings.quantum;
+  const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
+  isFirstClock = (currentEdges % edgesPerLoop) == 0;
+  clockHigh = currentEdges % 2 == 0;
+
+  const double secondsPerPhrase = 60.0 / (tempo / settings.quantum);
+  const double resetHighFraction = ML_RESET_PULSE_LENGTH / secondsPerPhrase;
+  resetHigh = (phase <= resetHighFraction);
+}
+
