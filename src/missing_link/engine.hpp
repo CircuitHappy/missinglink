@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <thread>
@@ -24,15 +25,23 @@ namespace MissingLink {
       void Run();
 
       enum PlayState {
-          Stopped,
-          Cued,
-          Playing
+        Stopped,
+        Cued,
+        Playing,
+        NUM_PLAY_STATES
+      };
+
+      enum InputMode {
+        BPM,
+        Loop,
+        Clock,
+        NUM_INPUT_MODES
       };
 
       struct State {
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
-        std::atomic<UserInterface::EncoderMode> encoderMode;
+        std::atomic<InputMode> inputMode;
         std::atomic<Settings> settings;
         ableton::Link link;
         State();
@@ -48,13 +57,19 @@ namespace MissingLink {
           virtual void Run();
           void Stop();
 
+          bool IsRunning() { return !m_bStopped; }
+
         protected:
 
           State &m_state;
-          std::atomic<bool> m_bStopped;
           std::unique_ptr<std::thread> m_pThread;
 
-          virtual void run() = 0;
+          virtual void run();
+          virtual void process() = 0;
+
+        private:
+
+          std::atomic<bool> m_bStopped;
       };
 
     private:
@@ -64,9 +79,7 @@ namespace MissingLink {
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;
       std::unique_ptr<TapTempo> m_pTapTempo;
-      std::chrono::microseconds m_lastOutputTime;
 
-      void runOutput();
       void runDisplayLoop();
 
       void playStop();

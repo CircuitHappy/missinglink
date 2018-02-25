@@ -60,8 +60,6 @@ UserInterface::UserInterface()
   , m_pLEDDriver(unique_ptr<LEDDriver>(new LEDDriver()))
   , m_pDisplay(unique_ptr<SegmentDisplay>(new SegmentDisplay()))
   , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
-  , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
-  , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
   // Configure Expander
   m_pExpander->Configure(ExpanderConfig);
@@ -143,16 +141,6 @@ void UserInterface::SetModeLED(EncoderMode mode) {
        return;
    };
    m_pLEDDriver->SetBrightness(0.25, ledIndex);
-}
-
-void UserInterface::SetClock(bool on) {
-  m_pClockOut->Write(on ? HIGH : LOW);
-  m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, CLOCK_LED);
-}
-
-void UserInterface::SetReset(bool on) {
-  m_pResetOut->Write(on ? HIGH : LOW);
-  m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, RESET_LED);
 }
 
 void UserInterface::SetAnimationLEDs(const float frame[6]) {

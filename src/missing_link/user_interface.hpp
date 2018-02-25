@@ -9,8 +9,6 @@
 #include <thread>
 #include <functional>
 #include <string>
-#include <vector>
-#include "missing_link/gpio.hpp"
 #include "missing_link/control.hpp"
 #include "missing_link/display.hpp"
 #include "missing_link/io_expander.hpp"
@@ -47,9 +45,6 @@ class UserInterface {
 
     void SetModeLED(EncoderMode mode);
 
-    void SetClock(bool on);
-    void SetReset(bool on);
-
     // Index of animation LED starting from 0
     void SetAnimationLEDs(const float frame[6]);
     void ClearAnimationLEDs();
@@ -63,8 +58,6 @@ class UserInterface {
     std::unique_ptr<LEDDriver> m_pLEDDriver;
     std::unique_ptr<SegmentDisplay> m_pDisplay;
     std::unique_ptr<ExpanderInputLoop> m_pInputLoop;
-    std::unique_ptr<GPIO::Pin> m_pClockOut;
-    std::unique_ptr<GPIO::Pin> m_pResetOut;
 };
 
 } // namespace
