@@ -8,6 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include "missing_link/gpio.hpp"
 #include "missing_link/view.hpp"
 
 namespace MissingLink {

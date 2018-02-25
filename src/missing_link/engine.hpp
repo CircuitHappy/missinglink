@@ -13,7 +13,6 @@
 #include "missing_link/types.hpp"
 #include "missing_link/tap_tempo.hpp"
 #include "missing_link/settings.hpp"
-#include "missing_link/user_interface.hpp"
 #include "missing_link/view.hpp"
 
 namespace MissingLink {
@@ -65,9 +64,9 @@ namespace MissingLink {
     private:
 
       State m_state;
-      std::shared_ptr<UserInterface> m_pUI;
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
+      std::vector<std::unique_ptr<Process>> m_processes;
 
       void playStop();
       void toggleMode();

@@ -8,8 +8,7 @@
 #include <vector>
 
 #include "missing_link/hw_defs.h"
-#include "missing_link/gpio.hpp"
-#include "missing_link/io_expander.hpp"
+#include "missing_link/engine.hpp"
 #include "missing_link/user_interface.hpp"
 
 using namespace std;
@@ -43,10 +42,15 @@ namespace MissingLink {
   };
 }
 
-UserInterface::UserInterface()
-  : m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
-  , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
+UserInputProcess::UserInputProcess(Engine::State &state)
+  : Engine::Process(state, std::chrono::microseconds(1000))
+  , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
+  , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
 {
+  // Configure interrupt pin and clear initial interrupt
+  m_pInterruptIn->SetEdgeMode(Pin::FALLING);
+  m_pInterruptIn->Read();
+
   // Configure Expander
   m_pExpander->Configure(ExpanderConfig);
 
@@ -54,48 +58,68 @@ UserInterface::UserInterface()
   m_pExpander->ReadCapturedInterruptState();
 
   // Register handlers
-  auto playButton = shared_ptr<Button>(new Button(PLAY_BUTTON));
+  auto playButton = unique_ptr<Button>(new Button(PLAY_BUTTON));
   playButton->onTriggered = [=]() {
     if (onPlayStop) {
       onPlayStop();
     }
   };
+  m_controls.push_back(std::move(playButton));
 
-  auto tapButton = shared_ptr<Button>(new Button(TAP_BUTTON));
+  auto tapButton = unique_ptr<Button>(new Button(TAP_BUTTON));
   tapButton->onTriggered = [=]() {
     if (onTapTempo) {
       onTapTempo();
     }
   };
+  m_controls.push_back(std::move(tapButton));
 
-  auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON, chrono::milliseconds(5), chrono::milliseconds(20)));
+  auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON, chrono::milliseconds(5), chrono::milliseconds(20)));
   encoderButton->onTriggered = [=]() {
     if (onEncoderPress) {
       onEncoderPress();
     }
   };
+  m_controls.push_back(std::move(encoderButton));
 
-  auto encoder = shared_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
+  auto encoder = unique_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
   encoder->onRotated = [=](float amount) {
     if (onEncoderRotate) {
       onEncoderRotate(amount);
     }
   };
-
-  m_pInputLoop->RegisterHandler(playButton);
-  m_pInputLoop->RegisterHandler(tapButton);
-  m_pInputLoop->RegisterHandler(encoderButton);
-  m_pInputLoop->RegisterHandler(encoder);
+  m_controls.push_back(std::move(encoder));
 }
 
-UserInterface::~UserInterface() {
-  StopPollingInput();
+void UserInputProcess::process() {
+  pollfd pfd = m_pInterruptIn->GetPollInfo();
+
+  // If interrupt is already low, handle immediately
+  if (m_pInterruptIn->Read() == GPIO::LOW) {
+    handleInterrupt();
+    return;
+  }
+
+  // Poll for 500ms
+  int result = ::poll(&pfd, 1, 500);
+
+  // No interrupts? try again
+  if (result == 0) { return; }
+
+  // Clear interrupt event
+  m_pInterruptIn->Read();
+
+  // Handle it
+  handleInterrupt();
 }
 
-void UserInterface::StartPollingInput() {
-  m_pInputLoop->Start();
-}
+void UserInputProcess::handleInterrupt() {
+  uint8_t flag = m_pExpander->ReadInterruptFlag();
+  uint8_t state = m_pExpander->ReadGPIO();
 
-void UserInterface::StopPollingInput() {
-  m_pInputLoop->Stop();
+  for (auto &control : m_controls) {
+    if (control->CanHandleInterrupt(flag)) {
+      control->HandleInterrupt(flag, state, m_pExpander);
+    }
+  }
 }

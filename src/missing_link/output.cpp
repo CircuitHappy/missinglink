@@ -11,7 +11,6 @@
 #include <ableton/Link.hpp>
 #include "missing_link/hw_defs.h"
 #include "missing_link/types.hpp"
-#include "missing_link/gpio.hpp"
 #include "missing_link/view.hpp"
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"

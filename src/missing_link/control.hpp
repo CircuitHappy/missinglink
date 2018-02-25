@@ -13,15 +13,27 @@
 
 namespace MissingLink {
 
-class Control : public ExpanderInputLoop::InterruptHandler {
+class Control {
 
   public:
 
     Control(std::vector<int> pinIndices);
     virtual ~Control();
 
+    bool CanHandleInterrupt(uint8_t flag) {
+      return (flag & m_flagMask) != 0;
+    }
+
+    void HandleInterrupt(uint8_t flag,
+                         uint8_t state,
+                         std::shared_ptr<IOExpander> pExpander);
+
   protected:
 
+    virtual void handleInterrupt(uint8_t flag,
+                                 uint8_t state,
+                                 std::shared_ptr<IOExpander> pExpander) = 0;
+    uint8_t m_flagMask = 0;
     std::chrono::steady_clock::time_point m_lastTriggered;
 };
 

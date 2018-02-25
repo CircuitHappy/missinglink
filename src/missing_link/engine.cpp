@@ -7,6 +7,7 @@
 #include <vector>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
+#include "missing_link/user_interface.hpp"
 
 using namespace std;
 using namespace MissingLink;
@@ -56,30 +57,30 @@ void Engine::Process::sleep() {
 }
 
 Engine::Engine()
-  : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
-  , m_pView(shared_ptr<MainView>(new MainView()))
+  : m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
 {
-  m_pUI->onPlayStop = bind(&Engine::playStop, this);
-  m_pUI->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
-  m_pUI->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
-  m_pUI->onEncoderPress = bind(&Engine::toggleMode, this);
+  auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(m_state));
+  m_processes.push_back(std::move(outputProcess));
+
+  auto viewProcess = unique_ptr<ViewUpdateProcess>(new ViewUpdateProcess(m_state, m_pView));
+  m_processes.push_back(std::move(viewProcess));
+
+  auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(m_state));
+  uiProcess->onPlayStop = bind(&Engine::playStop, this);
+  uiProcess->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
+  uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
+  uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
+  m_processes.push_back(std::move(uiProcess));
+
   m_pView->SetInputModeLED(m_state.inputMode);
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 }
 
 void Engine::Run() {
-
-  vector<shared_ptr<Process>> processes = {
-    shared_ptr<Process>(new OutputProcess(m_state)),
-    shared_ptr<Process>(new ViewUpdateProcess(m_state, m_pView))
-  };
-
-  for (auto process : processes) {
+  for (auto &process : m_processes) {
     process->Run();
   }
-
-  m_pUI->StartPollingInput();
 
   while (m_state.running) {
     Settings settings = m_state.settings.load();
@@ -87,11 +88,9 @@ void Engine::Run() {
     this_thread::sleep_for(chrono::seconds(1));
   }
 
-  for (auto process : processes) {
+  for (auto &process : m_processes) {
     process->Stop();
   }
-
-  m_pUI->StopPollingInput();
 }
 
 void Engine::playStop() {
