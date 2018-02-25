@@ -63,7 +63,7 @@ Engine::Engine()
 }
 
 void Engine::Run() {
-  OutputLoop output(m_state, m_pView);
+  OutputProcess output(m_state, m_pView);
 
   output.Run();
   m_pUI->StartPollingInput();

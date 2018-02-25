@@ -71,7 +71,7 @@ namespace MissingLink {
   };
 }
 
-OutputLoop::OutputLoop(Engine::State &state, std::shared_ptr<MainView> pView)
+OutputProcess::OutputProcess(Engine::State &state, std::shared_ptr<MainView> pView)
   : Engine::Process(state)
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
@@ -81,7 +81,7 @@ OutputLoop::OutputLoop(Engine::State &state, std::shared_ptr<MainView> pView)
   m_pResetOut->Write(LOW);
 }
 
-void OutputLoop::Run() {
+void OutputProcess::Run() {
   Process::Run();
   sched_param param;
   param.sched_priority = 90;
@@ -90,7 +90,7 @@ void OutputLoop::Run() {
   }
 }
 
-void OutputLoop::process() {
+void OutputProcess::process() {
 
   if (m_state.playState == PlayState::Stopped) {
     setClock(false);
@@ -126,19 +126,19 @@ void OutputLoop::process() {
   sleep();
 }
 
-void OutputLoop::sleep() {
+void OutputProcess::sleep() {
   auto sleepTime = std::chrono::microseconds(500);
   std::this_thread::sleep_for(sleepTime);
 }
 
-void OutputLoop::setClock(bool high) {
+void OutputProcess::setClock(bool high) {
   if (m_clockHigh == high) { return; }
   m_clockHigh = high;
   m_pClockOut->Write(high ? HIGH : LOW);
   m_pView->SetClockLED(high);
 }
 
-void OutputLoop::setReset(bool high) {
+void OutputProcess::setReset(bool high) {
   if (m_resetHigh == high) { return; }
   m_resetHigh = high;
   m_pResetOut->Write(high ? HIGH : LOW);

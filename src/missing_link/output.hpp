@@ -11,11 +11,11 @@
 
 namespace MissingLink {
 
-  class OutputLoop : public Engine::Process {
+  class OutputProcess : public Engine::Process {
 
     public:
 
-      OutputLoop(Engine::State &state, std::shared_ptr<MainView> pView);
+      OutputProcess(Engine::State &state, std::shared_ptr<MainView> pView);
       void Run() override;
 
     private:
