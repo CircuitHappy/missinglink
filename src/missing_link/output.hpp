@@ -15,14 +15,12 @@ namespace MissingLink {
 
     public:
 
-      OutputProcess(Engine::State &state, std::shared_ptr<MainView> pView);
+      OutputProcess(Engine::State &state);
       void Run() override;
 
     private:
 
       void process() override;
-      void sleep();
-
       void setClock(bool high);
       void setReset(bool high);
 
@@ -30,6 +28,18 @@ namespace MissingLink {
       std::unique_ptr<GPIO::Pin> m_pResetOut;
       bool m_clockHigh = false;
       bool m_resetHigh = false;
+  };
+
+  class ViewUpdateProcess : public Engine::Process {
+
+    public:
+
+      ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainView> pView);
+
+    private:
+
+      void process() override;
+      void animatePhase(float normalizedPhase, PlayState playState);
 
       std::shared_ptr<MainView> m_pView;
   };

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <thread>
@@ -38,7 +39,7 @@ namespace MissingLink {
 
         public:
 
-          Process(State &state);
+          Process(State &state, std::chrono::microseconds sleepTime);
           virtual ~Process();
 
           virtual void Run();
@@ -56,12 +57,12 @@ namespace MissingLink {
 
         private:
 
+          void sleep();
+          std::chrono::microseconds m_sleepTime;
           std::atomic<bool> m_bStopped;
       };
 
     private:
-
-      static constexpr double PULSE_LENGTH = 0.030; // seconds
 
       State m_state;
       std::shared_ptr<UserInterface> m_pUI;

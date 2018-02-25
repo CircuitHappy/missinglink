@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
 
@@ -20,8 +21,9 @@ Engine::State::State()
   link.enable(true);
 }
 
-Engine::Process::Process(State &state)
+Engine::Process::Process(State &state, std::chrono::microseconds sleepTime)
   : m_state(state)
+  , m_sleepTime(sleepTime)
   , m_bStopped(true)
 {}
 
@@ -45,7 +47,12 @@ void Engine::Process::Stop() {
 void Engine::Process::run() {
   while (!m_bStopped) {
     process();
+    sleep();
   }
+}
+
+void Engine::Process::sleep() {
+  std::this_thread::sleep_for(m_sleepTime);
 }
 
 Engine::Engine()
@@ -63,20 +70,29 @@ Engine::Engine()
 }
 
 void Engine::Run() {
-  OutputProcess output(m_state, m_pView);
 
-  output.Run();
+  vector<shared_ptr<Process>> processes = {
+    shared_ptr<Process>(new OutputProcess(m_state)),
+    shared_ptr<Process>(new ViewUpdateProcess(m_state, m_pView))
+  };
+
+  for (auto process : processes) {
+    process->Run();
+  }
+
   m_pUI->StartPollingInput();
 
   std::thread displayThread(&Engine::runDisplayLoop, this);
-
   while (m_state.running) {
     Settings settings = m_state.settings.load();
     Settings::Save(settings);
     this_thread::sleep_for(chrono::seconds(1));
   }
 
-  output.Stop();
+  for (auto process : processes) {
+    process->Stop();
+  }
+
   m_pUI->StopPollingInput();
   displayThread.join();
 }
