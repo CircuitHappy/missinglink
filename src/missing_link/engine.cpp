@@ -4,7 +4,6 @@
  */
 
 #include <iostream>
-#include <sstream>
 #include <vector>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
@@ -15,6 +14,7 @@ using namespace MissingLink;
 Engine::State::State()
   : running(true)
   , playState(Stopped)
+  , inputMode(BPM)
   , settings(Settings::Load())
   , link(settings.load().tempo)
 {
@@ -59,13 +59,12 @@ Engine::Engine()
   : m_pUI(shared_ptr<UserInterface>(new UserInterface()))
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
-  , m_inputMode(BPM)
 {
   m_pUI->onPlayStop = bind(&Engine::playStop, this);
   m_pUI->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   m_pUI->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   m_pUI->onEncoderPress = bind(&Engine::toggleMode, this);
-  m_pView->SetInputModeLED(m_inputMode);
+  m_pView->SetInputModeLED(m_state.inputMode);
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 }
 
@@ -82,7 +81,6 @@ void Engine::Run() {
 
   m_pUI->StartPollingInput();
 
-  std::thread displayThread(&Engine::runDisplayLoop, this);
   while (m_state.running) {
     Settings settings = m_state.settings.load();
     Settings::Save(settings);
@@ -94,40 +92,6 @@ void Engine::Run() {
   }
 
   m_pUI->StopPollingInput();
-  displayThread.join();
-}
-
-void Engine::runDisplayLoop() {
-  while (m_state.running) {
-    auto value = formatDisplayValue();
-    m_pView->WriteDisplay(value);
-    this_thread::sleep_for(chrono::milliseconds(50));
-  }
-}
-
-std::string Engine::formatDisplayValue() {
-
-  ostringstream stringStream;
-  stringStream.setf(ios::fixed, ios::floatfield);
-  stringStream.precision(1);
-
-  switch (m_inputMode) {
-    case BPM: {
-      auto timeline = m_state.link.captureAppTimeline();
-      stringStream << timeline.tempo();
-      break;
-    }
-    case Loop:
-      stringStream << (int)m_state.settings.load().quantum;
-      break;
-    case Clock:
-      stringStream << (int)m_state.settings.load().ppqn;
-      break;
-    default:
-      break;
-  }
-
-  return stringStream.str();
 }
 
 void Engine::playStop() {
@@ -149,12 +113,39 @@ void Engine::playStop() {
 }
 
 void Engine::toggleMode() {
-  m_inputMode = (InputMode)((m_inputMode + 1) % (int)NUM_INPUT_MODES);
-  m_pView->SetInputModeLED(m_inputMode);
+  InputMode inputMode = m_state.inputMode.load();
+  inputMode = (InputMode)((inputMode + 1) % (int)NUM_INPUT_MODES);
+  m_state.inputMode = inputMode;
+  m_pView->SetInputModeLED(inputMode);
+}
+
+void Engine::resetTimeline() {
+  // Reset to beat zero in 1 ms
+  auto timeline = m_state.link.captureAppTimeline();
+  auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
+  timeline.forceBeatAtTime(0, resetTime, m_state.settings.load().quantum);
+  m_state.link.commitAppTimeline(timeline);
+}
+
+void Engine::setTempo(double tempo) {
+  auto now = m_state.link.clock().micros();
+  auto timeline = m_state.link.captureAppTimeline();
+  timeline.setTempo(tempo, now);
+  m_state.link.commitAppTimeline(timeline);
+
+  auto settings = m_state.settings.load();
+  settings.tempo = tempo;
+  m_state.settings = settings;
+
+  // switch back to tempo mode
+  if (m_state.inputMode != BPM) {
+    m_state.inputMode = BPM;
+    m_pView->SetInputModeLED(BPM);
+  }
 }
 
 void Engine::routeEncoderAdjust(float amount) {
-  switch (m_inputMode) {
+  switch (m_state.inputMode) {
     case BPM:
       tempoAdjust(amount);
       break;
@@ -167,14 +158,6 @@ void Engine::routeEncoderAdjust(float amount) {
     default:
       break;
   }
-}
-
-void Engine::resetTimeline() {
-  // Reset to beat zero in 1 ms
-  auto timeline = m_state.link.captureAppTimeline();
-  auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
-  timeline.forceBeatAtTime(0, resetTime, m_state.settings.load().quantum);
-  m_state.link.commitAppTimeline(timeline);
 }
 
 void Engine::tempoAdjust(float amount) {
@@ -195,29 +178,12 @@ void Engine::ppqnAdjust(int amount) {
   m_state.settings = settings;
 }
 
-void Engine::setTempo(double tempo) {
-  auto now = m_state.link.clock().micros();
-  auto timeline = m_state.link.captureAppTimeline();
-  timeline.setTempo(tempo, now);
-  m_state.link.commitAppTimeline(timeline);
-
-  auto settings = m_state.settings.load();
-  settings.tempo = tempo;
-  m_state.settings = settings;
-
-  // switch back to tempo mode
-  if (m_inputMode != BPM) {
-    m_inputMode = BPM;
-    m_pView->SetInputModeLED(BPM);
-  }
-}
-
 
 OutputModel::OutputModel(ableton::Link &link, const Settings &settings, bool audioThread) {
   auto timeline = audioThread ? link.captureAudioTimeline() : link.captureAppTimeline();
+  tempo = timeline.tempo();
 
   const auto now = link.clock().micros();
-  const double tempo = timeline.tempo();
   const double beats = timeline.beatAtTime(now, settings.quantum);
   const double phase = timeline.phaseAtTime(now, settings.quantum);
   normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));

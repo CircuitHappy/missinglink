@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <memory>
+#include <string>
 #include "missing_link/view.hpp"
 
 namespace MissingLink {
@@ -40,6 +41,8 @@ namespace MissingLink {
 
       void process() override;
       void animatePhase(float normalizedPhase, PlayState playState);
+
+      std::string formatDisplayValue(double tempo, const Settings &settings);
 
       std::shared_ptr<MainView> m_pView;
   };

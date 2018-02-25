@@ -8,7 +8,6 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <string>
 #include <thread>
 #include <ableton/Link.hpp>
 #include "missing_link/types.hpp"
@@ -30,6 +29,7 @@ namespace MissingLink {
       struct State {
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
+        std::atomic<InputMode> inputMode;
         std::atomic<Settings> settings;
         ableton::Link link;
         State();
@@ -68,24 +68,22 @@ namespace MissingLink {
       std::shared_ptr<UserInterface> m_pUI;
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
-      std::atomic<InputMode> m_inputMode;
-
-      void runDisplayLoop();
 
       void playStop();
       void toggleMode();
-      std::string formatDisplayValue();
-      void routeEncoderAdjust(float amount);
       void resetTimeline();
+      void setTempo(double tempo);
+
+      void routeEncoderAdjust(float amount);
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
-      void setTempo(double tempo);
   };
 
   /// Model for engine output processes
   struct OutputModel {
 
+    double tempo;
     bool isFirstClock;
     bool clockHigh;
     bool resetHigh;

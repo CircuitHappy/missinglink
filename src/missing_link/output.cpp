@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <thread>
 #include <pthread.h>
+#include <iostream>
+#include <sstream>
 #include <ableton/Link.hpp>
 #include "missing_link/hw_defs.h"
 #include "missing_link/types.hpp"
@@ -113,6 +115,9 @@ void ViewUpdateProcess::process() {
   m_pView->SetClockLED(model.clockHigh && playing);
   m_pView->SetResetLED(model.resetHigh && playing);
   animatePhase(model.normalizedPhase, playState);
+
+  auto displayValue = formatDisplayValue(model.tempo, settings);
+  m_pView->WriteDisplay(displayValue);
 }
 
 void ViewUpdateProcess::animatePhase(float normalizedPhase, PlayState playState) {
@@ -133,5 +138,28 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, PlayState playState)
       m_pView->ClearAnimationLEDs();
       break;
   }
+}
+
+std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &settings) {
+
+  std::ostringstream stringStream;
+  stringStream.setf(std::ios::fixed, std::ios::floatfield);
+  stringStream.precision(1);
+
+  switch (m_state.inputMode) {
+    case BPM:
+      stringStream << tempo;
+      break;
+    case Loop:
+      stringStream << (int)settings.quantum;
+      break;
+    case Clock:
+      stringStream << (int)settings.ppqn;
+      break;
+    default:
+      break;
+  }
+
+  return stringStream.str();
 }
 
