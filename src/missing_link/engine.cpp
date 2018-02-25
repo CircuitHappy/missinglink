@@ -11,25 +11,6 @@
 using namespace std;
 using namespace MissingLink;
 
-#define NUM_ANIM_FRAMES 4
-
-namespace MissingLink {
-
-  static const float CueAnimationFrames[][6] =  {
-    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
-    {1, 1, 0.1, 0.1, 0.1, 1},
-    {1, 1, 1, 0.1, 1, 1},
-    {1, 1, 1, 1, 1, 1}
-  };
-
-  static const float PlayAnimationFrames[][6] = {
-    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
-    {0.1, 1, 1, 0.1, 0.1, 0.1},
-    {0.1, 0.1, 0.1, 1, 0.1, 0.1},
-    {0.1, 0.1, 0.1, 0.1, 1, 1}
-  };
-}
-
 Engine::State::State()
   : running(true)
   , playState(Stopped)
