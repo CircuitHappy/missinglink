@@ -141,7 +141,7 @@ void Pin::open() {
   }
 
   auto strValuePath = m_pinInterfacePath + "/value";
-  if ((m_fd = ::open(strValuePath.c_str(), O_RDWR)) < 0) {
+  if ((m_fd = ::open(strValuePath.c_str(), O_RDWR | O_NONBLOCK)) < 0) {
     std::cerr << "Failed to open value interface for pin: " << std::strerror(errno) << std::endl;
   }
 }
@@ -205,7 +205,7 @@ void I2CDevice::WriteBlock(uint8_t regAddr, const uint8_t *values, int nBytes) {
 
 void I2CDevice::open(uint8_t bus, uint8_t devAddr) {
   string interface = "/dev/i2c-" + std::to_string(bus);
-  m_fd = ::open(interface.c_str(), O_RDWR);
+  m_fd = ::open(interface.c_str(), O_RDWR | O_NONBLOCK);
   if (::ioctl(m_fd, I2C_SLAVE, devAddr)) {
     std::cerr << "[ERROR] Could not open I2C interface" << std::endl;
   }
