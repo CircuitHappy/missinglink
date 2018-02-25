@@ -4,6 +4,7 @@
  */
 
 #include <iostream>
+#include <cmath>
 #include "missing_link/control.hpp"
 
 using namespace std;
@@ -97,10 +98,20 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
 
   float rotationAmount = 0.0;
   if (std::abs(m_encVal) >= 4) {
+
+    float acc = 1.0;
+    auto now = std::chrono::steady_clock::now();
+    auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastTriggered).count();
+    if (interval > 0) {
+      float factor = fmin(1.0, fmax(0.0, (100.0 - (float)interval)/100.0));
+      acc += factor * 3.0;
+    }
+    m_lastTriggered = now;
+
     if (m_encVal > 0) {
-      rotationAmount = 1.0;
+      rotationAmount = 1.0 * acc;
     } else {
-      rotationAmount = -1.0;
+      rotationAmount = -1.0 * acc;
     }
     m_encVal = 0;
   }

@@ -144,15 +144,16 @@ void Engine::setTempo(double tempo) {
 }
 
 void Engine::routeEncoderAdjust(float amount) {
+  float rounded = round(amount);
   switch (m_state.inputMode) {
     case BPM:
-      tempoAdjust(amount);
+      tempoAdjust(rounded);
       break;
     case Loop:
-      loopAdjust((int)amount);
+      loopAdjust((int)rounded);
       break;
     case Clock:
-      ppqnAdjust((int)amount);
+      ppqnAdjust((int)rounded);
       break;
     default:
       break;
