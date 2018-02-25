@@ -27,9 +27,6 @@ class UserInterface {
       NUM_MODES
     };
 
-    static float CueAnimation[4][6];
-    static float PlayAnimation[4][6];
-
     UserInterface();
     virtual ~UserInterface();
 

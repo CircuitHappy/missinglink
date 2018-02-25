@@ -22,7 +22,6 @@ OutputLoop::OutputLoop(Engine::State &state)
   : Engine::Process(state)
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
-  , m_lastOutputTime(0)
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
@@ -38,12 +37,11 @@ void OutputLoop::Run() {
 }
 
 void OutputLoop::process() {
-  const auto lastTime = m_lastOutputTime;
-  const auto currentTime = m_state.link.clock().micros();
 
-  m_lastOutputTime = currentTime;
-
-  if (lastTime.count() == 0 || currentTime < lastTime) {
+  if (m_state.playState == Engine::PlayState::Stopped) {
+    setClock(false);
+    setReset(false);
+    //m_pUI->ClearAnimationLEDs();
     sleep();
     return;
   }
@@ -51,24 +49,22 @@ void OutputLoop::process() {
   auto timeline = m_state.link.captureAudioTimeline();
   auto settings = m_state.settings.load();
 
+  const auto now = m_state.link.clock().micros();
   const double tempo = timeline.tempo();
-  const double lastBeats = timeline.beatAtTime(lastTime, settings.quantum);
-  const double currentBeats = timeline.beatAtTime(currentTime, settings.quantum);
-  const double currentPhase = timeline.phaseAtTime(currentTime, settings.quantum);
+  const double beats = timeline.beatAtTime(now, settings.quantum);
+  const double phase = timeline.phaseAtTime(now, settings.quantum);
 
   const int edgesPerBeat = settings.ppqn * 2;
   const int edgesPerLoop = edgesPerBeat * settings.quantum;
-  const int lastEdges = (int)floor(lastBeats * (double)edgesPerBeat);
-  const int currentEdges = (int)floor(currentBeats * (double)edgesPerBeat);
-  const bool isNewEdge = currentEdges > lastEdges;
+  const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
 
-  //const double normalizedPhase = min(1.0, max(0.0, currentPhase / (double)settings.quantum));
+  //const double normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
   //const int animFrameIndex = min(NUM_ANIM_FRAMES - 1, max(0, (int)floor(normalizedPhase * NUM_ANIM_FRAMES)));
 
   switch ((Engine::PlayState)m_state.playState) {
     case Engine::PlayState::Cued:
       //set state to playing if there are no peers or we are at the starting edge of loop
-      if ( isNewEdge && currentEdges % edgesPerLoop == 0 ) {
+      if ( currentEdges % edgesPerLoop == 0 ) {
         m_state.playState = Engine::PlayState::Playing;
         // Deliberate fallthrough here
       } else {
@@ -78,22 +74,15 @@ void OutputLoop::process() {
     case Engine::PlayState::Playing: {
       const double secondsPerPhrase = 60.0 / (tempo / settings.quantum);
       const double resetHighFraction = ResetPulseLength / secondsPerPhrase;
-      const bool resetHigh = (currentPhase <= resetHighFraction);
-
+      const bool resetHigh = (phase <= resetHighFraction);
       setReset(resetHigh);
 
-      if (isNewEdge) {
-        const bool clockHigh = currentEdges % 2 == 0;
-        setClock(clockHigh);
+      const bool clockHigh = currentEdges % 2 == 0;
+      setClock(clockHigh);
         //m_pUI->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
-      }
-
       break;
     }
     default:
-      setClock(false);
-      setReset(false);
-      //m_pUI->ClearAnimationLEDs();
       break;
   }
 

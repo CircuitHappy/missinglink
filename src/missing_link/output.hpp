@@ -27,7 +27,6 @@ namespace MissingLink {
 
       std::unique_ptr<GPIO::Pin> m_pClockOut;
       std::unique_ptr<GPIO::Pin> m_pResetOut;
-      std::chrono::microseconds m_lastOutputTime;
       bool m_clockHigh = false;
       bool m_resetHigh = false;
   };
