@@ -10,10 +10,17 @@ using namespace std;
 using namespace MissingLink;
 
 Control::Control(vector<int> pinIndices)
-  : ExpanderInputLoop::InterruptHandler(pinIndices)
-{}
+{
+  for (auto index : pinIndices) {
+    m_flagMask |= (1 << index);
+  }
+}
 
 Control::~Control() {}
+
+void Control::HandleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander> pExpander) {
+  handleInterrupt(flag, state, pExpander);
+}
 
 Button::Button(int pinIndex,
                chrono::milliseconds debounceInterval,

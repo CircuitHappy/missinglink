@@ -8,11 +8,8 @@
 #include <vector>
 
 #include "missing_link/hw_defs.h"
-#include "missing_link/gpio.hpp"
-#include "missing_link/io_expander.hpp"
+#include "missing_link/engine.hpp"
 #include "missing_link/user_interface.hpp"
-
-#define NUM_ANIM_LEDS     6
 
 using namespace std;
 using namespace MissingLink;
@@ -26,16 +23,6 @@ namespace MissingLink {
     ENC_BUTTON    = 2,
     PLAY_BUTTON   = 3,
     TAP_BUTTON    = 4
-  };
-
-  enum OutputLEDIndex {
-    CLOCK_LED       = 0,
-    RESET_LED       = 1,
-    BPM_MODE_LED    = 2,
-    LOOP_MODE_LED   = 3,
-    CLK_MODE_LED    = 4,
-    WIFI_LED        = 5,
-    ANIM_LED_START  = 8 // start of 6 consecutive animation LEDs
   };
 
   static IOExpander::InterruptConfiguration ExpanderIntConfig = {
@@ -55,122 +42,84 @@ namespace MissingLink {
   };
 }
 
-UserInterface::UserInterface()
-  : m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
-  , m_pLEDDriver(unique_ptr<LEDDriver>(new LEDDriver()))
-  , m_pDisplay(unique_ptr<SegmentDisplay>(new SegmentDisplay()))
-  , m_pInputLoop(unique_ptr<ExpanderInputLoop>(new ExpanderInputLoop(m_pExpander, ML_INTERRUPT_PIN)))
-  , m_pClockOut(unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
-  , m_pResetOut(unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
+UserInputProcess::UserInputProcess(Engine::State &state)
+  : Engine::Process(state, std::chrono::microseconds(1000))
+  , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
+  , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
 {
+  // Configure interrupt pin and clear initial interrupt
+  m_pInterruptIn->SetEdgeMode(Pin::FALLING);
+  m_pInterruptIn->Read();
+
   // Configure Expander
   m_pExpander->Configure(ExpanderConfig);
-
-  // Configure LED Driver
-  m_pLEDDriver->Configure();
-
-  // Init Display
-  m_pDisplay->Init();
 
   // Clear interrupt state
   m_pExpander->ReadCapturedInterruptState();
 
   // Register handlers
-  auto playButton = shared_ptr<Button>(new Button(PLAY_BUTTON));
+  auto playButton = unique_ptr<Button>(new Button(PLAY_BUTTON));
   playButton->onTriggered = [=]() {
     if (onPlayStop) {
       onPlayStop();
     }
   };
+  m_controls.push_back(std::move(playButton));
 
-  auto tapButton = shared_ptr<Button>(new Button(TAP_BUTTON));
+  auto tapButton = unique_ptr<Button>(new Button(TAP_BUTTON));
   tapButton->onTriggered = [=]() {
     if (onTapTempo) {
       onTapTempo();
     }
   };
+  m_controls.push_back(std::move(tapButton));
 
-  auto encoderButton = shared_ptr<Button>(new Button(ENC_BUTTON, chrono::milliseconds(5), chrono::milliseconds(20)));
+  auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON, chrono::milliseconds(5), chrono::milliseconds(20)));
   encoderButton->onTriggered = [=]() {
     if (onEncoderPress) {
       onEncoderPress();
     }
   };
+  m_controls.push_back(std::move(encoderButton));
 
-  auto encoder = shared_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
+  auto encoder = unique_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
   encoder->onRotated = [=](float amount) {
     if (onEncoderRotate) {
       onEncoderRotate(amount);
     }
   };
-
-  m_pInputLoop->RegisterHandler(playButton);
-  m_pInputLoop->RegisterHandler(tapButton);
-  m_pInputLoop->RegisterHandler(encoderButton);
-  m_pInputLoop->RegisterHandler(encoder);
+  m_controls.push_back(std::move(encoder));
 }
 
-UserInterface::~UserInterface() {
-  StopPollingInput();
-}
+void UserInputProcess::process() {
+  pollfd pfd = m_pInterruptIn->GetPollInfo();
 
-void UserInterface::StartPollingInput() {
-  m_pInputLoop->Start();
-}
-
-void UserInterface::StopPollingInput() {
-  m_pInputLoop->Stop();
-}
-
-void UserInterface::SetModeLED(EncoderMode mode) {
-   // turn off all modes first
-   m_pLEDDriver->SetBrightness(0.0, BPM_MODE_LED);
-   m_pLEDDriver->SetBrightness(0.0, LOOP_MODE_LED);
-   m_pLEDDriver->SetBrightness(0.0, CLK_MODE_LED);
-
-   int ledIndex;
-   switch (mode) {
-     case BPM:
-       ledIndex = BPM_MODE_LED;
-       break;
-     case LOOP:
-       ledIndex = LOOP_MODE_LED;
-       break;
-     case CLOCK:
-       ledIndex = CLK_MODE_LED;
-       break;
-     default:
-       return;
-   };
-   m_pLEDDriver->SetBrightness(0.25, ledIndex);
-}
-
-void UserInterface::SetClock(bool on) {
-  m_pClockOut->Write(on ? HIGH : LOW);
-  m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, CLOCK_LED);
-}
-
-void UserInterface::SetReset(bool on) {
-  m_pResetOut->Write(on ? HIGH : LOW);
-  m_pLEDDriver->SetBrightness(on ? 1.0 : 0.0, RESET_LED);
-}
-
-void UserInterface::SetAnimationLEDs(const float frame[6]) {
-  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
-    m_pLEDDriver->SetBrightness(frame[i], ANIM_LED_START + i);
+  // If interrupt is already low, handle immediately
+  if (m_pInterruptIn->Read() == GPIO::LOW) {
+    handleInterrupt();
+    return;
   }
+
+  // Poll for 500ms
+  int result = ::poll(&pfd, 1, 500);
+
+  // No interrupts? try again
+  if (result == 0) { return; }
+
+  // Clear interrupt event
+  m_pInterruptIn->Read();
+
+  // Handle it
+  handleInterrupt();
 }
 
-void UserInterface::ClearAnimationLEDs() {
-  for (int i = 0; i < NUM_ANIM_LEDS; i ++) {
-    m_pLEDDriver->SetBrightness(0.1, ANIM_LED_START + i);
+void UserInputProcess::handleInterrupt() {
+  uint8_t flag = m_pExpander->ReadInterruptFlag();
+  uint8_t state = m_pExpander->ReadGPIO();
+
+  for (auto &control : m_controls) {
+    if (control->CanHandleInterrupt(flag)) {
+      control->HandleInterrupt(flag, state, m_pExpander);
+    }
   }
-}
-
-void UserInterface::WriteDisplay(std::string const &string) {
-  m_pDisplay->Write(string);
-}
-
-void UserInterface::ClearDisplay() {
-  m_pDisplay->Clear();
 }
