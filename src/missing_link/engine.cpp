@@ -173,8 +173,10 @@ void Engine::loopAdjust(int amount) {
 }
 
 void Engine::ppqnAdjust(int amount) {
+  int max_index = Settings::ppqn_options.size() - 1;
   auto settings = m_state.settings.load();
-  settings.ppqn = std::min(24, std::max(1, settings.ppqn + amount));
+  settings.ppqn_index = std::min(max_index, std::max(0, settings.ppqn_index + amount));
+  settings.ppqn = Settings::ppqn_options[settings.ppqn_index];
   m_state.settings = settings;
 }
 
@@ -198,4 +200,3 @@ OutputModel::OutputModel(ableton::Link &link, const Settings &settings, bool aud
   const double resetHighFraction = ML_RESET_PULSE_LENGTH / secondsPerPhrase;
   resetHigh = (phase <= resetHighFraction);
 }
-

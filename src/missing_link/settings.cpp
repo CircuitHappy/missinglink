@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <cstdio>
 #include <unistd.h>
+#include <vector>
 #include <libconfig.h++>
 #include "missing_link/settings.hpp"
 
@@ -14,6 +15,8 @@
 
 using namespace libconfig;
 using namespace MissingLink;
+
+const std::vector<int> Settings :: ppqn_options ({1, 2, 4, 8, 16, 24});
 
 Settings Settings::Load() {
   Settings settings;
@@ -38,7 +41,8 @@ Settings Settings::Load() {
   try {
     settings.tempo = config.lookup("tempo");
     settings.quantum = config.lookup("quantum");
-    settings.ppqn = config.lookup("ppqn");
+    settings.ppqn_index = config.lookup("ppqn_index");
+    settings.ppqn = ppqn_options[settings.ppqn_index];
   } catch (const SettingNotFoundException &exc) {
     std::cerr << "One or more settings missing from config file" << std::endl;
   }
@@ -47,7 +51,7 @@ Settings Settings::Load() {
     "Loaded Settings:" <<
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
-    "\n  ppqn: " << settings.ppqn << std::endl;
+    "\n  ppqn: " << settings.ppqn_index << std::endl;
 
   return settings;
 }
@@ -64,7 +68,7 @@ void Settings::Save(const Settings settings) {
   Setting &root = config.getRoot();
   root.add("tempo", Setting::TypeFloat) = settings.tempo;
   root.add("quantum", Setting::TypeInt) = settings.quantum;
-  root.add("ppqn", Setting::TypeInt) = settings.ppqn;
+  root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
 
   try {
     config.write(file);

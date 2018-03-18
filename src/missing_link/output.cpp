@@ -161,4 +161,3 @@ std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &
 
   return stringStream.str();
 }
-
