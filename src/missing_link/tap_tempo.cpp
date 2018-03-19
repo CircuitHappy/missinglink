@@ -29,7 +29,7 @@ void TapTempo::Tap() {
 
   const auto totalInterval = now - m_startTapTime;
   const auto averageInterval = totalInterval / (double)(m_tapCount - 1);
-  const double newTempo = seconds(60)/averageInterval;
+  const double newTempo = (int)((seconds(60)/averageInterval) + 0.5);
 
   if (onNewTempo) {
     onNewTempo(newTempo);
