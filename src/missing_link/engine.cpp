@@ -189,7 +189,7 @@ OutputModel::OutputModel(ableton::Link &link, const Settings &settings, bool aud
   const double phase = timeline.phaseAtTime(now, settings.quantum);
   normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
 
-  const int edgesPerBeat = settings.getPPQN(settings.ppqn_index) * 2;
+  const int edgesPerBeat = settings.getPPQN() * 2;
   const int edgesPerLoop = edgesPerBeat * settings.quantum;
   const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
   isFirstClock = (currentEdges % edgesPerLoop) == 0;

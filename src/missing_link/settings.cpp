@@ -50,7 +50,7 @@ Settings Settings::Load() {
     "Loaded Settings:" <<
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
-    "\n  ppqn: " << settings.getPPQN(settings.ppqn_index) << std::endl;
+    "\n  ppqn: " << settings.getPPQN() << std::endl;
 
   return settings;
 }
@@ -85,6 +85,6 @@ void Settings::Save(const Settings settings) {
   fclose(file);
 }
 
-int Settings::getPPQN(int index) {
-  return ppqn_options[index];
+int Settings::getPPQN() const {
+  return ppqn_options[ppqn_index];
 }

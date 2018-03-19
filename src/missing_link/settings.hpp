@@ -26,7 +26,7 @@ struct Settings {
   static void Save(const Settings settings);
 
   //look up ppqn value in ppqn_options vector
-  static int getPPQN(int index);
+  int getPPQN() const;
 };
 
 }
