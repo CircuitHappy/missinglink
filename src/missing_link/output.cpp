@@ -81,20 +81,24 @@ void OutputProcess::setReset(bool high) {
 
 namespace MissingLink {
 
-  static const int NUM_ANIM_FRAMES = 4;
+  static const int NUM_ANIM_FRAMES = 6;
 
   static const float CueAnimationFrames[][6] =  {
     {1, 0.1, 0.1, 0.1, 0.1, 0.1},
+    {1, 1, 0.1, 0.1, 0.1, 0.1},
     {1, 1, 0.1, 0.1, 0.1, 1},
+    {1, 1, 1, 0.1, 0.1, 1},
     {1, 1, 1, 0.1, 1, 1},
     {1, 1, 1, 1, 1, 1}
   };
 
   static const float PlayAnimationFrames[][6] = {
     {1, 0.1, 0.1, 0.1, 0.1, 0.1},
-    {0.1, 1, 1, 0.1, 0.1, 0.1},
+    {0.1, 1, 0.1, 0.1, 0.1, 0.1},
+    {0.1, 0.1, 1, 0.1, 0.1, 0.1},
     {0.1, 0.1, 0.1, 1, 0.1, 0.1},
-    {0.1, 0.1, 0.1, 0.1, 1, 1}
+    {0.1, 0.1, 0.1, 0.1, 1, 0.1},
+    {0.1, 0.1, 0.1, 0.1, 0.1, 1}
   };
 
 }
@@ -161,4 +165,3 @@ std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &
 
   return stringStream.str();
 }
-
