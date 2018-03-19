@@ -42,7 +42,6 @@ Settings Settings::Load() {
     settings.tempo = config.lookup("tempo");
     settings.quantum = config.lookup("quantum");
     settings.ppqn_index = config.lookup("ppqn_index");
-    settings.ppqn = ppqn_options[settings.ppqn_index];
   } catch (const SettingNotFoundException &exc) {
     std::cerr << "One or more settings missing from config file" << std::endl;
   }
@@ -51,7 +50,7 @@ Settings Settings::Load() {
     "Loaded Settings:" <<
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
-    "\n  ppqn: " << settings.ppqn_index << std::endl;
+    "\n  ppqn: " << settings.getPPQN(settings.ppqn_index) << std::endl;
 
   return settings;
 }
@@ -84,4 +83,8 @@ void Settings::Save(const Settings settings) {
   }
 
   fclose(file);
+}
+
+int Settings::getPPQN(int index) {
+  return ppqn_options[index];
 }

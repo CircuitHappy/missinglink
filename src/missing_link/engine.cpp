@@ -176,7 +176,6 @@ void Engine::ppqnAdjust(int amount) {
   int max_index = Settings::ppqn_options.size() - 1;
   auto settings = m_state.settings.load();
   settings.ppqn_index = std::min(max_index, std::max(0, settings.ppqn_index + amount));
-  settings.ppqn = Settings::ppqn_options[settings.ppqn_index];
   m_state.settings = settings;
 }
 
@@ -190,7 +189,7 @@ OutputModel::OutputModel(ableton::Link &link, const Settings &settings, bool aud
   const double phase = timeline.phaseAtTime(now, settings.quantum);
   normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
 
-  const int edgesPerBeat = settings.ppqn * 2;
+  const int edgesPerBeat = settings.getPPQN(settings.ppqn_index) * 2;
   const int edgesPerLoop = edgesPerBeat * settings.quantum;
   const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
   isFirstClock = (currentEdges % edgesPerLoop) == 0;

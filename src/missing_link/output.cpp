@@ -153,7 +153,7 @@ std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &
       stringStream << (int)settings.quantum;
       break;
     case Clock:
-      stringStream << (int)settings.ppqn;
+      stringStream << (int)settings.getPPQN(settings.ppqn_index);
       break;
     default:
       break;
