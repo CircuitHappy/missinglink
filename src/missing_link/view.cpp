@@ -3,6 +3,7 @@
  * Circuit Happy, LLC
  */
 
+#include <chrono>
 #include "missing_link/view.hpp"
 
 using namespace MissingLink;
@@ -36,6 +37,23 @@ void MainView::SetClockLED(bool on) {
 
 void MainView::SetResetLED(bool on) {
   m_pLEDDriver->SetBrightness(on ? 0.25 : 0.0, RESET_LED);
+}
+
+void MainView::ShowInputModeName(InputMode mode) {
+  std::chrono::system_clock::time_point TempMessageExpireTime = std::chrono::system_clock::now() + std::chrono::seconds(2);
+  switch (mode) {
+    case BPM:
+      ViewUpdateProcess::SetTempMessage("BPM", TempMessageExpireTime);
+      break;
+    case Loop:
+      ViewUpdateProcess::SetTempMessage("LOOP", TempMessageExpireTime);
+      break;
+    case Clock:
+      ViewUpdateProcess::SetTempMessage("PPQN", TempMessageExpireTime);
+      break;
+    default:
+      return;
+  };
 }
 
 void MainView::SetInputModeLED(InputMode mode) {

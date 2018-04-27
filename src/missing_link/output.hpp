@@ -38,10 +38,15 @@ namespace MissingLink {
 
       ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainView> pView);
 
+      void SetTempMessage(std::string message, std::chrono::system_clock::time_point expireTime);
+
     private:
 
       void process() override;
       void animatePhase(float normalizedPhase, PlayState playState);
+
+      std::chrono::system_clock::time_point TempMessageExpireTime = std::chrono::system_clock::now();
+      std::string TempMessage = "WHAT";
 
       std::string formatDisplayValue(double tempo, const Settings &settings);
 

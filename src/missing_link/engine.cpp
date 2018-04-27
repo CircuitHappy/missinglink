@@ -115,6 +115,7 @@ void Engine::toggleMode() {
   InputMode inputMode = m_state.inputMode.load();
   inputMode = (InputMode)((inputMode + 1) % (int)NUM_INPUT_MODES);
   m_state.inputMode = inputMode;
+  m_pView->ShowInputModeName(inputMode);
   m_pView->SetInputModeLED(inputMode);
 }
 
