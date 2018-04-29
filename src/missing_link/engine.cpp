@@ -25,25 +25,33 @@ Engine::State::State()
 const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds last, bool audioThread) {
   OutputModel output;
 
+  const auto now = link.clock().micros();
+  output.now = now;
+
   auto timeline = audioThread ? link.captureAudioTimeline() : link.captureAppTimeline();
   output.tempo = timeline.tempo();
 
   auto currentSettings = settings.load();
-
-  const auto now = link.clock().micros();
-  const double beats = timeline.beatAtTime(now, currentSettings.quantum);
   const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
   output.normalizedPhase = min(1.0, max(0.0, phase / (double)currentSettings.quantum));
 
+  if (last == std::chrono::microseconds(0)) {
+    output.clockTriggered = false;
+    output.resetTriggered = false;
+    return output;
+  }
+
+  const double beats = timeline.beatAtTime(now, currentSettings.quantum);
+  const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
+
   const int edgesPerBeat = currentSettings.getPPQN() * 2;
   const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
-  const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
-  output.isFirstClock = (currentEdges % edgesPerLoop) == 0;
-  output.clockTriggered = currentEdges % 2 == 0;
 
-  const double secondsPerPhrase = 60.0 / (output.tempo / currentSettings.quantum);
-  const double resetHighFraction = ML_RESET_PULSE_LENGTH / secondsPerPhrase;
-  output.resetTriggered = (phase <= resetHighFraction);
+  const int edge = (int)floor(beats * (double)edgesPerBeat);
+  const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
+
+  output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
+  output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
 
   return output;
 }

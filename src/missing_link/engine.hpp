@@ -28,8 +28,8 @@ namespace MissingLink {
 
       /// Model for engine output processes
       struct OutputModel {
+        std::chrono::microseconds now;
         double tempo;
-        bool isFirstClock;
         bool clockTriggered;
         bool resetTriggered;
         double normalizedPhase;
