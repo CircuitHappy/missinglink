@@ -22,6 +22,32 @@ Engine::State::State()
   link.enable(true);
 }
 
+const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds last, bool audioThread) {
+  OutputModel output;
+
+  auto timeline = audioThread ? link.captureAudioTimeline() : link.captureAppTimeline();
+  output.tempo = timeline.tempo();
+
+  auto currentSettings = settings.load();
+
+  const auto now = link.clock().micros();
+  const double beats = timeline.beatAtTime(now, currentSettings.quantum);
+  const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
+  output.normalizedPhase = min(1.0, max(0.0, phase / (double)currentSettings.quantum));
+
+  const int edgesPerBeat = currentSettings.getPPQN() * 2;
+  const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
+  const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
+  output.isFirstClock = (currentEdges % edgesPerLoop) == 0;
+  output.clockTriggered = currentEdges % 2 == 0;
+
+  const double secondsPerPhrase = 60.0 / (output.tempo / currentSettings.quantum);
+  const double resetHighFraction = ML_RESET_PULSE_LENGTH / secondsPerPhrase;
+  output.resetTriggered = (phase <= resetHighFraction);
+
+  return output;
+}
+
 Engine::Process::Process(State &state, std::chrono::microseconds sleepTime)
   : m_state(state)
   , m_sleepTime(sleepTime)
@@ -177,25 +203,4 @@ void Engine::ppqnAdjust(int amount) {
   auto settings = m_state.settings.load();
   settings.ppqn_index = std::min(max_index, std::max(0, settings.ppqn_index + amount));
   m_state.settings = settings;
-}
-
-
-OutputModel::OutputModel(ableton::Link &link, const Settings &settings, bool audioThread) {
-  auto timeline = audioThread ? link.captureAudioTimeline() : link.captureAppTimeline();
-  tempo = timeline.tempo();
-
-  const auto now = link.clock().micros();
-  const double beats = timeline.beatAtTime(now, settings.quantum);
-  const double phase = timeline.phaseAtTime(now, settings.quantum);
-  normalizedPhase = min(1.0, max(0.0, phase / (double)settings.quantum));
-
-  const int edgesPerBeat = settings.getPPQN() * 2;
-  const int edgesPerLoop = edgesPerBeat * settings.quantum;
-  const int currentEdges = (int)floor(beats * (double)edgesPerBeat);
-  isFirstClock = (currentEdges % edgesPerLoop) == 0;
-  clockHigh = currentEdges % 2 == 0;
-
-  const double secondsPerPhrase = 60.0 / (tempo / settings.quantum);
-  const double resetHighFraction = ML_RESET_PULSE_LENGTH / secondsPerPhrase;
-  resetHigh = (phase <= resetHighFraction);
 }

@@ -46,8 +46,8 @@ void OutputProcess::process() {
     return;
   }
 
-  const auto settings = m_state.settings.load();
-  const auto model = OutputModel(m_state.link, settings, true);
+  const auto lastOutput = std::chrono::microseconds(0);
+  const auto model = m_state.getOutput(lastOutput, true);
 
   switch (m_state.playState) {
     case Cued:
@@ -58,8 +58,8 @@ void OutputProcess::process() {
       // Deliberate fallthrough here
       m_state.playState = Playing;
     case Playing:
-      setReset(model.resetHigh);
-      setClock(model.clockHigh);
+      setReset(model.resetTriggered);
+      setClock(model.clockTriggered);
       break;
     default:
       break;
@@ -107,12 +107,12 @@ ViewUpdateProcess::ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainV
 void ViewUpdateProcess::process() {
 
   const auto playState = m_state.playState.load();
-  const auto settings = m_state.settings.load();
-  const auto model = OutputModel(m_state.link, settings, false);
+  const auto lastOutput = std::chrono::microseconds(0);
+  const auto model = m_state.getOutput(lastOutput, false);
 
   animatePhase(model.normalizedPhase, playState);
 
-  auto displayValue = formatDisplayValue(model.tempo, settings);
+  auto displayValue = formatDisplayValue(model.tempo, m_state.settings.load());
   m_pView->WriteDisplay(displayValue);
 }
 
