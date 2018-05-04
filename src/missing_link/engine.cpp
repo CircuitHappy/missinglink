@@ -114,8 +114,12 @@ Engine::Engine()
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
-  // TODO: setup tempo callback
-  m_pView->WriteDisplay("120.0");
+  m_pView->WriteDisplay(std::to_string(120.0));
+  m_state.link.setTempoCallback([this](const double tempo) {
+    if (m_state.inputMode == InputMode::BPM) {
+      m_pView->WriteDisplay(std::to_string(tempo));
+    }
+  });
 }
 
 void Engine::Run() {
@@ -158,13 +162,13 @@ void Engine::toggleMode() {
   m_state.inputMode = inputMode;
   switch (inputMode) {
     case InputMode::BPM:
-      m_pView->WriteDisplayTemporarily("BPM", 500);
+      m_pView->WriteDisplayTemporarily("BPM", 1500);
       break;
     case InputMode::Loop:
-      m_pView->WriteDisplayTemporarily("LOOP", 500);
+      m_pView->WriteDisplayTemporarily("LOOP", 1500);
       break;
     case InputMode::Clock:
-      m_pView->WriteDisplayTemporarily("CLK", 500);
+      m_pView->WriteDisplayTemporarily("CLK", 1500);
       break;
     default:
       break;
@@ -191,6 +195,7 @@ void Engine::setTempo(double tempo) {
 
   // switch back to tempo mode
   m_state.inputMode = InputMode::BPM;
+  m_pView->WriteDisplay(std::to_string(tempo));
 }
 
 void Engine::routeEncoderAdjust(float amount) {
@@ -218,13 +223,18 @@ void Engine::tempoAdjust(float amount) {
 
 void Engine::loopAdjust(int amount) {
   auto settings = m_state.settings.load();
-  settings.quantum = std::max(1, settings.quantum + amount);
+  int quantum = std::max(1, settings.quantum + amount);
+  settings.quantum = quantum;
   m_state.settings = settings;
+  m_pView->WriteDisplay(std::to_string(quantum));
 }
 
 void Engine::ppqnAdjust(int amount) {
   int max_index = Settings::ppqn_options.size() - 1;
   auto settings = m_state.settings.load();
-  settings.ppqn_index = std::min(max_index, std::max(0, settings.ppqn_index + amount));
+  int index = std::min(max_index, std::max(0, settings.ppqn_index + amount));
+  settings.ppqn_index = index;
   m_state.settings = settings;
+  int ppqn = Settings::ppqn_options[index];
+  m_pView->WriteDisplay(std::to_string(ppqn));
 }
