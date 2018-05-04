@@ -117,9 +117,10 @@ void ViewUpdateProcess::process() {
   const auto phase = m_state.getNormalizedPhase();
   const auto playState = m_state.playState.load();
   animatePhase(phase, playState);
+  m_pView->UpdateDisplay();
 
-  auto displayValue = formatDisplayValue(model.tempo, m_state.settings.load());
-  m_pView->WriteDisplay(displayValue);
+  //auto displayValue = formatDisplayValue(model.tempo, m_state.settings.load());
+  //m_pView->WriteDisplay(displayValue);
 }
 
 void ViewUpdateProcess::animatePhase(float normalizedPhase, PlayState playState) {
@@ -142,32 +143,22 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, PlayState playState)
   }
 }
 
-std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &settings) {
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  std::ostringstream stringStream;
-  stringStream.setf(std::ios::fixed, std::ios::floatfield);
-  stringStream.precision(1);
-  if (now < TempMessageExpireTime) {
-    stringStream << TempMessage;
-  } else {
-    switch (m_state.inputMode) {
-      case BPM:
-        stringStream << tempo;
-        break;
-      case Loop:
-        stringStream << (int)settings.quantum;
-        break;
-      case Clock:
-        stringStream << (int)settings.getPPQN();
-        break;
-      default:
-        break;
-    }
-  }
-  return stringStream.str();
-}
-
-void ViewUpdateProcess::SetTempMessage(std::string message, std::chrono::system_clock::time_point expireTime) {
-  TempMessage = message;
-  TempMessageExpireTime = expireTime;
-}
+//std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &settings) {
+//  std::ostringstream stringStream;
+//  switch (m_state.inputMode) {
+//    case BPM:
+//      stringStream.setf(std::ios::fixed, std::ios::floatfield);
+//      stringStream.precision(1);
+//      stringStream << tempo;
+//      break;
+//    case Loop:
+//      stringStream << (int)settings.quantum;
+//      break;
+//    case Clock:
+//      stringStream << (int)settings.getPPQN();
+//      break;
+//    default:
+//      break;
+//  }
+//  return stringStream.str();
+//}

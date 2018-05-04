@@ -35,6 +35,7 @@ namespace MissingLink {
       };
 
       struct State {
+
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
         std::atomic<InputMode> inputMode;

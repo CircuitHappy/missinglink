@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <chrono>
+
 namespace MissingLink {
 
     enum PlayState {
@@ -20,5 +22,4 @@ namespace MissingLink {
       Clock,
       NUM_INPUT_MODES
     };
-
 }

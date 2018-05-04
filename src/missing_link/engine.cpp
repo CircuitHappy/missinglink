@@ -113,6 +113,9 @@ Engine::Engine()
   m_processes.push_back(std::move(uiProcess));
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
+
+  // TODO: setup tempo callback
+  m_pView->WriteDisplay("120.0");
 }
 
 void Engine::Run() {
@@ -153,7 +156,19 @@ void Engine::toggleMode() {
   InputMode inputMode = m_state.inputMode.load();
   inputMode = (InputMode)((inputMode + 1) % (int)NUM_INPUT_MODES);
   m_state.inputMode = inputMode;
-  m_pView->ShowInputModeName(inputMode);
+  switch (inputMode) {
+    case BPM:
+      m_pView->WriteDisplayTemporarily("BPM", 500);
+      break;
+    case Loop:
+      m_pView->WriteDisplayTemporarily("LOOP", 500);
+      break;
+    case Clock:
+      m_pView->WriteDisplayTemporarily("CLK", 500);
+      break;
+    default:
+      break;
+  }
 }
 
 void Engine::resetTimeline() {
@@ -175,9 +190,7 @@ void Engine::setTempo(double tempo) {
   m_state.settings = settings;
 
   // switch back to tempo mode
-  if (m_state.inputMode != BPM) {
-    m_state.inputMode = BPM;
-  }
+  m_state.inputMode = BPM;
 }
 
 void Engine::routeEncoderAdjust(float amount) {
