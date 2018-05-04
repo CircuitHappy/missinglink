@@ -44,7 +44,7 @@ namespace MissingLink {
 
     private:
 
-      std::chrono::time_point<std::chrono::steady_clock> m_tempMessageExpires;
+      TimePoint m_tempMessageExpiration;
       std::stack<std::string> m_displayValues;
 
       std::mutex m_displayMutex;

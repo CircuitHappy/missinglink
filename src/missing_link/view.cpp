@@ -39,32 +39,32 @@ void MainView::ClearAnimationLEDs() {
 }
 
 void MainView::WriteDisplay(const std::string &string) {
-  std::lock_guard<std::mutex> lock(m_displayMutex);
+  ScopedMutex lock(m_displayMutex);
   m_displayValues = std::stack<std::string>();
   m_displayValues.push(string);
   m_pDisplay->Write(string);
 }
 
 void MainView::WriteDisplayTemporarily(const std::string &string, int millis) {
-  std::lock_guard<std::mutex> lock(m_displayMutex);
+  ScopedMutex lock(m_displayMutex);
   m_displayValues.push(string);
-  m_tempMessageExpires = std::chrono::steady_clock::now() + std::chrono::milliseconds(millis);
+  m_tempMessageExpiration = Clock::now() + std::chrono::milliseconds(millis);
   m_pDisplay->Write(string);
 }
 
 void MainView::ClearDisplay() {
-  std::lock_guard<std::mutex> lock(m_displayMutex);
+  ScopedMutex lock(m_displayMutex);
   m_displayValues = std::stack<std::string>();
   m_pDisplay->Clear();
 }
 
 void MainView::UpdateDisplay() {
-  std::lock_guard<std::mutex> lock(m_displayMutex);
-  auto now = std::chrono::steady_clock::now();
+  ScopedMutex lock(m_displayMutex);
+  auto now = Clock::now();
   if (m_displayValues.empty()) {
     return;
   }
-  if (now >= m_tempMessageExpires && m_displayValues.size() > 1) {
+  if (now >= m_tempMessageExpiration && m_displayValues.size() > 1) {
     while (m_displayValues.size() > 1) {
       m_displayValues.pop();
     }

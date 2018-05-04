@@ -41,8 +41,6 @@ namespace MissingLink {
 
       ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainView> pView);
 
-      void SetTempMessage(std::string message, std::chrono::system_clock::time_point expireTime);
-
     private:
 
       void process() override;
