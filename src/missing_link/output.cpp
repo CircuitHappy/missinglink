@@ -107,12 +107,9 @@ ViewUpdateProcess::ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainV
 void ViewUpdateProcess::process() {
 
   const auto playState = m_state.playState.load();
-  const bool playing = playState == Playing;
   const auto settings = m_state.settings.load();
   const auto model = OutputModel(m_state.link, settings, false);
 
-  m_pView->SetClockLED(model.clockHigh && playing);
-  m_pView->SetResetLED(model.resetHigh && playing);
   animatePhase(model.normalizedPhase, playState);
 
   auto displayValue = formatDisplayValue(model.tempo, settings);

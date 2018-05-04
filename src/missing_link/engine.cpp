@@ -73,7 +73,6 @@ Engine::Engine()
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
   m_processes.push_back(std::move(uiProcess));
 
-  m_pView->SetInputModeLED(m_state.inputMode);
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 }
 
@@ -116,7 +115,6 @@ void Engine::toggleMode() {
   inputMode = (InputMode)((inputMode + 1) % (int)NUM_INPUT_MODES);
   m_state.inputMode = inputMode;
   m_pView->ShowInputModeName(inputMode);
-  m_pView->SetInputModeLED(inputMode);
 }
 
 void Engine::resetTimeline() {
@@ -140,7 +138,6 @@ void Engine::setTempo(double tempo) {
   // switch back to tempo mode
   if (m_state.inputMode != BPM) {
     m_state.inputMode = BPM;
-    m_pView->SetInputModeLED(BPM);
   }
 }
 

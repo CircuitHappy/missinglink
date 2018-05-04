@@ -22,10 +22,7 @@ namespace MissingLink {
       MainView();
       virtual ~MainView();
 
-      void SetClockLED(bool on);
-      void SetResetLED(bool on);
       void ShowInputModeName(InputMode mode);
-      void SetInputModeLED(InputMode mode);
 
       void SetAnimationLEDs(const float frame[NumAnimLEDs]);
       void ClearAnimationLEDs();
