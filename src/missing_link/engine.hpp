@@ -26,13 +26,25 @@ namespace MissingLink {
 
       void Run();
 
+      /// Model for engine output processes
+      struct OutputModel {
+        std::chrono::microseconds now;
+        double tempo;
+        bool clockTriggered;
+        bool resetTriggered;
+        double normalizedPhase;
+      };
+
       struct State {
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
         std::atomic<InputMode> inputMode;
         std::atomic<Settings> settings;
         ableton::Link link;
+
         State();
+
+        const OutputModel getOutput(std::chrono::microseconds last, bool audioThread);
       };
 
       class Process {
@@ -80,18 +92,5 @@ namespace MissingLink {
       void ppqnAdjust(int amount);
   };
 
-  /// Model for engine output processes
-  struct OutputModel {
-
-    double tempo;
-    bool isFirstClock;
-    bool clockHigh;
-    bool resetHigh;
-    double normalizedPhase;
-
-    OutputModel(ableton::Link &link,
-                const Settings &settings,
-                bool audioThread);
-  };
 
 }

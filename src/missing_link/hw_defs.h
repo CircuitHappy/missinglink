@@ -6,6 +6,3 @@
 #define ML_INTERRUPT_PIN    25
 #define ML_CLOCK_PIN        23
 #define ML_RESET_PIN        24
-
-// Length of reset pulse
-#define ML_RESET_PULSE_LENGTH 0.05 // seconds
