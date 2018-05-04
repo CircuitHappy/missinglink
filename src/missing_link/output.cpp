@@ -40,7 +40,7 @@ void OutputProcess::Run() {
 
 void OutputProcess::process() {
 
-  if (m_state.playState == Engine::Stopped) {
+  if (m_state.playState == Engine::PlayState::Stopped) {
     setClock(false);
     setReset(false);
     return;
@@ -50,14 +50,14 @@ void OutputProcess::process() {
   m_lastOutTime = model.now;
 
   switch (m_state.playState) {
-    case Engine::Cued:
+    case Engine::PlayState::Cued:
       // start playing on first clock of loop
       if (!model.resetTriggered) {
         break;
       }
       // Deliberate fallthrough here
-      m_state.playState = Engine::Playing;
-    case Engine::Playing:
+      m_state.playState = Engine::PlayState::Playing;
+    case Engine::PlayState::Playing:
       triggerOutputs(model.clockTriggered, model.resetTriggered);
       break;
     default:
@@ -131,10 +131,10 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
   );
 
   switch (playState) {
-    case Engine::Cued:
+    case Engine::PlayState::Cued:
       m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex]);
       break;
-    case Engine::Playing:
+    case Engine::PlayState::Playing:
       m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
       break;
     default:

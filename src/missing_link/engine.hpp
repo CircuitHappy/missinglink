@@ -22,13 +22,13 @@ namespace MissingLink {
 
     public:
 
-      enum PlayState {
+      enum class PlayState {
         Stopped,
         Cued,
         Playing
       };
 
-      enum InputMode {
+      enum class InputMode {
         BPM,
         Loop,
         Clock

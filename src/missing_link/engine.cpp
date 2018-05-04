@@ -14,8 +14,8 @@ using namespace MissingLink;
 
 Engine::State::State()
   : running(true)
-  , playState(Stopped)
-  , inputMode(BPM)
+  , playState(PlayState::Stopped)
+  , inputMode(InputMode::BPM)
   , settings(Settings::Load())
   , link(settings.load().tempo)
 {
@@ -136,16 +136,16 @@ void Engine::Run() {
 
 void Engine::playStop() {
   switch (m_state.playState) {
-    case Stopped:
+    case PlayState::Stopped:
       // reset the timeline to zero if there are no peers
       if (m_state.link.numPeers() == 0) {
         resetTimeline();
       }
-      m_state.playState = Cued;
+      m_state.playState = PlayState::Cued;
       break;
-    case Playing:
-    case Cued:
-      m_state.playState = Stopped;
+    case PlayState::Playing:
+    case PlayState::Cued:
+      m_state.playState = PlayState::Stopped;
       break;
     default:
       break;
@@ -157,13 +157,13 @@ void Engine::toggleMode() {
   inputMode = static_cast<InputMode>((static_cast<int>(inputMode) + 1) % 3);
   m_state.inputMode = inputMode;
   switch (inputMode) {
-    case BPM:
+    case InputMode::BPM:
       m_pView->WriteDisplayTemporarily("BPM", 500);
       break;
-    case Loop:
+    case InputMode::Loop:
       m_pView->WriteDisplayTemporarily("LOOP", 500);
       break;
-    case Clock:
+    case InputMode::Clock:
       m_pView->WriteDisplayTemporarily("CLK", 500);
       break;
     default:
@@ -190,19 +190,19 @@ void Engine::setTempo(double tempo) {
   m_state.settings = settings;
 
   // switch back to tempo mode
-  m_state.inputMode = BPM;
+  m_state.inputMode = InputMode::BPM;
 }
 
 void Engine::routeEncoderAdjust(float amount) {
   float rounded = round(amount);
   switch (m_state.inputMode) {
-    case BPM:
+    case InputMode::BPM:
       tempoAdjust(rounded);
       break;
-    case Loop:
+    case InputMode::Loop:
       loopAdjust((int)rounded);
       break;
-    case Clock:
+    case InputMode::Clock:
       ppqnAdjust((int)rounded);
       break;
     default:
