@@ -22,9 +22,17 @@ namespace MissingLink {
 
     public:
 
-      Engine();
+      enum PlayState {
+        Stopped,
+        Cued,
+        Playing
+      };
 
-      void Run();
+      enum InputMode {
+        BPM,
+        Loop,
+        Clock
+      };
 
       /// Model for engine output processes
       struct OutputModel {
@@ -74,6 +82,10 @@ namespace MissingLink {
           std::chrono::microseconds m_sleepTime;
           std::atomic<bool> m_bStopped;
       };
+
+      Engine();
+
+      void Run();
 
     private:
 

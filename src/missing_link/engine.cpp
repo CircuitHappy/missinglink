@@ -154,7 +154,7 @@ void Engine::playStop() {
 
 void Engine::toggleMode() {
   InputMode inputMode = m_state.inputMode.load();
-  inputMode = (InputMode)((inputMode + 1) % (int)NUM_INPUT_MODES);
+  inputMode = static_cast<InputMode>((static_cast<int>(inputMode) + 1) % 3);
   m_state.inputMode = inputMode;
   switch (inputMode) {
     case BPM:

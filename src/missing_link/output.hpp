@@ -46,7 +46,7 @@ namespace MissingLink {
     private:
 
       void process() override;
-      void animatePhase(float normalizedPhase, PlayState playState);
+      void animatePhase(float normalizedPhase, Engine::PlayState playState);
 
       std::shared_ptr<MainView> m_pView;
   };
