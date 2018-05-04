@@ -22,18 +22,14 @@ Engine::State::State()
   link.enable(true);
 }
 
-const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds last, bool audioThread) {
+const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds last) {
   OutputModel output;
 
   const auto now = link.clock().micros();
   output.now = now;
 
-  auto timeline = audioThread ? link.captureAudioTimeline() : link.captureAppTimeline();
+  auto timeline = link.captureAudioTimeline();
   output.tempo = timeline.tempo();
-
-  auto currentSettings = settings.load();
-  const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
-  output.normalizedPhase = min(1.0, max(0.0, phase / (double)currentSettings.quantum));
 
   if (last == std::chrono::microseconds(0)) {
     output.clockTriggered = false;
@@ -41,6 +37,7 @@ const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds las
     return output;
   }
 
+  const auto currentSettings = settings.load();
   const double beats = timeline.beatAtTime(now, currentSettings.quantum);
   const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
 
@@ -54,6 +51,14 @@ const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds las
   output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
 
   return output;
+}
+
+const double Engine::State::getNormalizedPhase() {
+  const auto now = link.clock().micros();
+  const auto currentSettings = settings.load();
+  const auto timeline = link.captureAppTimeline();
+  const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
+  return min(1.0, max(0.0, phase / (double)currentSettings.quantum));
 }
 
 Engine::Process::Process(State &state, std::chrono::microseconds sleepTime)

@@ -46,7 +46,7 @@ void OutputProcess::process() {
     return;
   }
 
-  const auto model = m_state.getOutput(m_lastOutTime, true);
+  const auto model = m_state.getOutput(m_lastOutTime);
   m_lastOutTime = model.now;
 
   switch (m_state.playState) {
@@ -114,11 +114,9 @@ ViewUpdateProcess::ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainV
 
 void ViewUpdateProcess::process() {
 
+  const auto phase = m_state.getNormalizedPhase();
   const auto playState = m_state.playState.load();
-  const auto lastOutput = std::chrono::microseconds(0);
-  const auto model = m_state.getOutput(lastOutput, false);
-
-  animatePhase(model.normalizedPhase, playState);
+  animatePhase(phase, playState);
 
   auto displayValue = formatDisplayValue(model.tempo, m_state.settings.load());
   m_pView->WriteDisplay(displayValue);

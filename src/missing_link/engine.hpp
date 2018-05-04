@@ -32,7 +32,6 @@ namespace MissingLink {
         double tempo;
         bool clockTriggered;
         bool resetTriggered;
-        double normalizedPhase;
       };
 
       struct State {
@@ -44,7 +43,8 @@ namespace MissingLink {
 
         State();
 
-        const OutputModel getOutput(std::chrono::microseconds last, bool audioThread);
+        const OutputModel getOutput(std::chrono::microseconds last);
+        const double getNormalizedPhase();
       };
 
       class Process {
