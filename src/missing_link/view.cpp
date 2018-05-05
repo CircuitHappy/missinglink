@@ -38,36 +38,38 @@ void MainView::ClearAnimationLEDs() {
   }
 }
 
-void MainView::WriteDisplay(const std::string &string) {
+void MainView::WriteDisplay(const std::string &string, bool force) {
   ScopedMutex lock(m_displayMutex);
-  m_displayValues = std::stack<std::string>();
-  m_displayValues.push(string);
-  m_pDisplay->Write(string);
+  m_displayValue = string;
+  if (force) {
+    m_tempDisplayValues = std::stack<std::string>();
+    m_pDisplay->Write(string);
+  }
 }
 
 void MainView::WriteDisplayTemporarily(const std::string &string, int millis) {
   ScopedMutex lock(m_displayMutex);
-  m_displayValues.push(string);
+  m_tempDisplayValues.push(string);
   m_tempMessageExpiration = Clock::now() + std::chrono::milliseconds(millis);
   m_pDisplay->Write(string);
 }
 
 void MainView::ClearDisplay() {
   ScopedMutex lock(m_displayMutex);
-  m_displayValues = std::stack<std::string>();
+  m_tempDisplayValues = std::stack<std::string>();
+  m_displayValue = "";
   m_pDisplay->Clear();
 }
 
 void MainView::UpdateDisplay() {
   ScopedMutex lock(m_displayMutex);
   auto now = Clock::now();
-  if (m_displayValues.empty()) {
+  if (m_tempDisplayValues.empty()) {
+    m_pDisplay->Write(m_displayValue);
     return;
   }
-  if (now >= m_tempMessageExpiration && m_displayValues.size() > 1) {
-    while (m_displayValues.size() > 1) {
-      m_displayValues.pop();
-    }
-    m_pDisplay->Write(m_displayValues.top());
+  m_pDisplay->Write(m_tempDisplayValues.top());
+  if (now >= m_tempMessageExpiration) {
+    m_tempDisplayValues = std::stack<std::string>();
   }
 }

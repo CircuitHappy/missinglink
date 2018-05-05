@@ -114,15 +114,17 @@ Engine::Engine()
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
-  m_pView->WriteDisplay(std::to_string(120.0));
   m_state.link.setTempoCallback([this](const double tempo) {
     if (m_state.inputMode == InputMode::BPM) {
-      m_pView->WriteDisplay(std::to_string(tempo));
+      displayTempo(tempo, false);
     }
   });
 }
 
 void Engine::Run() {
+
+  displayTempo(getCurrentTempo(), true);
+
   for (auto &process : m_processes) {
     process->Run();
   }
@@ -157,22 +159,18 @@ void Engine::playStop() {
 }
 
 void Engine::toggleMode() {
+  auto now = Clock::now();
   InputMode inputMode = m_state.inputMode.load();
-  inputMode = static_cast<InputMode>((static_cast<int>(inputMode) + 1) % 3);
-  m_state.inputMode = inputMode;
-  switch (inputMode) {
-    case InputMode::BPM:
-      m_pView->WriteDisplayTemporarily("BPM", 1500);
-      break;
-    case InputMode::Loop:
-      m_pView->WriteDisplayTemporarily("LOOP", 1500);
-      break;
-    case InputMode::Clock:
-      m_pView->WriteDisplayTemporarily("CLK", 1500);
-      break;
-    default:
-      break;
+
+  // Only switch to next mode if toggle pressed twice within 1 second
+  if (now - m_lastToggle < std::chrono::seconds(1)) {
+    inputMode = static_cast<InputMode>((static_cast<int>(inputMode) + 1) % 3);
+    m_state.inputMode = inputMode;
   }
+  m_lastToggle = Clock::now();
+
+  // Update display
+  displayModeSwitch(inputMode);
 }
 
 void Engine::resetTimeline() {
@@ -195,7 +193,7 @@ void Engine::setTempo(double tempo) {
 
   // switch back to tempo mode
   m_state.inputMode = InputMode::BPM;
-  m_pView->WriteDisplay(std::to_string(tempo));
+  displayTempo(tempo, true);
 }
 
 void Engine::routeEncoderAdjust(float amount) {
@@ -216,9 +214,7 @@ void Engine::routeEncoderAdjust(float amount) {
 }
 
 void Engine::tempoAdjust(float amount) {
-  auto timeline = m_state.link.captureAppTimeline();
-  double tempo = timeline.tempo() + amount;
-  setTempo(tempo);
+  setTempo(getCurrentTempo() + amount);
 }
 
 void Engine::loopAdjust(int amount) {
@@ -226,7 +222,7 @@ void Engine::loopAdjust(int amount) {
   int quantum = std::max(1, settings.quantum + amount);
   settings.quantum = quantum;
   m_state.settings = settings;
-  m_pView->WriteDisplay(std::to_string(quantum));
+  displayQuantum(quantum, true);
 }
 
 void Engine::ppqnAdjust(int amount) {
@@ -236,5 +232,55 @@ void Engine::ppqnAdjust(int amount) {
   settings.ppqn_index = index;
   m_state.settings = settings;
   int ppqn = Settings::ppqn_options[index];
-  m_pView->WriteDisplay(std::to_string(ppqn));
+  displayPPQN(ppqn, true);
+}
+
+void Engine::displayModeSwitch(InputMode inputMode) {
+  const int holdTime = 1000;
+  switch (inputMode) {
+    case InputMode::BPM: {
+      m_pView->WriteDisplayTemporarily("BPM", holdTime);
+      displayTempo(getCurrentTempo(), false);
+      break;
+    }
+    case InputMode::Loop: {
+      m_pView->WriteDisplayTemporarily("LOOP", holdTime);
+      displayQuantum(getCurrentQuantum(), false);
+      break;
+    }
+    case InputMode::Clock: {
+      m_pView->WriteDisplayTemporarily("CLK", holdTime);
+      displayPPQN(getCurrentPPQN(), false);
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+void Engine::displayTempo(double tempo, bool force) {
+  m_pView->WriteDisplay(std::to_string(tempo), force);
+}
+
+void Engine::displayQuantum(int quantum, bool force) {
+  m_pView->WriteDisplay(std::to_string(quantum), force);
+}
+
+void Engine::displayPPQN(int ppqn, bool force) {
+  m_pView->WriteDisplay(std::to_string(ppqn), force);
+}
+
+double Engine::getCurrentTempo() const {
+  auto timeline = m_state.link.captureAppTimeline();
+  return timeline.tempo();
+}
+
+int Engine::getCurrentQuantum() const {
+  auto settings = m_state.settings.load();
+  return settings.quantum;
+}
+
+int Engine::getCurrentPPQN() const {
+  auto settings = m_state.settings.load();
+  return Settings::ppqn_options[settings.ppqn_index];
 }

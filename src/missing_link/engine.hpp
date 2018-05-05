@@ -103,6 +103,17 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+
+      void displayModeSwitch(InputMode inputMode);
+      void displayTempo(double tempo, bool force);
+      void displayQuantum(int quantum, bool force);
+      void displayPPQN(int ppqn, bool force);
+
+      double getCurrentTempo() const;
+      int getCurrentQuantum() const;
+      int getCurrentPPQN() const;
+
+      TimePoint m_lastToggle;
   };
 
 

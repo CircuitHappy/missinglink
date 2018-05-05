@@ -29,8 +29,8 @@ namespace MissingLink {
       void ClearAnimationLEDs();
 
       // Set a value to be immediately written to the display.
-      // Cancels any temporary message.
-      void WriteDisplay(const std::string &string);
+      // Cancels any temporary messages if `force` is true.
+      void WriteDisplay(const std::string &string, bool force = true);
 
       // Set a value to be written to the display for the given duration in ms
       // after which it will be reverted back to its previous value.
@@ -45,7 +45,8 @@ namespace MissingLink {
     private:
 
       TimePoint m_tempMessageExpiration;
-      std::stack<std::string> m_displayValues;
+      std::stack<std::string> m_tempDisplayValues;
+      std::string m_displayValue;
 
       std::mutex m_displayMutex;
 
