@@ -12,56 +12,9 @@
 using namespace std;
 using namespace MissingLink;
 
-Engine::State::State()
-  : running(true)
-  , playState(PlayState::Stopped)
-  , settings(Settings::Load())
-  , link(settings.load().tempo)
-{
-  link.enable(true);
-}
 
-const Engine::OutputModel Engine::State::getOutput(std::chrono::microseconds last) {
-  OutputModel output;
-
-  const auto now = link.clock().micros();
-  output.now = now;
-
-  auto timeline = link.captureAudioTimeline();
-  output.tempo = timeline.tempo();
-
-  if (last == std::chrono::microseconds(0)) {
-    output.clockTriggered = false;
-    output.resetTriggered = false;
-    return output;
-  }
-
-  const auto currentSettings = settings.load();
-  const double beats = timeline.beatAtTime(now, currentSettings.quantum);
-  const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
-
-  const int edgesPerBeat = currentSettings.getPPQN() * 2;
-  const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
-
-  const int edge = (int)floor(beats * (double)edgesPerBeat);
-  const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
-
-  output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
-  output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
-
-  return output;
-}
-
-const double Engine::State::getNormalizedPhase() {
-  const auto now = link.clock().micros();
-  const auto currentSettings = settings.load();
-  const auto timeline = link.captureAppTimeline();
-  const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
-  return min(1.0, max(0.0, phase / (double)currentSettings.quantum));
-}
-
-Engine::Process::Process(State &state, std::chrono::microseconds sleepTime)
-  : m_state(state)
+Engine::Process::Process(Engine &engine, std::chrono::microseconds sleepTime)
+  : m_engine(engine)
   , m_sleepTime(sleepTime)
   , m_bStopped(true)
 {}
@@ -95,17 +48,23 @@ void Engine::Process::sleep() {
 }
 
 Engine::Engine()
-  : m_inputMode(InputMode::BPM)
+  : m_running(true)
+  , m_playState(PlayState::Stopped)
+  , m_settings(Settings::Load())
+  , m_inputMode(InputMode::BPM)
+  , m_link(m_settings.load().tempo)
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
 {
-  auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(m_state));
+  m_link.enable(true);
+
+  auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(*this));
   m_processes.push_back(std::move(outputProcess));
 
-  auto viewProcess = unique_ptr<ViewUpdateProcess>(new ViewUpdateProcess(m_state, m_pView));
+  auto viewProcess = unique_ptr<ViewUpdateProcess>(new ViewUpdateProcess(*this, m_pView));
   m_processes.push_back(std::move(viewProcess));
 
-  auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(m_state));
+  auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(*this));
   uiProcess->onPlayStop = bind(&Engine::playStop, this);
   uiProcess->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
@@ -114,7 +73,7 @@ Engine::Engine()
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
-  m_state.link.setTempoCallback([this](const double tempo) {
+  m_link.setTempoCallback([this](const double tempo) {
     if (m_inputMode == InputMode::BPM) {
       displayTempo(tempo, false);
     }
@@ -129,8 +88,8 @@ void Engine::Run() {
     process->Run();
   }
 
-  while (m_state.running) {
-    Settings settings = m_state.settings.load();
+  while (isRunning()) {
+    Settings settings = m_settings.load();
     Settings::Save(settings);
     this_thread::sleep_for(chrono::seconds(1));
   }
@@ -140,18 +99,57 @@ void Engine::Run() {
   }
 }
 
+const double Engine::GetNormalizedPhase() const {
+  const auto now = m_link.clock().micros();
+  const auto currentSettings = m_settings.load();
+  const auto timeline = m_link.captureAppTimeline();
+  const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
+  return min(1.0, max(0.0, phase / (double)currentSettings.quantum));
+}
+
+const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last) const {
+  OutputModel output;
+
+  const auto now = m_link.clock().micros();
+  output.now = now;
+
+  auto timeline = m_link.captureAudioTimeline();
+  output.tempo = timeline.tempo();
+
+  if (last == std::chrono::microseconds(0)) {
+    output.clockTriggered = false;
+    output.resetTriggered = false;
+    return output;
+  }
+
+  const auto currentSettings = m_settings.load();
+  const double beats = timeline.beatAtTime(now, currentSettings.quantum);
+  const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
+
+  const int edgesPerBeat = currentSettings.getPPQN() * 2;
+  const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
+
+  const int edge = (int)floor(beats * (double)edgesPerBeat);
+  const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
+
+  output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
+  output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
+
+  return output;
+}
+
 void Engine::playStop() {
-  switch (m_state.playState) {
+  switch (m_playState) {
     case PlayState::Stopped:
       // reset the timeline to zero if there are no peers
-      if (m_state.link.numPeers() == 0) {
+      if (m_link.numPeers() == 0) {
         resetTimeline();
       }
-      m_state.playState = PlayState::Cued;
+      m_playState = PlayState::Cued;
       break;
     case PlayState::Playing:
     case PlayState::Cued:
-      m_state.playState = PlayState::Stopped;
+      m_playState = PlayState::Stopped;
       break;
     default:
       break;
@@ -162,7 +160,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1 second
   if (now - m_lastToggle < std::chrono::seconds(1)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode) + 1) % 3);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 3);
   }
   m_lastToggle = Clock::now();
   // Update display
@@ -171,21 +169,21 @@ void Engine::toggleMode() {
 
 void Engine::resetTimeline() {
   // Reset to beat zero in 1 ms
-  auto timeline = m_state.link.captureAppTimeline();
-  auto resetTime = m_state.link.clock().micros() + std::chrono::milliseconds(1);
-  timeline.forceBeatAtTime(0, resetTime, m_state.settings.load().quantum);
-  m_state.link.commitAppTimeline(timeline);
+  auto timeline = m_link.captureAppTimeline();
+  auto resetTime = m_link.clock().micros() + std::chrono::milliseconds(1);
+  timeline.forceBeatAtTime(0, resetTime, m_settings.load().quantum);
+  m_link.commitAppTimeline(timeline);
 }
 
 void Engine::setTempo(double tempo) {
-  auto now = m_state.link.clock().micros();
-  auto timeline = m_state.link.captureAppTimeline();
+  auto now = m_link.clock().micros();
+  auto timeline = m_link.captureAppTimeline();
   timeline.setTempo(tempo, now);
-  m_state.link.commitAppTimeline(timeline);
+  m_link.commitAppTimeline(timeline);
 
-  auto settings = m_state.settings.load();
+  auto settings = m_settings.load();
   settings.tempo = tempo;
-  m_state.settings = settings;
+  m_settings = settings;
 
   // switch back to tempo mode
   m_inputMode = InputMode::BPM;
@@ -193,7 +191,7 @@ void Engine::setTempo(double tempo) {
 }
 
 void Engine::routeEncoderAdjust(float amount) {
-  float rounded = round(amount);
+  const float rounded = round(amount);
   switch (m_inputMode) {
     case InputMode::BPM:
       tempoAdjust(rounded);
@@ -214,19 +212,19 @@ void Engine::tempoAdjust(float amount) {
 }
 
 void Engine::loopAdjust(int amount) {
-  auto settings = m_state.settings.load();
+  auto settings = m_settings.load();
   int quantum = std::max(1, settings.quantum + amount);
   settings.quantum = quantum;
-  m_state.settings = settings;
+  m_settings = settings;
   displayQuantum(quantum, true);
 }
 
 void Engine::ppqnAdjust(int amount) {
   int max_index = Settings::ppqn_options.size() - 1;
-  auto settings = m_state.settings.load();
+  auto settings = m_settings.load();
   int index = std::min(max_index, std::max(0, settings.ppqn_index + amount));
   settings.ppqn_index = index;
-  m_state.settings = settings;
+  m_settings = settings;
   int ppqn = Settings::ppqn_options[index];
   displayPPQN(ppqn, true);
 }
@@ -267,16 +265,16 @@ void Engine::displayPPQN(int ppqn, bool force) {
 }
 
 double Engine::getCurrentTempo() const {
-  auto timeline = m_state.link.captureAppTimeline();
+  auto timeline = m_link.captureAppTimeline();
   return timeline.tempo();
 }
 
 int Engine::getCurrentQuantum() const {
-  auto settings = m_state.settings.load();
+  auto settings = m_settings.load();
   return settings.quantum;
 }
 
 int Engine::getCurrentPPQN() const {
-  auto settings = m_state.settings.load();
+  auto settings = m_settings.load();
   return Settings::ppqn_options[settings.ppqn_index];
 }

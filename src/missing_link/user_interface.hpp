@@ -18,7 +18,7 @@ class UserInputProcess : public Engine::Process {
 
   public:
 
-    UserInputProcess(Engine::State &state);
+    UserInputProcess(Engine &engine);
 
     // Outputs
     // These will be called from input polling thread

@@ -17,7 +17,7 @@ namespace MissingLink {
 
     public:
 
-      OutputProcess(Engine::State &state);
+      OutputProcess(Engine &engine);
       void Run() override;
 
     private:
@@ -39,7 +39,7 @@ namespace MissingLink {
 
     public:
 
-      ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainView> pView);
+      ViewUpdateProcess(Engine &engine, std::shared_ptr<MainView> pView);
 
     private:
 

@@ -42,34 +42,21 @@ namespace MissingLink {
         bool resetTriggered;
       };
 
-      struct State {
-
-        std::atomic<bool> running;
-        std::atomic<PlayState> playState;
-        std::atomic<Settings> settings;
-        ableton::Link link;
-
-        State();
-
-        const OutputModel getOutput(std::chrono::microseconds last);
-        const double getNormalizedPhase();
-      };
-
       class Process {
 
         public:
 
-          Process(State &state, std::chrono::microseconds sleepTime);
+          Process(Engine &engine, std::chrono::microseconds sleepTime);
           virtual ~Process();
 
           virtual void Run();
           void Stop();
 
-          bool IsRunning() { return !m_bStopped; }
+          bool IsRunning() const { return !m_bStopped; }
 
         protected:
 
-          State &m_state;
+          Engine &m_engine;
           std::unique_ptr<std::thread> m_pThread;
 
           virtual void run();
@@ -86,10 +73,21 @@ namespace MissingLink {
 
       void Run();
 
+      const bool isRunning() const { return m_running; }
+      const double GetNormalizedPhase() const;
+      const OutputModel GetOutputModel(std::chrono::microseconds last) const;
+
+      PlayState GetPlayState() const { return m_playState.load(); }
+      void SetPlayState(PlayState state) { m_playState = state; };
+
     private:
 
-      State m_state;
-      InputMode m_inputMode;
+      std::atomic<bool> m_running;
+      std::atomic<PlayState> m_playState;
+      std::atomic<Settings> m_settings;
+      std::atomic<InputMode> m_inputMode;
+
+      ableton::Link m_link;
 
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;

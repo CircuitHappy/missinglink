@@ -20,8 +20,8 @@ using namespace MissingLink::GPIO;
 using std::min;
 using std::max;
 
-OutputProcess::OutputProcess(Engine::State &state)
-  : Engine::Process(state, std::chrono::microseconds(500))
+OutputProcess::OutputProcess(Engine &engine)
+  : Engine::Process(engine, std::chrono::microseconds(500))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
@@ -40,23 +40,24 @@ void OutputProcess::Run() {
 
 void OutputProcess::process() {
 
-  if (m_state.playState == Engine::PlayState::Stopped) {
+  auto playState = m_engine.GetPlayState();
+  if (playState == Engine::PlayState::Stopped) {
     setClock(false);
     setReset(false);
     return;
   }
 
-  const auto model = m_state.getOutput(m_lastOutTime);
+  const auto model = m_engine.GetOutputModel(m_lastOutTime);
   m_lastOutTime = model.now;
 
-  switch (m_state.playState) {
+  switch (playState) {
     case Engine::PlayState::Cued:
       // start playing on first clock of loop
       if (!model.resetTriggered) {
         break;
       }
       // Deliberate fallthrough here
-      m_state.playState = Engine::PlayState::Playing;
+      m_engine.SetPlayState(Engine::PlayState::Playing);
     case Engine::PlayState::Playing:
       triggerOutputs(model.clockTriggered, model.resetTriggered);
       break;
@@ -107,20 +108,16 @@ namespace MissingLink {
 
 }
 
-ViewUpdateProcess::ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainView> pView)
-  : Engine::Process(state, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(15)))
+ViewUpdateProcess::ViewUpdateProcess(Engine &engine, std::shared_ptr<MainView> pView)
+  : Engine::Process(engine, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(15)))
   , m_pView(pView)
 {}
 
 void ViewUpdateProcess::process() {
-
-  const auto phase = m_state.getNormalizedPhase();
-  const auto playState = m_state.playState.load();
+  const auto phase = m_engine.GetNormalizedPhase();
+  const auto playState = m_engine.GetPlayState();
   animatePhase(phase, playState);
   m_pView->UpdateDisplay();
-
-  //auto displayValue = formatDisplayValue(model.tempo, m_state.settings.load());
-  //m_pView->WriteDisplay(displayValue);
 }
 
 void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState playState) {
@@ -142,23 +139,3 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
       break;
   }
 }
-
-//std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &settings) {
-//  std::ostringstream stringStream;
-//  switch (m_state.inputMode) {
-//    case BPM:
-//      stringStream.setf(std::ios::fixed, std::ios::floatfield);
-//      stringStream.precision(1);
-//      stringStream << tempo;
-//      break;
-//    case Loop:
-//      stringStream << (int)settings.quantum;
-//      break;
-//    case Clock:
-//      stringStream << (int)settings.getPPQN();
-//      break;
-//    default:
-//      break;
-//  }
-//  return stringStream.str();
-//}

@@ -42,8 +42,8 @@ namespace MissingLink {
   };
 }
 
-UserInputProcess::UserInputProcess(Engine::State &state)
-  : Engine::Process(state, std::chrono::microseconds(1000))
+UserInputProcess::UserInputProcess(Engine &engine)
+  : Engine::Process(engine, std::chrono::microseconds(1000))
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
 {
