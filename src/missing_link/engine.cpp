@@ -4,6 +4,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
@@ -253,7 +254,11 @@ void Engine::displayCurrentMode() {
 }
 
 void Engine::displayTempo(double tempo, bool force) {
-  m_pView->WriteDisplay(std::to_string(tempo), force);
+  std::ostringstream stringStream;
+  stringStream.setf(std::ios::fixed, std::ios::floatfield);
+  stringStream.precision(1);
+  stringStream << tempo;
+  m_pView->WriteDisplay(stringStream.str(), force);
 }
 
 void Engine::displayQuantum(int quantum, bool force) {
