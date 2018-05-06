@@ -46,23 +46,32 @@ void OutputProcess::process() {
     return;
   }
 
-  const auto settings = m_state.settings.load();
-  const auto model = OutputModel(m_state.link, settings, true);
+  const auto model = m_state.getOutput(m_lastOutTime, true);
+  m_lastOutTime = model.now;
 
   switch (m_state.playState) {
     case Cued:
       // start playing on first clock of loop
-      if (!model.isFirstClock) {
+      if (!model.resetTriggered) {
         break;
       }
       // Deliberate fallthrough here
       m_state.playState = Playing;
     case Playing:
-      setReset(model.resetHigh);
-      setClock(model.clockHigh);
+      triggerOutputs(model.clockTriggered, model.resetTriggered);
       break;
     default:
       break;
+  }
+}
+
+void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
+  if (resetTriggered) { setReset(true); }
+  if (clockTriggered) { setClock(true); }
+  if (clockTriggered || resetTriggered) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    setReset(false);
+    setClock(false);
   }
 }
 
@@ -77,7 +86,6 @@ void OutputProcess::setReset(bool high) {
   m_resetHigh = high;
   m_pResetOut->Write(high ? HIGH : LOW);
 }
-
 
 namespace MissingLink {
 
@@ -111,15 +119,12 @@ ViewUpdateProcess::ViewUpdateProcess(Engine::State &state, std::shared_ptr<MainV
 void ViewUpdateProcess::process() {
 
   const auto playState = m_state.playState.load();
-  const bool playing = playState == Playing;
-  const auto settings = m_state.settings.load();
-  const auto model = OutputModel(m_state.link, settings, false);
+  const auto lastOutput = std::chrono::microseconds(0);
+  const auto model = m_state.getOutput(lastOutput, false);
 
-  m_pView->SetClockLED(model.clockHigh && playing);
-  m_pView->SetResetLED(model.resetHigh && playing);
   animatePhase(model.normalizedPhase, playState);
 
-  auto displayValue = formatDisplayValue(model.tempo, settings);
+  auto displayValue = formatDisplayValue(model.tempo, m_state.settings.load());
   m_pView->WriteDisplay(displayValue);
 }
 
@@ -157,7 +162,7 @@ std::string ViewUpdateProcess::formatDisplayValue(double tempo, const Settings &
       stringStream << (int)settings.quantum;
       break;
     case Clock:
-      stringStream << (int)settings.ppqn;
+      stringStream << (int)settings.getPPQN();
       break;
     default:
       break;

@@ -23,13 +23,16 @@ namespace MissingLink {
     private:
 
       void process() override;
+      void triggerOutputs(bool clockTriggered, bool resetTriggered);
       void setClock(bool high);
       void setReset(bool high);
 
-      std::unique_ptr<GPIO::Pin> m_pClockOut;
-      std::unique_ptr<GPIO::Pin> m_pResetOut;
+      std::chrono::microseconds m_lastOutTime = std::chrono::microseconds(0);
       bool m_clockHigh = false;
       bool m_resetHigh = false;
+
+      std::unique_ptr<GPIO::Pin> m_pClockOut;
+      std::unique_ptr<GPIO::Pin> m_pResetOut;
   };
 
   class ViewUpdateProcess : public Engine::Process {
