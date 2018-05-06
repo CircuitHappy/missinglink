@@ -4,20 +4,14 @@ cmake_minimum_required(VERSION 3.0)
 # Toolchain
 ############
 
-set(
-  CMAKE_FIND_ROOT_PATH 
-  ${TARGET_DIR}
-  ${TARGET_DIR}/usr/lib
-)
+set(CMAKE_FIND_ROOT_PATH  ${TARGET_DIR})
 
-include_directories(
-  /usr/include
-  /usr/arm-buildroot-linux-gnueabihf/sysroot/usr/include
-)
+include_directories(/usr/include)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ##########
 # Project
