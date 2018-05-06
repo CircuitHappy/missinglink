@@ -15,7 +15,6 @@ using namespace MissingLink;
 Engine::State::State()
   : running(true)
   , playState(PlayState::Stopped)
-  , inputMode(InputMode::BPM)
   , settings(Settings::Load())
   , link(settings.load().tempo)
 {
@@ -96,7 +95,8 @@ void Engine::Process::sleep() {
 }
 
 Engine::Engine()
-  : m_pView(shared_ptr<MainView>(new MainView()))
+  : m_inputMode(InputMode::BPM)
+  , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
 {
   auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(m_state));
@@ -115,7 +115,7 @@ Engine::Engine()
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
   m_state.link.setTempoCallback([this](const double tempo) {
-    if (m_state.inputMode == InputMode::BPM) {
+    if (m_inputMode == InputMode::BPM) {
       displayTempo(tempo, false);
     }
   });
@@ -160,17 +160,13 @@ void Engine::playStop() {
 
 void Engine::toggleMode() {
   auto now = Clock::now();
-  InputMode inputMode = m_state.inputMode.load();
-
   // Only switch to next mode if toggle pressed twice within 1 second
   if (now - m_lastToggle < std::chrono::seconds(1)) {
-    inputMode = static_cast<InputMode>((static_cast<int>(inputMode) + 1) % 3);
-    m_state.inputMode = inputMode;
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode) + 1) % 3);
   }
   m_lastToggle = Clock::now();
-
   // Update display
-  displayModeSwitch(inputMode);
+  displayCurrentMode();
 }
 
 void Engine::resetTimeline() {
@@ -192,13 +188,13 @@ void Engine::setTempo(double tempo) {
   m_state.settings = settings;
 
   // switch back to tempo mode
-  m_state.inputMode = InputMode::BPM;
+  m_inputMode = InputMode::BPM;
   displayTempo(tempo, true);
 }
 
 void Engine::routeEncoderAdjust(float amount) {
   float rounded = round(amount);
-  switch (m_state.inputMode) {
+  switch (m_inputMode) {
     case InputMode::BPM:
       tempoAdjust(rounded);
       break;
@@ -235,9 +231,9 @@ void Engine::ppqnAdjust(int amount) {
   displayPPQN(ppqn, true);
 }
 
-void Engine::displayModeSwitch(InputMode inputMode) {
+void Engine::displayCurrentMode() {
   const int holdTime = 1000;
-  switch (inputMode) {
+  switch (m_inputMode) {
     case InputMode::BPM: {
       m_pView->WriteDisplayTemporarily("BPM", holdTime);
       displayTempo(getCurrentTempo(), false);

@@ -46,7 +46,6 @@ namespace MissingLink {
 
         std::atomic<bool> running;
         std::atomic<PlayState> playState;
-        std::atomic<InputMode> inputMode;
         std::atomic<Settings> settings;
         ableton::Link link;
 
@@ -90,6 +89,8 @@ namespace MissingLink {
     private:
 
       State m_state;
+      InputMode m_inputMode;
+
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
       std::vector<std::unique_ptr<Process>> m_processes;
@@ -104,7 +105,7 @@ namespace MissingLink {
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
 
-      void displayModeSwitch(InputMode inputMode);
+      void displayCurrentMode();
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
