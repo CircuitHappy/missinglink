@@ -197,7 +197,6 @@ void Engine::setTempo(double tempo) {
 }
 
 void Engine::routeEncoderAdjust(float amount) {
-  const float rounded = round(amount);
   switch (m_inputMode) {
     case InputMode::BPM:
       tempoAdjust(round(amount));
@@ -249,7 +248,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::Clock: {
-      m_pView->WriteDisplayTemporarily("CLK", holdTime);
+      m_pView->WriteDisplayTemporarily("PPQN", holdTime);
       displayPPQN(getCurrentPPQN(), false);
       break;
     }
