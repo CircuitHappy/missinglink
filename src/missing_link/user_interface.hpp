@@ -35,6 +35,8 @@ class UserInputProcess : public Engine::Process {
     std::vector<std::unique_ptr<Control>> m_controls;
     std::shared_ptr<IOExpander> m_pExpander;
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
+
+    int m_loopGuardCount = 0;
 };
 
 } // namespace

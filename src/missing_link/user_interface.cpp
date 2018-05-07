@@ -43,7 +43,7 @@ namespace MissingLink {
 }
 
 UserInputProcess::UserInputProcess(Engine &engine)
-  : Engine::Process(engine, std::chrono::microseconds(1000))
+  : Engine::Process(engine, std::chrono::microseconds(10))
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
 {
@@ -97,8 +97,15 @@ void UserInputProcess::process() {
   // If interrupt is already low, handle immediately
   if (m_pInterruptIn->Read() == GPIO::LOW) {
     handleInterrupt();
+    if (++m_loopGuardCount > 10) {
+      m_loopGuardCount = 0;
+      std::cerr << "UI process in tight loop. Forcing 10ms sleep..." << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
     return;
   }
+
+  m_loopGuardCount = 0;
 
   // Poll for 500ms
   int result = ::poll(&pfd, 1, 500);
@@ -106,11 +113,11 @@ void UserInputProcess::process() {
   // No interrupts? try again
   if (result == 0) { return; }
 
-  // Clear interrupt event
-  m_pInterruptIn->Read();
-
   // Handle it
   handleInterrupt();
+
+  // Clear interrupt event
+  m_pInterruptIn->Read();
 }
 
 void UserInputProcess::handleInterrupt() {
