@@ -96,13 +96,15 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
     return;
   }
 
-  float rotationAmount = 0.0;
   float acc = 1.0;
+  float rotationAmount = 0.0;
+
+  const float accThreshold = 50.0;
 
   auto now = Clock::now();
   auto interval = std::chrono::duration_cast<Millis>(now - m_lastChange).count();
   if (interval > 0) {
-    float factor = fmin(1.0, fmax(0.0, (100.0 - (float)interval)/100.0));
+    float factor = fmin(1.0, fmax(0.0, (accThreshold - (float)interval)/accThreshold));
     acc += factor * 3.0;
   }
   m_lastChange = now;
