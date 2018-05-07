@@ -8,6 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <functional>
+#include "missing_link/types.hpp"
 #include "missing_link/gpio.hpp"
 #include "missing_link/io_expander.hpp"
 
@@ -34,16 +35,13 @@ class Control {
                                  uint8_t state,
                                  std::shared_ptr<IOExpander> pExpander) = 0;
     uint8_t m_flagMask = 0;
-    std::chrono::steady_clock::time_point m_lastTriggered;
 };
 
 class Button : public Control {
 
   public:
 
-    Button(int pinIndex,
-           std::chrono::milliseconds debounceInterval = std::chrono::milliseconds(2),
-           std::chrono::milliseconds minRepeatInterval = std::chrono::milliseconds(5));
+    Button(int pinIndex);
 
     virtual ~Button();
 
@@ -53,9 +51,7 @@ class Button : public Control {
 
   private:
 
-    std::chrono::milliseconds m_debounceInterval;
-    std::chrono::milliseconds m_minRepeatInterval;
-
+    TimePoint m_lastEvent;
     void handleInterrupt(uint8_t flag,
                          uint8_t state,
                          std::shared_ptr<IOExpander> pExpander) override;
@@ -79,6 +75,7 @@ class RotaryEncoder : public Control {
 
     long m_encVal;
     unsigned int m_lastEncSeq;
+    TimePoint m_lastChange;
 
     void handleInterrupt(uint8_t flag,
                          uint8_t state,

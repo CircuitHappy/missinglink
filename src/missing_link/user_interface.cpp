@@ -74,7 +74,7 @@ UserInputProcess::UserInputProcess(Engine &engine)
   };
   m_controls.push_back(std::move(tapButton));
 
-  auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON, chrono::milliseconds(5), chrono::milliseconds(20)));
+  auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON));
   encoderButton->onTriggered = [=]() {
     if (onEncoderPress) {
       onEncoderPress();

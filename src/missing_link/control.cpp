@@ -10,6 +10,10 @@
 using namespace std;
 using namespace MissingLink;
 
+namespace MissingLink {
+  typedef std::chrono::milliseconds Millis;
+}
+
 Control::Control(vector<int> pinIndices)
 {
   for (auto index : pinIndices) {
@@ -23,41 +27,27 @@ void Control::HandleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander
   handleInterrupt(flag, state, pExpander);
 }
 
-Button::Button(int pinIndex,
-               chrono::milliseconds debounceInterval,
-               chrono::milliseconds minRepeatInterval)
-  : Control({ pinIndex })
-  , m_debounceInterval(debounceInterval)
-  , m_minRepeatInterval(minRepeatInterval)
-{}
+Button::Button(int pinIndex) : Control({ pinIndex }) {}
 
 Button::~Button() {}
 
 void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander> pExpander) {
+
+  auto now = Clock::now();
+  if ((now - m_lastEvent) < Millis(5)) {
+    return;
+  }
+
+  m_lastEvent = chrono::steady_clock::now();
 
   // check change to ON
   if ((flag & state) == 0) {
     return;
   }
 
-  auto now = chrono::steady_clock::now();
-  if ((now - m_lastTriggered) < m_minRepeatInterval) {
-    return;
-  }
-
-  // sleep to debounce
-  this_thread::sleep_for(chrono::milliseconds(m_debounceInterval));
-
-  // check again to make sure it's still on
-  if ((pExpander->ReadGPIO() | flag) == 0) {
-    return;
-  }
-
   if (onTriggered) {
     onTriggered();
   }
-
-  m_lastTriggered = chrono::steady_clock::now();
 }
 
 
@@ -96,27 +86,30 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
       break;
   }
 
-  float rotationAmount = 0.0;
-  if (std::abs(m_encVal) >= 4) {
-
-    float acc = 1.0;
-    auto now = std::chrono::steady_clock::now();
-    auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastTriggered).count();
-    if (interval > 0) {
-      float factor = fmin(1.0, fmax(0.0, (100.0 - (float)interval)/100.0));
-      acc += factor * 3.0;
-    }
-    m_lastTriggered = now;
-
-    if (m_encVal > 0) {
-      rotationAmount = 1.0 * acc;
-    } else {
-      rotationAmount = -1.0 * acc;
-    }
-    m_encVal = 0;
+  if (std::abs(m_encVal) < 4) {
+    return;
   }
 
-  if (rotationAmount && onRotated) {
+  float rotationAmount = 0.0;
+  float acc = 1.0;
+
+  auto now = Clock::now();
+  auto interval = std::chrono::duration_cast<Millis>(now - m_lastChange).count();
+  if (interval > 0) {
+    float factor = fmin(1.0, fmax(0.0, (100.0 - (float)interval)/100.0));
+    acc += factor * 3.0;
+  }
+  m_lastChange = now;
+
+  if (m_encVal > 0) {
+    rotationAmount = 1.0 * acc;
+  } else {
+    rotationAmount = -1.0 * acc;
+  }
+
+  m_encVal = 0;
+
+  if (onRotated) {
     onRotated(rotationAmount);
   }
 }
