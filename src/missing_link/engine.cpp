@@ -6,13 +6,16 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
 #include "missing_link/user_interface.hpp"
 
+#define MIN_TEMPO 40.0
+#define MAX_TEMPO 200.0
+
 using namespace std;
 using namespace MissingLink;
-
 
 Engine::Process::Process(Engine &engine, std::chrono::microseconds sleepTime)
   : m_engine(engine)
@@ -176,6 +179,9 @@ void Engine::resetTimeline() {
 }
 
 void Engine::setTempo(double tempo) {
+
+  tempo = std::max(MIN_TEMPO, std::min(MAX_TEMPO, tempo));
+
   auto now = m_link.clock().micros();
   auto timeline = m_link.captureAppTimeline();
   timeline.setTempo(tempo, now);
