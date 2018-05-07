@@ -96,6 +96,7 @@ void UserInputProcess::process() {
 
   // If interrupt is already low, handle immediately
   if (m_pInterruptIn->Read() == GPIO::LOW) {
+    std::cout << "Interrupt already low at start of poll routine" << std::endl;
     handleInterrupt();
     return;
   }

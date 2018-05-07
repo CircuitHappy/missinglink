@@ -55,6 +55,7 @@ RotaryEncoder::RotaryEncoder(int pinIndexA, int pinIndexB)
   : Control({ pinIndexA, pinIndexB })
   , m_aFlag(1 << pinIndexA)
   , m_bFlag(1 << pinIndexB)
+  , m_encVal(0)
   , m_lastEncSeq(0)
 {}
 
