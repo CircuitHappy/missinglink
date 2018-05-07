@@ -200,13 +200,13 @@ void Engine::routeEncoderAdjust(float amount) {
   const float rounded = round(amount);
   switch (m_inputMode) {
     case InputMode::BPM:
-      tempoAdjust(rounded);
+      tempoAdjust(round(amount));
       break;
     case InputMode::Loop:
-      loopAdjust((int)rounded);
+      loopAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::Clock:
-      ppqnAdjust((int)rounded);
+      ppqnAdjust(amount > 0.0 ? 1 : -1);
       break;
     default:
       break;
