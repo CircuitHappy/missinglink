@@ -54,6 +54,7 @@ void Engine::Process::sleep() {
 Engine::Engine()
   : m_running(true)
   , m_playState(PlayState::Stopped)
+  , m_wifiStatus(WifiState::TRYING_TO_CONNECT)
   , m_settings(Settings::Load())
   , m_inputMode(InputMode::BPM)
   , m_link(m_settings.load().tempo)

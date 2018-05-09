@@ -46,6 +46,8 @@ namespace MissingLink {
       void process() override;
       void animatePhase(float normalizedPhase, Engine::PlayState playState);
 
+      float getWifiStatusFrame();
+
       std::shared_ptr<MainView> m_pView;
   };
 

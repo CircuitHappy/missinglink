@@ -16,6 +16,11 @@
 
 namespace MissingLink {
 
+  enum OutputLEDIndex {
+    WIFI_LED        = 7,
+    ANIM_LED_START  = 8 // start of 6 consecutive animation LEDs
+  };
+
   class MainView {
 
     public:
@@ -41,6 +46,9 @@ namespace MissingLink {
 
       // Update the display.
       void UpdateDisplay();
+
+      // Draw a frame of the WiFi Status LED
+      void displayWifiStatusFrame(float frame);
 
     private:
 
