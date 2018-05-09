@@ -37,7 +37,7 @@ void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
   auto last = m_lastEvent;
   m_lastEvent = now;
 
-  if ((now - last) < Millis(5)) {
+  if ((now - last) < Millis(50)) {
     return;
   }
 
