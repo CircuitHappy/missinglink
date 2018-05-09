@@ -88,6 +88,11 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   }
 
   if (std::abs(m_encVal) < 4) {
+    // Reset value on start of grey code if
+    // sequence failed to get all the way through.
+    if (seq == 0) {
+      m_encVal = 0;
+    }
     return;
   }
 

@@ -164,7 +164,6 @@ void Engine::toggleMode() {
     m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 3);
   }
   m_lastToggle = Clock::now();
-  // Update display
   displayCurrentMode();
 }
 
