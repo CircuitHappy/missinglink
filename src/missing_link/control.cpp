@@ -34,11 +34,12 @@ Button::~Button() {}
 void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander> pExpander) {
 
   auto now = Clock::now();
-  if ((now - m_lastEvent) < Millis(5)) {
+  auto last = m_lastEvent;
+  m_lastEvent = now;
+
+  if ((now - last) < Millis(5)) {
     return;
   }
-
-  m_lastEvent = chrono::steady_clock::now();
 
   // check change to ON
   if ((flag & state) == 0) {
