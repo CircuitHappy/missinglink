@@ -27,6 +27,7 @@ namespace MissingLink {
       void setClock(bool high);
       void setReset(bool high);
 
+
       std::chrono::microseconds m_lastOutTime = std::chrono::microseconds(0);
       bool m_clockHigh = false;
       bool m_resetHigh = false;
@@ -46,7 +47,7 @@ namespace MissingLink {
       void process() override;
       void animatePhase(float normalizedPhase, Engine::PlayState playState);
 
-      float getWifiStatusFrame();
+      float getWifiStatusFrame(int wifiStatus);
 
       std::shared_ptr<MainView> m_pView;
   };

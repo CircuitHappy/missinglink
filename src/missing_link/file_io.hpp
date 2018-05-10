@@ -32,5 +32,7 @@
      std::string read();
      void write(std::string message);
 
+     bool exists();
+
  };
 }} // namespaces

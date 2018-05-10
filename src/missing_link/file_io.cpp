@@ -21,9 +21,9 @@ TextFile::TextFile(string path)
   : m_path(path)
   , m_fd(-1)
 {
-  //add setup here
-  //check for existence of file
-  //create file if it doesn't exist and write default status to file
+  if (!exists()) {
+    write("TRYING_TO_CONNECT");
+  }
 }
 
 TextFile::~TextFile() {
@@ -38,9 +38,10 @@ string TextFile::Read() {
 }
 
 void TextFile::write(string message) {
-  m_fd = ::open(m_path.c_str(), O_WRONLY);
-  ::write(m_fd, message.c_str(), message.size());
-  ::close(m_fd);
+  std::ofstream myFile;
+  myFile.open(m_path, std::ofstream::out | std::ofstream::trunc);
+  myFile << message;
+  myFile.close();
 }
 
 string TextFile::read() {
@@ -56,8 +57,9 @@ string TextFile::read() {
       myFile.close();
   }
   return lastLine;
-  // m_fd = ::open(m_path.c_str(), O_RDONLY | O_NONBLOCK);
-  // ::read(m_fd, &str, 80);
-  // ::close(m_fd);
-  // return std::string(str);
+}
+
+bool TextFile::exists() {
+  ifstream f(m_path.c_str());
+  return f.good();
 }

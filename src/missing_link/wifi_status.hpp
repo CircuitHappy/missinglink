@@ -26,7 +26,7 @@ enum WifiState {
       WifiStatus();
       virtual ~WifiStatus();
 
-      WifiState GetStatus();
+      WifiState ReadStatus();
 
     private:
       std::string wifiStatusFile = "/tmp/WifiStatus";
