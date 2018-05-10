@@ -6,3 +6,4 @@
 #define ML_INTERRUPT_PIN    25
 #define ML_CLOCK_PIN        23
 #define ML_RESET_PIN        24
+#define ML_LOGO_PIN         16

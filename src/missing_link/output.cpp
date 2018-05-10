@@ -26,9 +26,11 @@ OutputProcess::OutputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(500))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
+  , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
+  m_pLogoLight->Write(HIGH);
 }
 
 void OutputProcess::Run() {
