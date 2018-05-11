@@ -19,10 +19,9 @@ using namespace std;
 
 TextFile::TextFile(string path)
   : m_path(path)
-  , m_fd(-1)
 {
   if (!exists()) {
-    write("TRYING_TO_CONNECT");
+    write("");
   }
 }
 

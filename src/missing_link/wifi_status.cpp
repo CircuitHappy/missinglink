@@ -17,6 +17,9 @@ WifiStatus::~WifiStatus() {}
 
 WifiState WifiStatus::ReadStatus() {
   std::string strState = m_pWifiStatusFile->Read();
+  if (strState == "") {
+    return TRYING_TO_CONNECT;
+  }
   if (strState == "NO_WIFI_FOUND") {
     return NO_WIFI_FOUND;
   }

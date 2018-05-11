@@ -25,8 +25,6 @@
 
      const std::string m_path;
 
-     int m_fd;
-
      void open();
 
      std::string read();
