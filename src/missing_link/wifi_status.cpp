@@ -17,12 +17,6 @@ WifiStatus::~WifiStatus() {}
 
 WifiState WifiStatus::ReadStatus() {
   std::string strState = m_pWifiStatusFile->Read();
-  if (strState == "") {
-    return TRYING_TO_CONNECT;
-  }
-  if (strState == "NO_WIFI_FOUND") {
-    return NO_WIFI_FOUND;
-  }
   if (strState == "WIFI_CONNECTED") {
       return WIFI_CONNECTED;
   }
@@ -32,6 +26,9 @@ WifiState WifiStatus::ReadStatus() {
   if (strState == "AP_MODE") {
       return AP_MODE;
   }
+  if (strState == "NO_WIFI_FOUND") {
+    return NO_WIFI_FOUND;
+  }
   //DEFAULT STATE
-  return NO_WIFI_FOUND;
+  return TRYING_TO_CONNECT;
 }
