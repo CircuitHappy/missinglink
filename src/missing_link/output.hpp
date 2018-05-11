@@ -27,12 +27,14 @@ namespace MissingLink {
       void setClock(bool high);
       void setReset(bool high);
 
+
       std::chrono::microseconds m_lastOutTime = std::chrono::microseconds(0);
       bool m_clockHigh = false;
       bool m_resetHigh = false;
 
       std::unique_ptr<GPIO::Pin> m_pClockOut;
       std::unique_ptr<GPIO::Pin> m_pResetOut;
+      std::unique_ptr<GPIO::Pin> m_pLogoLight;
   };
 
   class ViewUpdateProcess : public Engine::Process {
@@ -45,6 +47,8 @@ namespace MissingLink {
 
       void process() override;
       void animatePhase(float normalizedPhase, Engine::PlayState playState);
+
+      float getWifiStatusFrame(int wifiStatus);
 
       std::shared_ptr<MainView> m_pView;
   };

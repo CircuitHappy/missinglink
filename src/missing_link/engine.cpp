@@ -54,6 +54,8 @@ void Engine::Process::sleep() {
 Engine::Engine()
   : m_running(true)
   , m_playState(PlayState::Stopped)
+  , m_wifiStatus(WifiState::TRYING_TO_CONNECT)
+  , m_pWifiStatusFile(unique_ptr<WifiStatus>(new WifiStatus()))
   , m_settings(Settings::Load())
   , m_inputMode(InputMode::BPM)
   , m_link(m_settings.load().tempo)
@@ -95,6 +97,7 @@ void Engine::Run() {
   while (isRunning()) {
     Settings settings = m_settings.load();
     Settings::Save(settings);
+    m_wifiStatus = m_pWifiStatusFile->ReadStatus();
     this_thread::sleep_for(chrono::seconds(1));
   }
 
@@ -140,6 +143,10 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
 
   return output;
+}
+
+int Engine::getWifiStatus() {
+  return m_wifiStatus;
 }
 
 void Engine::playStop() {

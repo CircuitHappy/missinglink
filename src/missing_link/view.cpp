@@ -10,10 +10,6 @@ using namespace MissingLink;
 
 namespace MissingLink {
 
-  enum OutputLEDIndex {
-    WIFI_LED        = 5,
-    ANIM_LED_START  = 8 // start of 6 consecutive animation LEDs
-  };
 }
 
 MainView::MainView()
@@ -72,4 +68,8 @@ void MainView::UpdateDisplay() {
   if (now >= m_tempMessageExpiration) {
     m_tempDisplayValues = std::stack<std::string>();
   }
+}
+
+void MainView::displayWifiStatusFrame(float frame) {
+  m_pLEDDriver->SetBrightness(frame, WIFI_LED);
 }

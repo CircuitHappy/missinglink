@@ -15,6 +15,7 @@
 #include "missing_link/tap_tempo.hpp"
 #include "missing_link/settings.hpp"
 #include "missing_link/view.hpp"
+#include "missing_link/wifi_status.hpp"
 
 namespace MissingLink {
 
@@ -80,10 +81,14 @@ namespace MissingLink {
       PlayState GetPlayState() const { return m_playState.load(); }
       void SetPlayState(PlayState state) { m_playState = state; };
 
+      int getWifiStatus();
+
     private:
 
       std::atomic<bool> m_running;
       std::atomic<PlayState> m_playState;
+      std::atomic<WifiState> m_wifiStatus;
+      std::shared_ptr<WifiStatus> m_pWifiStatusFile;
       std::atomic<Settings> m_settings;
       std::atomic<InputMode> m_inputMode;
 
