@@ -270,10 +270,10 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily(" AP ", oneSecond * 10);
+      m_pView->WriteDisplayTemporarily(" AP ", oneSecond * 20);
     break;
     case TRYING_TO_CONNECT :
-      m_pView->WriteDisplayTemporarily("SRCH", oneSecond * 10);
+      m_pView->WriteDisplayTemporarily("SRCH", oneSecond * 60);
       break;
     case NO_WIFI_FOUND :
       m_pView->WriteDisplayTemporarily("NoWF", oneSecond * 10);
