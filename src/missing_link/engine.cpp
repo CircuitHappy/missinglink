@@ -54,7 +54,7 @@ void Engine::Process::sleep() {
 Engine::Engine()
   : m_running(true)
   , m_playState(PlayState::Stopped)
-  , m_wifiStatus(WifiState::TRYING_TO_CONNECT)
+  , m_wifiStatus(WifiState::NO_WIFI_FOUND)
   , m_pWifiStatusFile(unique_ptr<WifiStatus>(new WifiStatus()))
   , m_settings(Settings::Load())
   , m_inputMode(InputMode::BPM)
@@ -87,7 +87,7 @@ Engine::Engine()
 }
 
 void Engine::Run() {
-
+  WifiState prevWifiStatus;
   displayTempo(getCurrentTempo(), true);
 
   for (auto &process : m_processes) {
@@ -97,7 +97,9 @@ void Engine::Run() {
   while (isRunning()) {
     Settings settings = m_settings.load();
     Settings::Save(settings);
+    prevWifiStatus = m_wifiStatus;
     m_wifiStatus = m_pWifiStatusFile->ReadStatus();
+    if (prevWifiStatus != m_wifiStatus) displayTempWifiStatus(m_wifiStatus);
     this_thread::sleep_for(chrono::seconds(1));
   }
 
@@ -260,6 +262,29 @@ void Engine::displayCurrentMode() {
       break;
     }
     default:
+      break;
+  }
+}
+
+void Engine::displayTempWifiStatus(WifiState status) {
+  const int holdTime = 4000;
+  switch (status) {
+    case AP_MODE :
+      m_pView->WriteDisplayTemporarily(" AP ", holdTime);
+    break;
+    case TRYING_TO_CONNECT :
+      m_pView->WriteDisplayTemporarily("SRCH", holdTime);
+      break;
+    case NO_WIFI_FOUND :
+      m_pView->WriteDisplayTemporarily("NoWF", holdTime);
+      break;
+    case WIFI_CONNECTED :
+      m_pView->WriteDisplayTemporarily("WIFI", holdTime);
+      break;
+      case REBOOT :
+        m_pView->WriteDisplayTemporarily("Rst!", holdTime);
+        break;
+    default :
       break;
   }
 }
