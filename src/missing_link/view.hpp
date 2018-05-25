@@ -39,7 +39,9 @@ namespace MissingLink {
 
       // Set a value to be written to the display for the given duration in ms
       // after which it will be reverted back to its previous value.
-      void WriteDisplayTemporarily(const std::string &string, int millis);
+      void WriteDisplayTemporarily(const std::string &string, int millis, bool scrolling);
+
+      void ScrollTempMessage();
 
       // Set the display to be cleared on the next update
       void ClearDisplay();
@@ -55,6 +57,10 @@ namespace MissingLink {
       TimePoint m_tempMessageExpiration;
       std::stack<std::string> m_tempDisplayValues;
       std::string m_displayValue;
+      std::string m_tempScrollingMessage;
+      TimePoint m_lastTempMessageFrame;
+      bool m_scrollTempMessage;
+      int m_scrollOffset;
 
       std::mutex m_displayMutex;
 

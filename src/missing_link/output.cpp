@@ -149,6 +149,7 @@ void ViewUpdateProcess::process() {
   const auto playState = m_engine.GetPlayState();
   animatePhase(phase, playState);
   m_pView->displayWifiStatusFrame(getWifiStatusFrame(m_engine.getWifiStatus()));
+  m_pView->ScrollTempMessage();
   m_pView->UpdateDisplay();
 }
 

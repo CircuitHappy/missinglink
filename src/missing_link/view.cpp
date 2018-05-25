@@ -43,11 +43,29 @@ void MainView::WriteDisplay(const std::string &string, bool force) {
   }
 }
 
-void MainView::WriteDisplayTemporarily(const std::string &string, int millis) {
+void MainView::WriteDisplayTemporarily(const std::string &string, int millis, bool scrolling) {
   ScopedMutex lock(m_displayMutex);
+  m_scrollTempMessage = scrolling;
+  if (scrolling) {
+    m_scrollOffset = 0;
+    m_tempScrollingMessage = string;
+  }
   m_tempDisplayValues.push(string);
   m_tempMessageExpiration = Clock::now() + std::chrono::milliseconds(millis);
   m_pDisplay->Write(string);
+}
+
+void MainView::ScrollTempMessage() {
+  if (m_scrollTempMessage) {
+    auto now = Clock::now();
+    if (now >= m_lastTempMessageFrame) {
+      m_lastTempMessageFrame = now + std::chrono::milliseconds(100);
+      int messageLength = m_tempScrollingMessage.length();
+      m_scrollOffset ++;
+      if ((m_scrollOffset + 3) > (messageLength - 1)) m_scrollOffset = 0;
+      m_tempDisplayValues.push(m_tempScrollingMessage.substr(m_scrollOffset, 4));
+    }
+  }
 }
 
 void MainView::ClearDisplay() {
@@ -67,6 +85,7 @@ void MainView::UpdateDisplay() {
   m_pDisplay->Write(m_tempDisplayValues.top());
   if (now >= m_tempMessageExpiration) {
     m_tempDisplayValues = std::stack<std::string>();
+    m_scrollTempMessage = false;
   }
 }
 
