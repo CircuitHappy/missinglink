@@ -59,7 +59,7 @@ void MainView::ScrollTempMessage() {
   if (m_scrollTempMessage) {
     auto now = Clock::now();
     if (now >= m_lastTempMessageFrame) {
-      m_lastTempMessageFrame = now + std::chrono::milliseconds(100);
+      m_lastTempMessageFrame = now + std::chrono::milliseconds(150);
       int messageLength = m_tempScrollingMessage.length();
       m_scrollOffset ++;
       if ((m_scrollOffset + 3) > (messageLength - 1)) m_scrollOffset = 0;
