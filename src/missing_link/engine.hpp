@@ -109,6 +109,7 @@ namespace MissingLink {
       void ppqnAdjust(int amount);
 
       void displayCurrentMode();
+      void displayTempWifiStatus(WifiState status);
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
