@@ -275,19 +275,19 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily(" AP ", oneSecond * 20);
+      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 20, true);
     break;
     case TRYING_TO_CONNECT :
-      m_pView->WriteDisplayTemporarily("SRCH", oneSecond * 60);
+      m_pView->WriteDisplayTemporarily("    SEARCHING FOR WIFI    ", oneSecond * 60, true);
       break;
     case NO_WIFI_FOUND :
-      m_pView->WriteDisplayTemporarily("NoWF", oneSecond * 10);
+      m_pView->WriteDisplayTemporarily("    NO WIFI FOUND    ", oneSecond * 10, true);
       break;
     case WIFI_CONNECTED :
-      m_pView->WriteDisplayTemporarily("WIFI", oneSecond * 5);
+      m_pView->WriteDisplayTemporarily("    WIFI CONNECTED    ", oneSecond * 5, true);
       break;
       case REBOOT :
-        m_pView->WriteDisplayTemporarily("BOOT", oneSecond * 10);
+        m_pView->WriteDisplayTemporarily("BOOT", oneSecond * 10, false);
         break;
     default :
       break;
