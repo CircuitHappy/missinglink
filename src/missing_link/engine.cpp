@@ -80,8 +80,8 @@ Engine::Engine()
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
   m_link.setNumPeersCallback([this](std::size_t numPeers) {
-    std::string message = std::to_string(numPeers) + " Ln";
-    m_pView->WriteDisplayTemporarily(message, 1000);
+    std::string message = "    " + std::to_string(numPeers) + " LINKS    ";
+    m_pView->WriteDisplayTemporarily(message, 2000, true);
   });
 
   m_link.setTempoCallback([this](const double tempo) {
