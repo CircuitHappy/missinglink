@@ -149,6 +149,7 @@ void ViewUpdateProcess::process() {
   const auto playState = m_engine.GetPlayState();
   animatePhase(phase, playState);
   m_pView->displayWifiStatusFrame(getWifiStatusFrame(m_engine.getWifiStatus()));
+  m_pView->ScrollTempMessage();
   m_pView->UpdateDisplay();
 }
 
@@ -189,6 +190,9 @@ float ViewUpdateProcess::getWifiStatusFrame(int wifiStatus) {
       break;
     case WIFI_CONNECTED :
       animationFrames = {1.0};
+      break;
+    case REBOOT :
+      animationFrames = {0.0};
       break;
     default :
       animationFrames = {0.0};

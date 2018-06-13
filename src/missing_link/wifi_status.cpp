@@ -29,6 +29,9 @@ WifiState WifiStatus::ReadStatus() {
   if (strState == "NO_WIFI_FOUND") {
     return NO_WIFI_FOUND;
   }
+  if (strState == "REBOOT") {
+    return REBOOT;
+  }
   //DEFAULT STATE
   return TRYING_TO_CONNECT;
 }
