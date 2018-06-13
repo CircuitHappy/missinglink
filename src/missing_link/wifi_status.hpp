@@ -17,6 +17,7 @@ enum WifiState {
   WIFI_CONNECTED      = 1,
   TRYING_TO_CONNECT   = 2,
   AP_MODE             = 3,
+  REBOOT              = 4,
 };
 
   class WifiStatus {

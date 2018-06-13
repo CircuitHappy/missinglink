@@ -191,6 +191,9 @@ float ViewUpdateProcess::getWifiStatusFrame(int wifiStatus) {
     case WIFI_CONNECTED :
       animationFrames = {1.0};
       break;
+    case REBOOT :
+      animationFrames = {0.0};
+      break;
     default :
       animationFrames = {0.0};
       break;
