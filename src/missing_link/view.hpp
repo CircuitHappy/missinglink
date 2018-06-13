@@ -39,7 +39,7 @@ namespace MissingLink {
 
       // Set a value to be written to the display for the given duration in ms
       // after which it will be reverted back to its previous value.
-      void WriteDisplayTemporarily(const std::string &string, int millis, bool scrolling);
+      void WriteDisplayTemporarily(const std::string &string, int millis, bool scrolling = false);
 
       void ScrollTempMessage();
 
