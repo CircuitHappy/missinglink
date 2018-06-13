@@ -244,20 +244,20 @@ void Engine::ppqnAdjust(int amount) {
 }
 
 void Engine::displayCurrentMode() {
-  const int holdTime = 5000;
+  const int holdTime = 1000;
   switch (m_inputMode) {
     case InputMode::BPM: {
-      m_pView->WriteDisplayTemporarily("    Tempo (BPM)    ", holdTime, true);
+      m_pView->WriteDisplayTemporarily("BPM", holdTime);
       displayTempo(getCurrentTempo(), false);
       break;
     }
     case InputMode::Loop: {
-      m_pView->WriteDisplayTemporarily("    LOOP SIZE    ", holdTime, true);
+      m_pView->WriteDisplayTemporarily("LOOP", holdTime);
       displayQuantum(getCurrentQuantum(), false);
       break;
     }
     case InputMode::Clock: {
-      m_pView->WriteDisplayTemporarily("    Clock PPQN    ", holdTime, true);
+      m_pView->WriteDisplayTemporarily("PPQN", holdTime);
       displayPPQN(getCurrentPPQN(), false);
       break;
     }
