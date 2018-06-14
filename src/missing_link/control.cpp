@@ -69,6 +69,10 @@ void RotaryEncoder::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOEx
 }
 
 void RotaryEncoder::decode(bool aOn, bool bOn) {
+
+  auto now = Clock::now();
+  m_lastChange = now;
+
   uint8_t aVal = aOn ? 0x01 : 0x00;
   uint8_t bVal = bOn ? 0x01 : 0x00;
 
@@ -76,6 +80,11 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   unsigned int delta = (seq - m_lastEncSeq) & 0b11;
 
   m_lastEncSeq = seq;
+
+  // Reset value if the last change was more than 50ms ago
+  if (now - m_lastChange >= Millis(50)) {
+    m_encVal = 0;
+  }
 
   switch (delta) {
     case 1:
@@ -89,11 +98,6 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   }
 
   if (std::abs(m_encVal) < 4) {
-    // Reset value on start of grey code if
-    // sequence failed to get all the way through.
-    if (seq == 0) {
-      m_encVal = 0;
-    }
     return;
   }
 
@@ -102,13 +106,11 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
 
   const float accThreshold = 50.0;
 
-  auto now = Clock::now();
   auto interval = std::chrono::duration_cast<Millis>(now - m_lastChange).count();
   if (interval > 0) {
     float factor = fmin(1.0, fmax(0.0, (accThreshold - (float)interval)/accThreshold));
-    acc += factor * 3.0;
+    acc += factor * 5.0;
   }
-  m_lastChange = now;
 
   if (m_encVal > 0) {
     rotationAmount = 1.0 * acc;
