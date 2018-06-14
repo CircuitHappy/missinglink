@@ -34,10 +34,10 @@ Button::~Button() {}
 void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander> pExpander) {
 
   auto now = Clock::now();
-  auto last = m_lastEvent;
+  Millis tDiff = std::chrono::duration_cast<Millis>(now - m_lastEvent);
   m_lastEvent = now;
 
-  if ((now - last) < Millis(50)) {
+  if (tDiff < Millis(50)) {
     return;
   }
 
@@ -71,7 +71,6 @@ void RotaryEncoder::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOEx
 void RotaryEncoder::decode(bool aOn, bool bOn) {
 
   auto now = Clock::now();
-  m_lastChange = now;
 
   uint8_t aVal = aOn ? 0x01 : 0x00;
   uint8_t bVal = bOn ? 0x01 : 0x00;
@@ -80,11 +79,6 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   unsigned int delta = (seq - m_lastEncSeq) & 0b11;
 
   m_lastEncSeq = seq;
-
-  // Reset value if the last change was more than 250ms ago
-  if (now - m_lastChange >= Millis(250)) {
-    m_encVal = 0;
-  }
 
   switch (delta) {
     case 1:
@@ -104,13 +98,15 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   float acc = 1.0;
   float rotationAmount = 0.0;
 
-  const float accThreshold = 100.0;
+  const float accThreshold = 50.0;
+  float interval = (float)std::chrono::duration_cast<Millis>(now - m_lastChange).count();
 
-  auto interval = std::chrono::duration_cast<Millis>(now - m_lastChange).count();
-  if (interval > 0) {
-    float factor = fmin(1.0, fmax(0.0, (accThreshold - (float)interval)/accThreshold));
-    acc += factor * 50.0;
+  if (interval <= accThreshold && interval > 0) {
+    float factor = fmin(1.0, fmax(0.0, (accThreshold - interval)/accThreshold));
+    acc += factor * 4.0;
   }
+
+  m_lastChange = now;
 
   if (m_encVal > 0) {
     rotationAmount = 1.0 * acc;
