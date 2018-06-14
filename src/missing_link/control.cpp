@@ -81,8 +81,8 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
 
   m_lastEncSeq = seq;
 
-  // Reset value if the last change was more than 50ms ago
-  if (now - m_lastChange >= Millis(50)) {
+  // Reset value if the last change was more than 250ms ago
+  if (now - m_lastChange >= Millis(250)) {
     m_encVal = 0;
   }
 
@@ -104,12 +104,12 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   float acc = 1.0;
   float rotationAmount = 0.0;
 
-  const float accThreshold = 50.0;
+  const float accThreshold = 100.0;
 
   auto interval = std::chrono::duration_cast<Millis>(now - m_lastChange).count();
   if (interval > 0) {
     float factor = fmin(1.0, fmax(0.0, (accThreshold - (float)interval)/accThreshold));
-    acc += factor * 5.0;
+    acc += factor * 50.0;
   }
 
   if (m_encVal > 0) {
