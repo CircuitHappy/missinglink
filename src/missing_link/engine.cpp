@@ -11,8 +11,8 @@
 #include "missing_link/output.hpp"
 #include "missing_link/user_interface.hpp"
 
-#define MIN_TEMPO 40.0
-#define MAX_TEMPO 200.0
+#define MIN_TEMPO 20.0
+#define MAX_TEMPO 300.0
 
 using namespace std;
 using namespace MissingLink;
