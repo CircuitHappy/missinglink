@@ -275,7 +275,7 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 20, true);
+      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 300, true);
     break;
     case TRYING_TO_CONNECT :
       m_pView->WriteDisplayTemporarily("    SEARCHING FOR WIFI    ", oneSecond * 60, true);
