@@ -156,6 +156,10 @@ int Engine::getWifiStatus() {
   return m_wifiStatus;
 }
 
+int Engine::getResetMode() {
+  return getCurrentResetMode();
+}
+
 void Engine::playStop() {
   switch (m_playState) {
     case PlayState::Stopped:
@@ -220,6 +224,9 @@ void Engine::routeEncoderAdjust(float amount) {
       break;
     case InputMode::Clock:
       ppqnAdjust(amount > 0.0 ? 1 : -1);
+      break;
+    case InputMode::ResetMode:
+      resetModeAdjust(amount > 0.0 ? 1 : -1);
       break;
     default:
       break;

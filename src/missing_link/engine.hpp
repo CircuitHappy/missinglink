@@ -83,6 +83,7 @@ namespace MissingLink {
       void SetPlayState(PlayState state) { m_playState = state; };
 
       int getWifiStatus();
+      int getResetMode();
 
     private:
 

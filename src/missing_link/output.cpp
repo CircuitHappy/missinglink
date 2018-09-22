@@ -71,11 +71,16 @@ void OutputProcess::process() {
 }
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
+  auto playState = m_engine.GetPlayState();
   if (resetTriggered) { setReset(true); }
   if (clockTriggered) { setClock(true); }
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    setReset(false);
+    if ((m_engine.getResetMode() == 0) && (playState == Engine::PlayState::Playing)) {
+      setReset(false);
+    } else {
+      setReset(true);
+    }
     setClock(false);
   }
 }
