@@ -178,7 +178,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1 second
   if (now - m_lastToggle < std::chrono::seconds(1)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 3);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 4);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -248,6 +248,16 @@ void Engine::ppqnAdjust(int amount) {
   displayPPQN(ppqn, true);
 }
 
+void Engine::resetModeAdjust(int amount) {
+  int max_index = Settings::reset_mode_options.size() - 1;
+  auto settings = m_settings.load();
+  int index = std::min(max_index, std::max(0, settings.reset_mode_index + amount));
+  settings.reset_mode_index = index;
+  m_settings = settings;
+  int mode = Settings::reset_mode_options[index];
+  displayResetMode(mode, true);
+}
+
 void Engine::displayCurrentMode() {
   const int holdTime = 1000;
   switch (m_inputMode) {
@@ -264,6 +274,11 @@ void Engine::displayCurrentMode() {
     case InputMode::Clock: {
       m_pView->WriteDisplayTemporarily("PPQN", holdTime);
       displayPPQN(getCurrentPPQN(), false);
+      break;
+    }
+    case InputMode::ResetMode: {
+      m_pView->WriteDisplayTemporarily("RsMd", holdTime);
+      displayResetMode(getCurrentResetMode(), false);
       break;
     }
     default:
@@ -310,6 +325,10 @@ void Engine::displayPPQN(int ppqn, bool force) {
   m_pView->WriteDisplay(std::to_string(ppqn), force);
 }
 
+void Engine::displayResetMode(int mode, bool force) {
+  m_pView->WriteDisplay(std::to_string(mode), force);
+}
+
 double Engine::getCurrentTempo() const {
   auto timeline = m_link.captureAppTimeline();
   return timeline.tempo();
@@ -323,4 +342,9 @@ int Engine::getCurrentQuantum() const {
 int Engine::getCurrentPPQN() const {
   auto settings = m_settings.load();
   return Settings::ppqn_options[settings.ppqn_index];
+}
+
+int Engine::getCurrentResetMode() const {
+  auto settings = m_settings.load();
+  return Settings::reset_mode_options[settings.reset_mode_index];
 }
