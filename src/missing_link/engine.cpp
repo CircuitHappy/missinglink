@@ -89,6 +89,19 @@ Engine::Engine()
       displayTempo(tempo, false);
     }
   });
+
+  m_link.setStartStopCallback([this](const bool isPlaying) {
+    std::string message;
+    const auto timeline = m_link.captureAppSessionState();
+    playStop();
+    if (timeline.isPlaying()) {
+      message = "    SYNC START    ";
+    } else {
+      message = "    SYNC STOP    ";
+    }
+    m_pView->WriteDisplayTemporarily(message, 2000, true);
+  });
+
 }
 
 void Engine::Run() {
@@ -116,7 +129,7 @@ void Engine::Run() {
 const double Engine::GetNormalizedPhase() const {
   const auto now = m_link.clock().micros();
   const auto currentSettings = m_settings.load();
-  const auto timeline = m_link.captureAppTimeline();
+  const auto timeline = m_link.captureAppSessionState();
   const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
   return min(1.0, max(0.0, phase / (double)currentSettings.quantum));
 }
@@ -127,7 +140,7 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   const auto now = m_link.clock().micros();
   output.now = now;
 
-  auto timeline = m_link.captureAudioTimeline();
+  auto timeline = m_link.captureAudioSessionState();
   output.tempo = timeline.tempo();
 
   if (last == std::chrono::microseconds(0)) {
@@ -178,7 +191,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1 second
   if (now - m_lastToggle < std::chrono::seconds(1)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 3);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 4);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -186,10 +199,10 @@ void Engine::toggleMode() {
 
 void Engine::resetTimeline() {
   // Reset to beat zero in 1 ms
-  auto timeline = m_link.captureAppTimeline();
+  auto timeline = m_link.captureAppSessionState();
   auto resetTime = m_link.clock().micros() + std::chrono::milliseconds(1);
   timeline.forceBeatAtTime(0, resetTime, m_settings.load().quantum);
-  m_link.commitAppTimeline(timeline);
+  m_link.commitAppSessionState(timeline);
 }
 
 void Engine::setTempo(double tempo) {
@@ -197,9 +210,9 @@ void Engine::setTempo(double tempo) {
   tempo = std::max(MIN_TEMPO, std::min(MAX_TEMPO, tempo));
 
   auto now = m_link.clock().micros();
-  auto timeline = m_link.captureAppTimeline();
+  auto timeline = m_link.captureAppSessionState();
   timeline.setTempo(tempo, now);
-  m_link.commitAppTimeline(timeline);
+  m_link.commitAppSessionState(timeline);
 
   auto settings = m_settings.load();
   settings.tempo = tempo;
@@ -220,6 +233,9 @@ void Engine::routeEncoderAdjust(float amount) {
       break;
     case InputMode::Clock:
       ppqnAdjust(amount > 0.0 ? 1 : -1);
+      break;
+    case InputMode::StartStopSync:
+      StartStopSyncAdjust(amount > 0.0 ? 1 : -1);
       break;
     default:
       break;
@@ -248,6 +264,16 @@ void Engine::ppqnAdjust(int amount) {
   displayPPQN(ppqn, true);
 }
 
+void Engine::StartStopSyncAdjust(int amount) {
+  int max_index = 1; //two options, 0 or 1
+  auto settings = m_settings.load();
+  int ss_sync = std::min(max_index, std::max(0, settings.start_stop_sync + amount));
+  settings.start_stop_sync = ss_sync;
+  m_settings = settings;
+  m_link.enableStartStopSync(ss_sync == 1);
+  displayStartStopSync(ss_sync, true);
+}
+
 void Engine::displayCurrentMode() {
   const int holdTime = 1000;
   switch (m_inputMode) {
@@ -264,6 +290,11 @@ void Engine::displayCurrentMode() {
     case InputMode::Clock: {
       m_pView->WriteDisplayTemporarily("PPQN", holdTime);
       displayPPQN(getCurrentPPQN(), false);
+      break;
+    }
+    case InputMode::StartStopSync: {
+      m_pView->WriteDisplayTemporarily("SYNC", holdTime);
+      displayStartStopSync(getCurrentStartStopSync(), false);
       break;
     }
     default:
@@ -310,8 +341,22 @@ void Engine::displayPPQN(int ppqn, bool force) {
   m_pView->WriteDisplay(std::to_string(ppqn), force);
 }
 
+void Engine::displayStartStopSync(int sync, bool force) {
+  switch (sync) {
+    case 0:
+      m_pView->WriteDisplay("OFF", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("ON", force);
+      break;
+    default:
+      m_pView->WriteDisplay(std::to_string(sync), force);
+      break;
+  }
+}
+
 double Engine::getCurrentTempo() const {
-  auto timeline = m_link.captureAppTimeline();
+  auto timeline = m_link.captureAppSessionState();
   return timeline.tempo();
 }
 
@@ -323,4 +368,9 @@ int Engine::getCurrentQuantum() const {
 int Engine::getCurrentPPQN() const {
   auto settings = m_settings.load();
   return Settings::ppqn_options[settings.ppqn_index];
+}
+
+int Engine::getCurrentStartStopSync() const {
+  auto settings = m_settings.load();
+  return settings.start_stop_sync;
 }

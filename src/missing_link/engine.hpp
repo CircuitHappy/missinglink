@@ -32,7 +32,8 @@ namespace MissingLink {
       enum class InputMode {
         BPM,
         Loop,
-        Clock
+        Clock,
+        StartStopSync
       };
 
       /// Model for engine output processes
@@ -107,16 +108,19 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+      void StartStopSyncAdjust(int amount);
 
       void displayCurrentMode();
       void displayTempWifiStatus(WifiState status);
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
+      void displayStartStopSync(int sync, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;
       int getCurrentPPQN() const;
+      int getCurrentStartStopSync() const;
 
       TimePoint m_lastToggle;
   };
