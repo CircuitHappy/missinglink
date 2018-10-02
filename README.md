@@ -39,7 +39,7 @@ SSH in to your RPi via your terminal `ssh pi@raspberrypi.local`
 Password should be the default password for the `pi` user.
 
 ## Get Missing Link building
-Install these files to get all the tools you will need to build and run the `missinglink` binary.
+Install these files to get all the tools you will need to build and run the `missing_link` binary.
 
 `sudo apt-get install cmake git libconfig++-dev libconfig++9v5`
 
@@ -56,3 +56,5 @@ Clone the git repo in your home directory
 `sudo build/bin/missing_link`
 
 Run the binary `sudo ./build/bin/missing_link`
+
+*Note: missing_link binary is expecting to talk to an LED driver, LED display, and GPIO expander over the i2c buss. You will have to disable some of these dependencies if you don't have those wired up to the RPi Zero W.*
