@@ -72,14 +72,33 @@ void OutputProcess::process() {
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
   auto playState = m_engine.GetPlayState();
-  if (resetTriggered) { setReset(true); }
+  bool resetTrig = true;
+  if (m_engine.getResetMode() == 2) {
+    resetTrig = false;
+  }
+  if (resetTriggered) { setReset(resetTrig); }
   if (clockTriggered) { setClock(true); }
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    if ((m_engine.getResetMode() == 0) && (playState == Engine::PlayState::Playing)) {
-      setReset(false);
-    } else {
-      setReset(true);
+    switch (m_engine.getResetMode()) {
+      case 0:
+        if (playState == Engine::PlayState::Playing) {
+          setReset(false);
+        }
+        break;
+      case 1:
+        if (playState == Engine::PlayState::Playing) {
+          setReset(true);
+        }
+        break;
+      case 2:
+        if (playState == Engine::PlayState::Playing) {
+          setReset(true);
+        }
+        break;
+      default:
+        setReset(false);
+        break;
     }
     setClock(false);
   }

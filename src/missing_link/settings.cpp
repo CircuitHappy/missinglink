@@ -17,7 +17,7 @@ using namespace libconfig;
 using namespace MissingLink;
 
 const std::vector<int> Settings :: ppqn_options ({1, 2, 4, 8, 12, 16, 24, 32});
-const std::vector<int> Settings :: reset_mode_options ({0, 1});
+const std::vector<int> Settings :: reset_mode_options ({0, 1, 2});
 
 Settings Settings::Load() {
   Settings settings;

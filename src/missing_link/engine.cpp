@@ -284,7 +284,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::ResetMode: {
-      m_pView->WriteDisplayTemporarily("RsMd", holdTime);
+      m_pView->WriteDisplayTemporarily("RSTM", holdTime);
       displayResetMode(getCurrentResetMode(), false);
       break;
     }
@@ -333,7 +333,21 @@ void Engine::displayPPQN(int ppqn, bool force) {
 }
 
 void Engine::displayResetMode(int mode, bool force) {
-  m_pView->WriteDisplay(std::to_string(mode), force);
+  switch (mode) {
+    case 0:
+      m_pView->WriteDisplay("PULS", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("DIN1", force);
+      break;
+    case 2:
+      m_pView->WriteDisplay("DIN2", force);
+      break;
+    default:
+      m_pView->WriteDisplay("WHAT", force);
+      break;
+  }
+
 }
 
 double Engine::getCurrentTempo() const {
