@@ -53,8 +53,6 @@ Clone the git repo in your home directory
 
 `sudo make -C build`
 
-`sudo build/bin/missing_link`
-
 Run the binary `sudo ./build/bin/missing_link`
 
 *Note: missing_link binary is expecting to talk to an LED driver, LED display, and GPIO expander over the i2c buss. You will have to disable some of these dependencies if you don't have those wired up to the RPi Zero W.*
