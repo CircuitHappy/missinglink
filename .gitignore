@@ -3,9 +3,4 @@ build/
 .vagrant/
 *.log
 *.pyc
-
-# Build dependencies (only applies to Ubuntu hosts)
-CHIP-buildroot
-chip-mtd-utils
-CHIP-tools
-sunxi-tools
+.DS_Store
