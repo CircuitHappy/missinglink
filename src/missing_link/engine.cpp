@@ -235,7 +235,7 @@ void Engine::routeEncoderAdjust(float amount) {
       ppqnAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::StartStopSync:
-      StartStopSyncAdjust(amount > 0.0 ? 1 : -1);
+      StartStopSyncAdjust(amount);
       break;
     default:
       break;
@@ -264,13 +264,14 @@ void Engine::ppqnAdjust(int amount) {
   displayPPQN(ppqn, true);
 }
 
-void Engine::StartStopSyncAdjust(int amount) {
-  int max_index = 1; //two options, 0 or 1
+void Engine::StartStopSyncAdjust(float amount) {
+  //clockwise set value to true, counterclock set value to false
   auto settings = m_settings.load();
-  int ss_sync = std::min(max_index, std::max(0, settings.start_stop_sync + amount));
+  bool ss_sync = settings.start_stop_sync;
+  ss_sync = amount > 0 ? true : false;
   settings.start_stop_sync = ss_sync;
   m_settings = settings;
-  m_link.enableStartStopSync(ss_sync == 1);
+  m_link.enableStartStopSync(ss_sync);
   displayStartStopSync(ss_sync, true);
 }
 
@@ -341,17 +342,11 @@ void Engine::displayPPQN(int ppqn, bool force) {
   m_pView->WriteDisplay(std::to_string(ppqn), force);
 }
 
-void Engine::displayStartStopSync(int sync, bool force) {
-  switch (sync) {
-    case 0:
-      m_pView->WriteDisplay("OFF", force);
-      break;
-    case 1:
-      m_pView->WriteDisplay("ON", force);
-      break;
-    default:
-      m_pView->WriteDisplay(std::to_string(sync), force);
-      break;
+void Engine::displayStartStopSync(bool sync, bool force) {
+  if (sync == true) {
+    m_pView->WriteDisplay("ON", force);
+  } else {
+    m_pView->WriteDisplay("OFF", force);
   }
 }
 

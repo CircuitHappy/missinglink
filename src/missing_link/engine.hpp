@@ -108,14 +108,14 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
-      void StartStopSyncAdjust(int amount);
+      void StartStopSyncAdjust(float amount);
 
       void displayCurrentMode();
       void displayTempWifiStatus(WifiState status);
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
-      void displayStartStopSync(int sync, bool force);
+      void displayStartStopSync(bool sync, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;

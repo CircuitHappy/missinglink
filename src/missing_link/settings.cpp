@@ -48,7 +48,8 @@ Settings Settings::Load() {
   }
 
   std::cout << std::setprecision(1) << std::setiosflags(std::ios::fixed) <<
-    "Loaded Settings:" <<
+    "Loaded Settings: " <<
+    ML_CONFIG_FILE <<
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
     "\n  ppqn: " << settings.getPPQN() <<
@@ -70,7 +71,7 @@ void Settings::Save(const Settings settings) {
   root.add("tempo", Setting::TypeFloat) = settings.tempo;
   root.add("quantum", Setting::TypeInt) = settings.quantum;
   root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
-  root.add("start_stop_sync", Setting::TypeInt) = settings.start_stop_sync;
+  root.add("start_stop_sync", Setting::TypeBoolean) = settings.start_stop_sync;
 
   try {
     config.write(file);
