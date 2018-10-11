@@ -256,12 +256,16 @@ void Engine::ppqnAdjust(int amount) {
 }
 
 void Engine::resetModeAdjust(int amount) {
-  int max_index = Settings::reset_mode_options.size() - 1;
+  int num_options = 3;
   auto settings = m_settings.load();
-  int index = std::min(max_index, std::max(0, settings.reset_mode_index + amount));
-  settings.reset_mode_index = index;
+  int mode = std::min(num_options - 1, std::max(0, settings.reset_mode + amount));
+  if ( (mode > 0) && (getCurrentPPQN() != 24) ) {
+    //set clock to 24 PPQN
+    settings.ppqn_index = 6;
+    m_pView->WriteDisplayTemporarily("    CLOCK NOW 24 PPQN    ", 3000, true);
+  }
+  settings.reset_mode = mode;
   m_settings = settings;
-  int mode = Settings::reset_mode_options[index];
   displayResetMode(mode, true);
 }
 
@@ -367,5 +371,5 @@ int Engine::getCurrentPPQN() const {
 
 int Engine::getCurrentResetMode() const {
   auto settings = m_settings.load();
-  return Settings::reset_mode_options[settings.reset_mode_index];
+  return settings.reset_mode;
 }
