@@ -65,6 +65,15 @@ void OutputProcess::process() {
     case Engine::PlayState::Playing:
       triggerOutputs(model.clockTriggered, model.resetTriggered);
       break;
+    case Engine::PlayState::CuedStop:
+      // stop playing on first clock of loop
+      if (model.resetTriggered) {
+        m_engine.SetPlayState(Engine::PlayState::Stopped);
+      } else {
+        //keep playing the clock
+        triggerOutputs(model.clockTriggered, model.resetTriggered);
+      }
+      break;
     default:
       break;
   }
@@ -112,6 +121,15 @@ namespace MissingLink {
     {1, 1, 1, 1, 0.1, 0.1},
     {1, 1, 1, 1, 1, 0.1},
     {1, 1, 1, 1, 1, 1},
+  };
+
+  static const float CuedStopAnimationFrames[][6] = {
+    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
+    {0, 1, 0.1, 0.1, 0.1, 0.1},
+    {0, 0, 1, 0.1, 0.1, 0.1},
+    {0, 0, 0, 1, 0.1, 0.1},
+    {0, 0, 0, 0, 1, 0.1},
+    {0, 0, 0, 0, 0, 1},
   };
 
   //Animation for WIFI LED when AP is ready to connect to
@@ -169,6 +187,9 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
       break;
     case Engine::PlayState::Playing:
       m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
+      break;
+    case Engine::PlayState::CuedStop:
+      m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex]);
       break;
     default:
       m_pView->ClearAnimationLEDs();
