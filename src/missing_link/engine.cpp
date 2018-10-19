@@ -278,7 +278,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::DelayCompensation: {
-      m_pView->WriteDisplayTemporarily("DLY", holdTime);
+      m_pView->WriteDisplayTemporarily("    OFFSET    ", 1500, true);
       displayDelayCompensation(getCurrentDelayCompensation(), false);
       break;
     }
