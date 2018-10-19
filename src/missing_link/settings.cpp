@@ -42,6 +42,7 @@ Settings Settings::Load() {
     settings.tempo = config.lookup("tempo");
     settings.quantum = config.lookup("quantum");
     settings.ppqn_index = config.lookup("ppqn_index");
+    settings.delay_compensation = config.lookup("delay_compensation");
   } catch (const SettingNotFoundException &exc) {
     std::cerr << "One or more settings missing from config file" << std::endl;
   }
@@ -50,7 +51,8 @@ Settings Settings::Load() {
     "Loaded Settings:" <<
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
-    "\n  ppqn: " << settings.getPPQN() << std::endl;
+    "\n  ppqn: " << settings.getPPQN() <<
+    "\n  delay_compensation: " << settings.delay_compensation << std::endl;
 
   return settings;
 }
@@ -68,6 +70,7 @@ void Settings::Save(const Settings settings) {
   root.add("tempo", Setting::TypeFloat) = settings.tempo;
   root.add("quantum", Setting::TypeInt) = settings.quantum;
   root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
+  root.add("delay_compensation", Setting::TypeInt) = settings.delay_compensation;
 
   try {
     config.write(file);
