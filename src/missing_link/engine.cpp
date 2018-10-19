@@ -222,7 +222,7 @@ void Engine::routeEncoderAdjust(float amount) {
       ppqnAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::DelayCompensation:
-      delayCompensationAdjust(amount > 0.0 ? 1 : -1);
+      delayCompensationAdjust(amount);
       break;
     default:
       break;
