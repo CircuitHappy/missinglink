@@ -180,8 +180,8 @@ void Engine::playStop() {
 
 void Engine::toggleMode() {
   auto now = Clock::now();
-  // Only switch to next mode if toggle pressed twice within 1 second
-  if (now - m_lastToggle < std::chrono::seconds(1)) {
+  // Only switch to next mode if toggle pressed twice within 1.5 seconds
+  if (now - m_lastToggle < std::chrono::milliseconds(1500)) {
     m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 4);
   }
   m_lastToggle = Clock::now();
@@ -270,7 +270,7 @@ void Engine::resetModeAdjust(int amount) {
 }
 
 void Engine::displayCurrentMode() {
-  const int holdTime = 1000;
+  const int holdTime = 1500;
   switch (m_inputMode) {
     case InputMode::BPM: {
       m_pView->WriteDisplayTemporarily("BPM", holdTime);
@@ -288,7 +288,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::ResetMode: {
-      m_pView->WriteDisplayTemporarily("RSTM", holdTime);
+      m_pView->WriteDisplayTemporarily("    RESET MODE    ", 2400, true);
       displayResetMode(getCurrentResetMode(), false);
       break;
     }
