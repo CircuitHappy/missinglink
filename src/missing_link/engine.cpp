@@ -294,7 +294,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::StartStopSync: {
-      m_pView->WriteDisplayTemporarily("SYNC", holdTime);
+      m_pView->WriteDisplayTemporarily("    SYNC START/STOP    ", 3000, true);
       displayStartStopSync(getCurrentStartStopSync(), false);
       break;
     }
