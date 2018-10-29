@@ -62,7 +62,11 @@ Engine::Engine()
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
 {
+  Settings settings = m_settings.load();
+
   m_link.enable(true);
+
+  m_link.enableStartStopSync(settings.start_stop_sync);
 
   auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(*this));
   m_processes.push_back(std::move(outputProcess));
@@ -93,13 +97,14 @@ Engine::Engine()
   m_link.setStartStopCallback([this](const bool isPlaying) {
     std::string message;
     const auto timeline = m_link.captureAppSessionState();
-    playStop();
     if (timeline.isPlaying()) {
-      message = "    SYNC START    ";
+      m_playState = PlayState::Cued;
+      //message = "    SYNC START    "; //would be nice to display status if remotely start/stop
     } else {
-      message = "    SYNC STOP    ";
+      m_playState = PlayState::Stopped;
+      //message = "    SYNC STOP    "; //but these display even if local play button is hit
     }
-    m_pView->WriteDisplayTemporarily(message, 2000, true);
+    //m_pView->WriteDisplayTemporarily(message, 2000, true);
   });
 
 }
@@ -172,15 +177,13 @@ int Engine::getWifiStatus() {
 void Engine::playStop() {
   switch (m_playState) {
     case PlayState::Stopped:
-      // reset the timeline to zero if there are no peers
-      if (m_link.numPeers() == 0) {
-        resetTimeline();
-      }
+      startTimeline();
       m_playState = PlayState::Cued;
       break;
     case PlayState::Playing:
     case PlayState::Cued:
       m_playState = PlayState::Stopped;
+      stopTimeline();
       break;
     default:
       break;
@@ -197,11 +200,22 @@ void Engine::toggleMode() {
   displayCurrentMode();
 }
 
-void Engine::resetTimeline() {
-  // Reset to beat zero in 1 ms
+void Engine::startTimeline() {
   auto timeline = m_link.captureAppSessionState();
-  auto resetTime = m_link.clock().micros() + std::chrono::milliseconds(1);
-  timeline.forceBeatAtTime(0, resetTime, m_settings.load().quantum);
+  auto now = m_link.clock().micros();
+  if (m_link.numPeers() == 0){
+    timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(1), m_settings.load().quantum);
+    timeline.setIsPlaying(true, now + std::chrono::milliseconds(1));
+  } else {
+    timeline.setIsPlayingAndRequestBeatAtTime(true, now, 0, m_settings.load().quantum);
+  }
+  m_link.commitAppSessionState(timeline);
+}
+
+void Engine::stopTimeline() {
+  auto timeline = m_link.captureAppSessionState();
+  auto now = m_link.clock().micros();
+  timeline.setIsPlayingAndRequestBeatAtTime(false, now, 0, m_settings.load().quantum);
   m_link.commitAppSessionState(timeline);
 }
 

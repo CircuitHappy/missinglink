@@ -101,7 +101,8 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
-      void resetTimeline();
+      void startTimeline();
+      void stopTimeline();
       void setTempo(double tempo);
 
       void routeEncoderAdjust(float amount);
