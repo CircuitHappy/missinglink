@@ -124,7 +124,7 @@ const double Engine::GetNormalizedPhase() const {
 const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last) const {
   OutputModel output;
 
-  const auto now = m_link.clock().micros() + std::chrono::milliseconds(getCurrentDelayCompensation());
+  const auto now = m_link.clock().micros() - std::chrono::milliseconds(getCurrentDelayCompensation());
   output.now = now;
 
   auto timeline = m_link.captureAudioTimeline();
@@ -278,7 +278,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::DelayCompensation: {
-      m_pView->WriteDisplayTemporarily("    OFFSET    ", 1500, true);
+      m_pView->WriteDisplayTemporarily("    OFFSET (MS)    ", 2200, true);
       displayDelayCompensation(getCurrentDelayCompensation(), false);
       break;
     }
