@@ -42,15 +42,18 @@ Settings Settings::Load() {
     settings.tempo = config.lookup("tempo");
     settings.quantum = config.lookup("quantum");
     settings.ppqn_index = config.lookup("ppqn_index");
+    settings.start_stop_sync = config.lookup("start_stop_sync");
   } catch (const SettingNotFoundException &exc) {
     std::cerr << "One or more settings missing from config file" << std::endl;
   }
 
   std::cout << std::setprecision(1) << std::setiosflags(std::ios::fixed) <<
-    "Loaded Settings:" <<
+    "Loaded Settings: " <<
+    ML_CONFIG_FILE <<
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
-    "\n  ppqn: " << settings.getPPQN() << std::endl;
+    "\n  ppqn: " << settings.getPPQN() <<
+    "\n  start_stop_sync: " << settings.start_stop_sync << std::endl;
 
   return settings;
 }
@@ -68,6 +71,7 @@ void Settings::Save(const Settings settings) {
   root.add("tempo", Setting::TypeFloat) = settings.tempo;
   root.add("quantum", Setting::TypeInt) = settings.quantum;
   root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
+  root.add("start_stop_sync", Setting::TypeBoolean) = settings.start_stop_sync;
 
   try {
     config.write(file);
