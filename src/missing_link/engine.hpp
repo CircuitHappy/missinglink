@@ -33,7 +33,9 @@ namespace MissingLink {
         BPM,
         Loop,
         Clock,
-        ResetMode
+        ResetMode,
+        DelayCompensation,
+        StartStopSync
       };
 
       /// Model for engine output processes
@@ -102,7 +104,8 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
-      void resetTimeline();
+      void startTimeline();
+      void stopTimeline();
       void setTempo(double tempo);
 
       void routeEncoderAdjust(float amount);
@@ -110,6 +113,8 @@ namespace MissingLink {
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
       void resetModeAdjust(int amount);
+      void delayCompensationAdjust(int amount);
+      void StartStopSyncAdjust(float amount);
 
       void displayCurrentMode();
       void displayTempWifiStatus(WifiState status);
@@ -117,11 +122,15 @@ namespace MissingLink {
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
       void displayResetMode(int mode, bool force);
+      void displayDelayCompensation(int delay, bool force);
+      void displayStartStopSync(bool sync, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;
       int getCurrentPPQN() const;
       int getCurrentResetMode() const;
+      int getCurrentDelayCompensation() const;
+      int getCurrentStartStopSync() const;
 
       TimePoint m_lastToggle;
   };

@@ -39,6 +39,7 @@ void MainView::WriteDisplay(const std::string &string, bool force) {
   m_displayValue = string;
   if (force) {
     m_tempDisplayValues = std::stack<std::string>();
+    m_scrollTempMessage = false;
     m_pDisplay->Write(string);
   }
 }
