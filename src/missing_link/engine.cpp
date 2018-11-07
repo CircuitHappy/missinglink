@@ -170,6 +170,13 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   return output;
 }
 
+void Engine::SetPlayState(PlayState state) {
+  m_playState = state;
+  if (state == PlayState::Stopped) {
+    stopTimeline();
+  }
+}
+
 int Engine::getWifiStatus() {
   return m_wifiStatus;
 }

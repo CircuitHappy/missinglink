@@ -83,7 +83,7 @@ namespace MissingLink {
       const OutputModel GetOutputModel(std::chrono::microseconds last) const;
 
       PlayState GetPlayState() const { return m_playState.load(); }
-      void SetPlayState(PlayState state) { m_playState = state; };
+      void SetPlayState(PlayState state);
 
       int getWifiStatus();
       int getResetMode();
