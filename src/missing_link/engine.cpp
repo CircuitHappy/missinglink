@@ -194,7 +194,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1 second
   if (now - m_lastToggle < std::chrono::seconds(1)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 4);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 5);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -250,6 +250,7 @@ void Engine::routeEncoderAdjust(float amount) {
       break;
     case InputMode::DelayCompensation:
       delayCompensationAdjust(amount);
+      break;
     case InputMode::StartStopSync:
       StartStopSyncAdjust(amount);
       break;
@@ -320,6 +321,8 @@ void Engine::displayCurrentMode() {
     case InputMode::DelayCompensation: {
       m_pView->WriteDisplayTemporarily("    OFFSET (MS)    ", 2200, true);
       displayDelayCompensation(getCurrentDelayCompensation(), false);
+      break;
+    }
     case InputMode::StartStopSync: {
       m_pView->WriteDisplayTemporarily("    SYNC START/STOP    ", 3000, true);
       displayStartStopSync(getCurrentStartStopSync(), false);
@@ -372,7 +375,7 @@ void Engine::displayPPQN(int ppqn, bool force) {
 void Engine::displayDelayCompensation(int delay, bool force) {
   m_pView->WriteDisplay(std::to_string(delay), force);
 }
-  
+
 void Engine::displayStartStopSync(bool sync, bool force) {
   if (sync == true) {
     m_pView->WriteDisplay("ON", force);
@@ -400,7 +403,7 @@ int Engine::getCurrentDelayCompensation() const {
   auto settings = m_settings.load();
   return settings.delay_compensation;
 }
-  
+
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;

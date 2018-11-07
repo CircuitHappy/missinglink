@@ -54,7 +54,7 @@ Settings Settings::Load() {
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
     "\n  ppqn: " << settings.getPPQN() <<
-    "\n  delay_compensation: " << settings.delay_compensation << std::endl;
+    "\n  delay_compensation: " << settings.delay_compensation <<
     "\n  start_stop_sync: " << settings.start_stop_sync << std::endl;
 
   return settings;
