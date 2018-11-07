@@ -16,7 +16,7 @@
 using namespace libconfig;
 using namespace MissingLink;
 
-const std::vector<int> Settings :: ppqn_options ({1, 2, 4, 8, 12, 16, 24});
+const std::vector<int> Settings :: ppqn_options ({1, 2, 4, 8, 12, 16, 24, 32});
 
 Settings Settings::Load() {
   Settings settings;
@@ -42,6 +42,7 @@ Settings Settings::Load() {
     settings.tempo = config.lookup("tempo");
     settings.quantum = config.lookup("quantum");
     settings.ppqn_index = config.lookup("ppqn_index");
+    settings.reset_mode = config.lookup("reset_mode");
     settings.delay_compensation = config.lookup("delay_compensation");
     settings.start_stop_sync = config.lookup("start_stop_sync");
   } catch (const SettingNotFoundException &exc) {
@@ -54,6 +55,7 @@ Settings Settings::Load() {
     "\n  tempo: " << settings.tempo <<
     "\n  quantum: " << settings.quantum <<
     "\n  ppqn: " << settings.getPPQN() <<
+    "\n  reset_mode: " << settings.reset_mode <<
     "\n  delay_compensation: " << settings.delay_compensation <<
     "\n  start_stop_sync: " << settings.start_stop_sync << std::endl;
 
@@ -73,6 +75,7 @@ void Settings::Save(const Settings settings) {
   root.add("tempo", Setting::TypeFloat) = settings.tempo;
   root.add("quantum", Setting::TypeInt) = settings.quantum;
   root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
+  root.add("reset_mode", Setting::TypeInt) = settings.reset_mode;
   root.add("delay_compensation", Setting::TypeInt) = settings.delay_compensation;
   root.add("start_stop_sync", Setting::TypeBoolean) = settings.start_stop_sync;
 

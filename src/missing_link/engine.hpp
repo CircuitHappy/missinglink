@@ -33,6 +33,7 @@ namespace MissingLink {
         BPM,
         Loop,
         Clock,
+        ResetMode,
         DelayCompensation,
         StartStopSync
       };
@@ -84,6 +85,7 @@ namespace MissingLink {
       void SetPlayState(PlayState state) { m_playState = state; };
 
       int getWifiStatus();
+      int getResetMode();
 
     private:
 
@@ -110,6 +112,7 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+      void resetModeAdjust(int amount);
       void delayCompensationAdjust(int amount);
       void StartStopSyncAdjust(float amount);
 
@@ -118,12 +121,14 @@ namespace MissingLink {
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
+      void displayResetMode(int mode, bool force);
       void displayDelayCompensation(int delay, bool force);
       void displayStartStopSync(bool sync, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;
       int getCurrentPPQN() const;
+      int getCurrentResetMode() const;
       int getCurrentDelayCompensation() const;
       int getCurrentStartStopSync() const;
 

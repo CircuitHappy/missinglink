@@ -174,6 +174,10 @@ int Engine::getWifiStatus() {
   return m_wifiStatus;
 }
 
+int Engine::getResetMode() {
+  return getCurrentResetMode();
+}
+
 void Engine::playStop() {
   switch (m_playState) {
     case PlayState::Stopped:
@@ -192,9 +196,9 @@ void Engine::playStop() {
 
 void Engine::toggleMode() {
   auto now = Clock::now();
-  // Only switch to next mode if toggle pressed twice within 1 second
-  if (now - m_lastToggle < std::chrono::seconds(1)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 5);
+  // Only switch to next mode if toggle pressed twice within 1.5 seconds
+  if (now - m_lastToggle < std::chrono::milliseconds(1500)) {
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 6);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -248,6 +252,9 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::Clock:
       ppqnAdjust(amount > 0.0 ? 1 : -1);
       break;
+    case InputMode::ResetMode:
+      resetModeAdjust(amount > 0.0 ? 1 : -1);
+      break;
     case InputMode::DelayCompensation:
       delayCompensationAdjust(amount);
       break;
@@ -289,6 +296,20 @@ void Engine::ppqnAdjust(int amount) {
   displayPPQN(ppqn, true);
 }
 
+void Engine::resetModeAdjust(int amount) {
+  int num_options = 3;
+  auto settings = m_settings.load();
+  int mode = std::min(num_options - 1, std::max(0, settings.reset_mode + amount));
+  if ( (mode > 0) && (getCurrentPPQN() != 24) ) {
+    //set clock to 24 PPQN
+    settings.ppqn_index = 6;
+    m_pView->WriteDisplayTemporarily("    CLOCK NOW 24 PPQN    ", 3000, true);
+  }
+  settings.reset_mode = mode;
+  m_settings = settings;
+  displayResetMode(mode, true);
+}
+
 void Engine::StartStopSyncAdjust(float amount) {
   //clockwise set value to true, counterclock set value to false
   auto settings = m_settings.load();
@@ -301,7 +322,7 @@ void Engine::StartStopSyncAdjust(float amount) {
 }
 
 void Engine::displayCurrentMode() {
-  const int holdTime = 1000;
+  const int holdTime = 1500;
   switch (m_inputMode) {
     case InputMode::BPM: {
       m_pView->WriteDisplayTemporarily("BPM", holdTime);
@@ -316,6 +337,11 @@ void Engine::displayCurrentMode() {
     case InputMode::Clock: {
       m_pView->WriteDisplayTemporarily("PPQN", holdTime);
       displayPPQN(getCurrentPPQN(), false);
+      break;
+    }
+    case InputMode::ResetMode: {
+      m_pView->WriteDisplayTemporarily("    RESET MODE    ", 2400, true);
+      displayResetMode(getCurrentResetMode(), false);
       break;
     }
     case InputMode::DelayCompensation: {
@@ -372,6 +398,23 @@ void Engine::displayPPQN(int ppqn, bool force) {
   m_pView->WriteDisplay(std::to_string(ppqn), force);
 }
 
+void Engine::displayResetMode(int mode, bool force) {
+  switch (mode) {
+    case 0:
+      m_pView->WriteDisplay("PULS", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("DIN1", force);
+      break;
+    case 2:
+      m_pView->WriteDisplay("DIN2", force);
+      break;
+    default:
+      m_pView->WriteDisplay("WHAT", force);
+      break;
+  }
+}
+
 void Engine::displayDelayCompensation(int delay, bool force) {
   m_pView->WriteDisplay(std::to_string(delay), force);
 }
@@ -397,6 +440,11 @@ int Engine::getCurrentQuantum() const {
 int Engine::getCurrentPPQN() const {
   auto settings = m_settings.load();
   return Settings::ppqn_options[settings.ppqn_index];
+}
+
+int Engine::getCurrentResetMode() const {
+  auto settings = m_settings.load();
+  return settings.reset_mode;
 }
 
 int Engine::getCurrentDelayCompensation() const {
