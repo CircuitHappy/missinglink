@@ -26,7 +26,8 @@ namespace MissingLink {
       enum class PlayState {
         Stopped,
         Cued,
-        Playing
+        Playing,
+        CuedStop
       };
 
       enum class InputMode {

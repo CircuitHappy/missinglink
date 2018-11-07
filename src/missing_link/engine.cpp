@@ -185,7 +185,10 @@ void Engine::playStop() {
       m_playState = PlayState::Cued;
       break;
     case PlayState::Playing:
+      m_playState = PlayState::CuedStop;
+      break;
     case PlayState::Cued:
+    case PlayState::CuedStop:
       m_playState = PlayState::Stopped;
       stopTimeline();
       break;
