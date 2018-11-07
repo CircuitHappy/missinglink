@@ -132,7 +132,7 @@ void Engine::Run() {
 }
 
 const double Engine::GetNormalizedPhase() const {
-  const auto now = m_link.clock().micros();
+  const auto now = m_link.clock().micros() + std::chrono::milliseconds(getCurrentDelayCompensation());
   const auto currentSettings = m_settings.load();
   const auto timeline = m_link.captureAppSessionState();
   const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
@@ -142,7 +142,7 @@ const double Engine::GetNormalizedPhase() const {
 const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last) const {
   OutputModel output;
 
-  const auto now = m_link.clock().micros();
+  const auto now = m_link.clock().micros() - std::chrono::milliseconds(getCurrentDelayCompensation());
   output.now = now;
 
   auto timeline = m_link.captureAudioSessionState();
@@ -248,6 +248,8 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::Clock:
       ppqnAdjust(amount > 0.0 ? 1 : -1);
       break;
+    case InputMode::DelayCompensation:
+      delayCompensationAdjust(amount);
     case InputMode::StartStopSync:
       StartStopSyncAdjust(amount);
       break;
@@ -266,6 +268,14 @@ void Engine::loopAdjust(int amount) {
   settings.quantum = quantum;
   m_settings = settings;
   displayQuantum(quantum, true);
+}
+
+void Engine::delayCompensationAdjust(int amount) {
+  auto settings = m_settings.load();
+  int delay = settings.delay_compensation + amount;
+  settings.delay_compensation = delay;
+  m_settings = settings;
+  displayDelayCompensation(delay, true);
 }
 
 void Engine::ppqnAdjust(int amount) {
@@ -307,6 +317,9 @@ void Engine::displayCurrentMode() {
       displayPPQN(getCurrentPPQN(), false);
       break;
     }
+    case InputMode::DelayCompensation: {
+      m_pView->WriteDisplayTemporarily("    OFFSET (MS)    ", 2200, true);
+      displayDelayCompensation(getCurrentDelayCompensation(), false);
     case InputMode::StartStopSync: {
       m_pView->WriteDisplayTemporarily("    SYNC START/STOP    ", 3000, true);
       displayStartStopSync(getCurrentStartStopSync(), false);
@@ -356,6 +369,10 @@ void Engine::displayPPQN(int ppqn, bool force) {
   m_pView->WriteDisplay(std::to_string(ppqn), force);
 }
 
+void Engine::displayDelayCompensation(int delay, bool force) {
+  m_pView->WriteDisplay(std::to_string(delay), force);
+}
+  
 void Engine::displayStartStopSync(bool sync, bool force) {
   if (sync == true) {
     m_pView->WriteDisplay("ON", force);
@@ -379,6 +396,11 @@ int Engine::getCurrentPPQN() const {
   return Settings::ppqn_options[settings.ppqn_index];
 }
 
+int Engine::getCurrentDelayCompensation() const {
+  auto settings = m_settings.load();
+  return settings.delay_compensation;
+}
+  
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;

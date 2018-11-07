@@ -33,6 +33,7 @@ namespace MissingLink {
         BPM,
         Loop,
         Clock,
+        DelayCompensation,
         StartStopSync
       };
 
@@ -109,6 +110,7 @@ namespace MissingLink {
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+      void delayCompensationAdjust(int amount);
       void StartStopSyncAdjust(float amount);
 
       void displayCurrentMode();
@@ -116,11 +118,13 @@ namespace MissingLink {
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
+      void displayDelayCompensation(int delay, bool force);
       void displayStartStopSync(bool sync, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;
       int getCurrentPPQN() const;
+      int getCurrentDelayCompensation() const;
       int getCurrentStartStopSync() const;
 
       TimePoint m_lastToggle;

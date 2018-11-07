@@ -14,11 +14,11 @@ struct Settings {
   int quantum;
   int ppqn_index;
   static const std::vector<int> ppqn_options;
+  int delay_compensation;
   bool start_stop_sync;
 
-
   // Defaults
-  Settings() : tempo(120.0), quantum(4), ppqn_index(2), start_stop_sync(false) {}
+  Settings() : tempo(120.0), quantum(4), ppqn_index(2), delay_compensation(0), start_stop_sync(false) {}
 
   // Load from config file
   static Settings Load();
