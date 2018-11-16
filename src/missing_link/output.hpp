@@ -10,6 +10,7 @@
 #include <string>
 #include "missing_link/gpio.hpp"
 #include "missing_link/view.hpp"
+#include "missing_link/midi_out.hpp"
 
 namespace MissingLink {
 
@@ -35,6 +36,8 @@ namespace MissingLink {
       std::unique_ptr<GPIO::Pin> m_pClockOut;
       std::unique_ptr<GPIO::Pin> m_pResetOut;
       std::unique_ptr<GPIO::Pin> m_pLogoLight;
+
+      std::unique_ptr<MidiOut::MidiOut> m_pMidiOut;
   };
 
   class ViewUpdateProcess : public Engine::Process {

@@ -19,6 +19,7 @@
 
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
+using namespace MissingLink::MidiOut;
 using std::min;
 using std::max;
 
@@ -27,6 +28,7 @@ OutputProcess::OutputProcess(Engine &engine)
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
   , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
+  , m_pMidiOut(std::unique_ptr<MidiOut>(new MidiOut()))
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);

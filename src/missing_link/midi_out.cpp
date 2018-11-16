@@ -1,0 +1,91 @@
+// midiout.cpp
+#include <iostream>
+#include <cstdlib>
+
+#include "missing_link/midi_out.hpp"
+
+using namespace MissingLink;
+using namespace MissingLink::MidiOut;
+
+MidiOut::MidiOut()
+  : m_foundMidiPort(false)
+{
+  open();
+}
+
+MidiOut::~MidiOut() {
+  close();
+}
+
+void MidiOut::ClockOut() {
+  //output clock messages
+}
+void MidiOut::StartTransport() {
+  //output Start Transport messages
+}
+void MidiOut::StopTransport() {
+  //output Stop Transport messages
+}
+void MidiOut::AllNotesOff() {
+  //output All Notes Off messages
+}
+
+void MidiOut::open() {
+  //open MIDI port
+  m_midiout = new RtMidiOut();
+  // Check available ports.
+  unsigned int nPorts = m_midiout->getPortCount();
+  if ( nPorts == 0 ) {
+    std::cout << "No MIDI ports available!\n";
+    m_foundMidiPort = false;
+  } else {
+    // Open first available port.
+    m_midiout->openPort( 0 );
+    m_foundMidiPort = true;
+  }
+
+}
+
+void MidiOut::close() {
+  //close open MIDI port
+  delete m_midiout;
+}
+
+// int main()
+// {
+//   RtMidiOut *midiout = new RtMidiOut();
+//   std::vector<unsigned char> message;
+//   // Check available ports.
+//   unsigned int nPorts = midiout->getPortCount();
+//   if ( nPorts == 0 ) {
+//     std::cout << "No ports available!\n";
+//     goto cleanup;
+//   }
+//   // Open first available port.
+//   midiout->openPort( 0 );
+//   // Send out a series of MIDI messages.
+//   // Program change: 192, 5
+//   message.push_back( 192 );
+//   message.push_back( 5 );
+//   midiout->sendMessage( &message );
+//   // Control Change: 176, 7, 100 (volume)
+//   message[0] = 176;
+//   message[1] = 7;
+//   message.push_back( 100 );
+//   midiout->sendMessage( &message );
+//   // Note On: 144, 64, 90
+//   message[0] = 144;
+//   message[1] = 64;
+//   message[2] = 90;
+//   midiout->sendMessage( &message );
+//   SLEEP( 500 ); // Platform-dependent ... see example in tests directory.
+//   // Note Off: 128, 64, 40
+//   message[0] = 128;
+//   message[1] = 64;
+//   message[2] = 40;
+//   midiout->sendMessage( &message );
+//   // Clean up
+//  cleanup:
+//   delete midiout;
+//   return 0;
+// }

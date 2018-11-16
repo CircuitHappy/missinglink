@@ -16,7 +16,6 @@
 #include "missing_link/settings.hpp"
 #include "missing_link/view.hpp"
 #include "missing_link/wifi_status.hpp"
-#include "../../vendor/rtmidi/RtMidi.h"
 
 namespace MissingLink {
 
