@@ -19,7 +19,6 @@
 
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
-using namespace MissingLink::MidiOut;
 using std::min;
 using std::max;
 

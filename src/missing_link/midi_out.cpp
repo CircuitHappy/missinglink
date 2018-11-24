@@ -1,14 +1,13 @@
 // midiout.cpp
 #include <iostream>
 #include <cstdlib>
-
 #include "missing_link/midi_out.hpp"
 
 using namespace MissingLink;
-using namespace MissingLink::MidiOut;
 
 MidiOut::MidiOut()
-  : m_foundMidiPort(false)
+  : m_pMidiOut(std::unique_ptr<RtMidiOut>(new RtMidiOut()))
+  , m_foundMidiPort(false)
 {
   open();
 }
@@ -31,16 +30,14 @@ void MidiOut::AllNotesOff() {
 }
 
 void MidiOut::open() {
-  //open MIDI port
-  m_midiout = new RtMidiOut();
   // Check available ports.
-  unsigned int nPorts = m_midiout->getPortCount();
+  unsigned int nPorts = m_pMidiOut->getPortCount();
   if ( nPorts == 0 ) {
     std::cout << "No MIDI ports available!\n";
     m_foundMidiPort = false;
   } else {
     // Open first available port.
-    m_midiout->openPort( 0 );
+    m_pMidiOut->openPort( 0 );
     m_foundMidiPort = true;
   }
 
@@ -48,7 +45,6 @@ void MidiOut::open() {
 
 void MidiOut::close() {
   //close open MIDI port
-  delete m_midiout;
 }
 
 // int main()

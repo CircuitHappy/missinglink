@@ -1,10 +1,9 @@
 #include <iostream>
 #include <cstdlib>
-
-#include "../../vendor/rtmidi/RtMidi.h"
+#include <memory>
+#include <rtmidi/RtMidi.h>
 
 namespace MissingLink {
-namespace MidiOut {
 
 class MidiOut {
 
@@ -20,7 +19,7 @@ class MidiOut {
 
   protected:
 
-    RtMidiOut m_midiout;
+    std::unique_ptr<RtMidiOut> m_pMidiOut;
     std::vector<unsigned char> m_message;
     bool m_foundMidiPort;
 
@@ -29,4 +28,4 @@ class MidiOut {
 
 };
 
-}}//namespaces
+}//namespaces

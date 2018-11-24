@@ -37,7 +37,7 @@ namespace MissingLink {
       std::unique_ptr<GPIO::Pin> m_pResetOut;
       std::unique_ptr<GPIO::Pin> m_pLogoLight;
 
-      std::unique_ptr<MidiOut::MidiOut> m_pMidiOut;
+      std::unique_ptr<MidiOut> m_pMidiOut;
   };
 
   class ViewUpdateProcess : public Engine::Process {
