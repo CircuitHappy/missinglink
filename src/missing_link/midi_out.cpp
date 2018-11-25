@@ -18,12 +18,21 @@ MidiOut::~MidiOut() {
 
 void MidiOut::ClockOut() {
   //output clock messages
+  m_message.clear();
+  m_message.push_back( 0xF8 );
+  m_pMidiOut->sendMessage( &m_message );
 }
 void MidiOut::StartTransport() {
   //output Start Transport messages
+  m_message.clear();
+  m_message.push_back( 0xFA );
+  m_pMidiOut->sendMessage( &m_message );
 }
 void MidiOut::StopTransport() {
   //output Stop Transport messages
+  m_message.clear();
+  m_message.push_back( 0xFC );
+  m_pMidiOut->sendMessage( &m_message );
 }
 void MidiOut::AllNotesOff() {
   //output All Notes Off messages
@@ -32,12 +41,13 @@ void MidiOut::AllNotesOff() {
 void MidiOut::open() {
   // Check available ports.
   unsigned int nPorts = m_pMidiOut->getPortCount();
+  std::cout << "Found " << nPorts << " MIDI port(s)\n";
   if ( nPorts == 0 ) {
     std::cout << "No MIDI ports available!\n";
     m_foundMidiPort = false;
   } else {
     // Open first available port.
-    m_pMidiOut->openPort( 0 );
+    m_pMidiOut->openPort( 1 );
     m_foundMidiPort = true;
   }
 

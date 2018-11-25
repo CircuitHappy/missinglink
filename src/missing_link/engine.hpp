@@ -45,6 +45,7 @@ namespace MissingLink {
         double tempo;
         bool clockTriggered;
         bool resetTriggered;
+        bool midiClockTriggered;
       };
 
       class Process {

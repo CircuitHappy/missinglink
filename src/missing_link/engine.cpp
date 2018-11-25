@@ -151,6 +151,7 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   if (last == std::chrono::microseconds(0)) {
     output.clockTriggered = false;
     output.resetTriggered = false;
+    output.midiClockTriggered = false;
     return output;
   }
 
@@ -159,13 +160,19 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
 
   const int edgesPerBeat = currentSettings.getPPQN() * 2;
+  const int midiEdgesPerBeat = 24 * 2;
   const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
 
   const int edge = (int)floor(beats * (double)edgesPerBeat);
   const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
 
+  const int midiEdge = (int)floor(beats * (double)midiEdgesPerBeat);
+  const int midiLastEdge = (int)floor(lastBeats * (double)midiEdgesPerBeat);
+
   output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
   output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
+
+  output.midiClockTriggered = (midiEdge % 2 == 0) && (midiEdge != midiLastEdge);
 
   return output;
 }

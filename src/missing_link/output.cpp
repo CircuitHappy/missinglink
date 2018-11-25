@@ -32,6 +32,7 @@ OutputProcess::OutputProcess(Engine &engine)
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
   m_pLogoLight->Write(HIGH);
+  m_pMidiOut->StopTransport();
 }
 
 void OutputProcess::Run() {
@@ -47,6 +48,10 @@ void OutputProcess::process() {
 
   auto playState = m_engine.GetPlayState();
   if (playState == Engine::PlayState::Stopped) {
+    if (m_transportStopped == false) {
+      m_pMidiOut->StopTransport();
+      m_transportStopped = true;
+    }
     setClock(false);
     setReset(false);
     return;
@@ -64,7 +69,7 @@ void OutputProcess::process() {
       // Deliberate fallthrough here
       m_engine.SetPlayState(Engine::PlayState::Playing);
     case Engine::PlayState::Playing:
-      triggerOutputs(model.clockTriggered, model.resetTriggered);
+      triggerOutputs(model.clockTriggered, model.resetTriggered, model.midiClockTriggered);
       break;
     case Engine::PlayState::CuedStop:
       // stop playing on first clock of loop
@@ -72,7 +77,7 @@ void OutputProcess::process() {
         m_engine.SetPlayState(Engine::PlayState::Stopped);
       } else {
         //keep playing the clock
-        triggerOutputs(model.clockTriggered, model.resetTriggered);
+        triggerOutputs(model.clockTriggered, model.resetTriggered, model.midiClockTriggered);
       }
       break;
     default:
@@ -80,14 +85,20 @@ void OutputProcess::process() {
   }
 }
 
-void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
+void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered, bool midiClockTriggered) {
   auto playState = m_engine.GetPlayState();
   bool resetTrig = true;
   if (m_engine.getResetMode() == 2) {
     resetTrig = false;
   }
-  if (resetTriggered) { setReset(resetTrig); }
+  if (resetTriggered) {
+    setReset(resetTrig);
+    m_pMidiOut->StartTransport();
+    m_transportStopped = false;
+  }
   if (clockTriggered) { setClock(true); }
+  if (midiClockTriggered) { m_pMidiOut->ClockOut(); }
+
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     switch (m_engine.getResetMode()) {
