@@ -65,17 +65,50 @@ void OutputProcess::process() {
     case Engine::PlayState::Playing:
       triggerOutputs(model.clockTriggered, model.resetTriggered);
       break;
+    case Engine::PlayState::CuedStop:
+      // stop playing on first clock of loop
+      if (model.resetTriggered) {
+        m_engine.SetPlayState(Engine::PlayState::Stopped);
+      } else {
+        //keep playing the clock
+        triggerOutputs(model.clockTriggered, model.resetTriggered);
+      }
+      break;
     default:
       break;
   }
 }
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
-  if (resetTriggered) { setReset(true); }
+  auto playState = m_engine.GetPlayState();
+  bool resetTrig = true;
+  if (m_engine.getResetMode() == 2) {
+    resetTrig = false;
+  }
+  if (resetTriggered) { setReset(resetTrig); }
   if (clockTriggered) { setClock(true); }
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    setReset(false);
+    switch (m_engine.getResetMode()) {
+      case 0:
+        if (playState == Engine::PlayState::Playing) {
+          setReset(false);
+        }
+        break;
+      case 1:
+        if (playState == Engine::PlayState::Playing) {
+          setReset(true);
+        }
+        break;
+      case 2:
+        if (playState == Engine::PlayState::Playing) {
+          setReset(true);
+        }
+        break;
+      default:
+        setReset(false);
+        break;
+    }
     setClock(false);
   }
 }
@@ -112,6 +145,15 @@ namespace MissingLink {
     {1, 1, 1, 1, 0.1, 0.1},
     {1, 1, 1, 1, 1, 0.1},
     {1, 1, 1, 1, 1, 1},
+  };
+
+  static const float CuedStopAnimationFrames[][6] = {
+    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
+    {0, 1, 0.1, 0.1, 0.1, 0.1},
+    {0, 0, 1, 0.1, 0.1, 0.1},
+    {0, 0, 0, 1, 0.1, 0.1},
+    {0, 0, 0, 0, 1, 0.1},
+    {0, 0, 0, 0, 0, 1},
   };
 
   //Animation for WIFI LED when AP is ready to connect to
@@ -169,6 +211,9 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
       break;
     case Engine::PlayState::Playing:
       m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
+      break;
+    case Engine::PlayState::CuedStop:
+      m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex]);
       break;
     default:
       m_pView->ClearAnimationLEDs();

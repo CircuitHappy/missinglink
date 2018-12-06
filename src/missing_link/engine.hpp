@@ -26,13 +26,17 @@ namespace MissingLink {
       enum class PlayState {
         Stopped,
         Cued,
-        Playing
+        Playing,
+        CuedStop
       };
 
       enum class InputMode {
         BPM,
         Loop,
-        Clock
+        Clock,
+        ResetMode,
+        DelayCompensation,
+        StartStopSync
       };
 
       /// Model for engine output processes
@@ -79,9 +83,10 @@ namespace MissingLink {
       const OutputModel GetOutputModel(std::chrono::microseconds last) const;
 
       PlayState GetPlayState() const { return m_playState.load(); }
-      void SetPlayState(PlayState state) { m_playState = state; };
+      void SetPlayState(PlayState state);
 
       int getWifiStatus();
+      int getResetMode();
 
     private:
 
@@ -100,23 +105,33 @@ namespace MissingLink {
 
       void playStop();
       void toggleMode();
-      void resetTimeline();
+      void startTimeline();
+      void stopTimeline();
       void setTempo(double tempo);
 
       void routeEncoderAdjust(float amount);
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
       void ppqnAdjust(int amount);
+      void resetModeAdjust(int amount);
+      void delayCompensationAdjust(int amount);
+      void StartStopSyncAdjust(float amount);
 
       void displayCurrentMode();
       void displayTempWifiStatus(WifiState status);
       void displayTempo(double tempo, bool force);
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
+      void displayResetMode(int mode, bool force);
+      void displayDelayCompensation(int delay, bool force);
+      void displayStartStopSync(bool sync, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;
       int getCurrentPPQN() const;
+      int getCurrentResetMode() const;
+      int getCurrentDelayCompensation() const;
+      int getCurrentStartStopSync() const;
 
       TimePoint m_lastToggle;
   };
