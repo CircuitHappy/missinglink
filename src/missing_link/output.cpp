@@ -54,7 +54,7 @@ void OutputProcess::process() {
     }
     setClock(false);
     setReset(false);
-    return;
+    //return; //removed this so midi clock always outputs
   }
 
   const auto model = m_engine.GetOutputModel(m_lastOutTime);
@@ -69,7 +69,7 @@ void OutputProcess::process() {
       // Deliberate fallthrough here
       m_engine.SetPlayState(Engine::PlayState::Playing);
     case Engine::PlayState::Playing:
-      triggerOutputs(model.clockTriggered, model.resetTriggered, model.midiClockTriggered);
+      triggerOutputs(model.clockTriggered, model.resetTriggered);
       break;
     case Engine::PlayState::CuedStop:
       // stop playing on first clock of loop
@@ -77,15 +77,20 @@ void OutputProcess::process() {
         m_engine.SetPlayState(Engine::PlayState::Stopped);
       } else {
         //keep playing the clock
-        triggerOutputs(model.clockTriggered, model.resetTriggered, model.midiClockTriggered);
+        triggerOutputs(model.clockTriggered, model.resetTriggered);
       }
       break;
     default:
       break;
   }
+  midiClockOutput(model.midiClockTriggered); //always output midi clock
 }
 
-void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered, bool midiClockTriggered) {
+void OutputProcess::midiClockOutput(bool midiClockTriggered) {
+  if (midiClockTriggered) { m_pMidiOut->ClockOut(); }
+}
+
+void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
   auto playState = m_engine.GetPlayState();
   bool resetTrig = true;
   if (m_engine.getResetMode() == 2) {
@@ -100,7 +105,6 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered, boo
     }
   }
   if (clockTriggered) { setClock(true); }
-  if (midiClockTriggered) { m_pMidiOut->ClockOut(); }
 
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));

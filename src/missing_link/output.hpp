@@ -24,7 +24,8 @@ namespace MissingLink {
     private:
 
       void process() override;
-      void triggerOutputs(bool clockTriggered, bool resetTriggered, bool midiClockTriggered);
+      void midiClockOutput(bool midiClockTriggered);
+      void triggerOutputs(bool clockTriggered, bool resetTriggered);
       void setClock(bool high);
       void setReset(bool high);
 
