@@ -93,8 +93,11 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered, boo
   }
   if (resetTriggered) {
     setReset(resetTrig);
-    m_pMidiOut->StartTransport();
-    m_transportStopped = false;
+    //first reset trigger is start of sequence, tell midi to StartTransport
+    if (m_transportStopped == true) {
+      m_pMidiOut->StartTransport();
+      m_transportStopped = false;
+    }
   }
   if (clockTriggered) { setClock(true); }
   if (midiClockTriggered) { m_pMidiOut->ClockOut(); }
