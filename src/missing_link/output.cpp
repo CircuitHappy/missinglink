@@ -24,15 +24,14 @@ using std::max;
 
 OutputProcess::OutputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(500))
+  , m_pMidiOut(std::shared_ptr<MidiOut>(engine.m_pMidiOut))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
   , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
-  , m_pMidiOut(std::unique_ptr<MidiOut>(new MidiOut()))
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
   m_pLogoLight->Write(HIGH);
-  m_pMidiOut->StopTransport();
 }
 
 void OutputProcess::Run() {
@@ -47,20 +46,18 @@ void OutputProcess::Run() {
 void OutputProcess::process() {
 
   auto playState = m_engine.GetPlayState();
-  if (playState == Engine::PlayState::Stopped) {
-    if (m_transportStopped == false) {
-      m_pMidiOut->StopTransport();
-      m_transportStopped = true;
-    }
-    setClock(false);
-    setReset(false);
-    //return; //removed this so midi clock always outputs
-  }
-
   const auto model = m_engine.GetOutputModel(m_lastOutTime);
   m_lastOutTime = model.now;
 
   switch (playState) {
+    case Engine::PlayState::Stopped:
+      if (m_transportStopped == false) {
+        m_pMidiOut->StopTransport();
+        m_transportStopped = true;
+      }
+      setClock(false);
+      setReset(false);
+      break;
     case Engine::PlayState::Cued:
       // start playing on first clock of loop
       if (!model.resetTriggered) {
@@ -75,6 +72,8 @@ void OutputProcess::process() {
       // stop playing on first clock of loop
       if (model.resetTriggered) {
         m_engine.SetPlayState(Engine::PlayState::Stopped);
+        m_pMidiOut->StopTransport(); //stop before start of next loop
+        m_transportStopped = true;
       } else {
         //keep playing the clock
         triggerOutputs(model.clockTriggered, model.resetTriggered);
@@ -83,11 +82,7 @@ void OutputProcess::process() {
     default:
       break;
   }
-  midiClockOutput(model.midiClockTriggered); //always output midi clock
-}
-
-void OutputProcess::midiClockOutput(bool midiClockTriggered) {
-  if (midiClockTriggered) { m_pMidiOut->ClockOut(); }
+  if (model.midiClockTriggered) { m_pMidiOut->ClockOut(); } //always output midi clock
 }
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {

@@ -52,7 +52,8 @@ void Engine::Process::sleep() {
 }
 
 Engine::Engine()
-  : m_running(true)
+  : m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
+  , m_running(true)
   , m_playState(PlayState::Stopped)
   , m_wifiStatus(WifiState::NO_WIFI_FOUND)
   , m_pWifiStatusFile(unique_ptr<WifiStatus>(new WifiStatus()))
@@ -472,4 +473,8 @@ int Engine::getCurrentDelayCompensation() const {
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;
+}
+
+void Engine::checkMidiPorts() const {
+  m_pMidiOut->CheckPorts();
 }

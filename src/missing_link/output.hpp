@@ -10,7 +10,7 @@
 #include <string>
 #include "missing_link/gpio.hpp"
 #include "missing_link/view.hpp"
-#include "missing_link/midi_out.hpp"
+//#include "missing_link/midi_out.hpp"
 
 namespace MissingLink {
 
@@ -21,14 +21,14 @@ namespace MissingLink {
       OutputProcess(Engine &engine);
       void Run() override;
 
+      std::shared_ptr<MidiOut> m_pMidiOut;
+
     private:
 
       void process() override;
-      void midiClockOutput(bool midiClockTriggered);
       void triggerOutputs(bool clockTriggered, bool resetTriggered);
       void setClock(bool high);
       void setReset(bool high);
-
 
       std::chrono::microseconds m_lastOutTime = std::chrono::microseconds(0);
       bool m_clockHigh = false;
@@ -39,8 +39,6 @@ namespace MissingLink {
       std::unique_ptr<GPIO::Pin> m_pClockOut;
       std::unique_ptr<GPIO::Pin> m_pResetOut;
       std::unique_ptr<GPIO::Pin> m_pLogoLight;
-
-      std::unique_ptr<MidiOut> m_pMidiOut;
   };
 
   class ViewUpdateProcess : public Engine::Process {
