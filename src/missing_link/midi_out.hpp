@@ -25,7 +25,6 @@ class MidiOut {
     std::vector<unsigned char> m_message;
     bool m_foundMidiPort;
     unsigned int m_numPorts;
-    std::chrono::system_clock::time_point m_lastScanTime;
 
     void open();
     void close();

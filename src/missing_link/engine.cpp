@@ -124,6 +124,7 @@ void Engine::Run() {
     prevWifiStatus = m_wifiStatus;
     m_wifiStatus = m_pWifiStatusFile->ReadStatus();
     if (prevWifiStatus != m_wifiStatus) displayTempWifiStatus(m_wifiStatus);
+    m_pMidiOut->CheckPorts();
     this_thread::sleep_for(chrono::seconds(1));
   }
 
@@ -473,8 +474,4 @@ int Engine::getCurrentDelayCompensation() const {
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;
-}
-
-void Engine::checkMidiPorts() const {
-  m_pMidiOut->CheckPorts();
 }

@@ -9,7 +9,6 @@ MidiOut::MidiOut()
   : m_pMidiOut(std::unique_ptr<RtMidiOut>(new RtMidiOut()))
   , m_foundMidiPort(false)
   , m_numPorts(0)
-  , m_lastScanTime(std::chrono::system_clock::now())
 {
   open();
 }
@@ -64,27 +63,21 @@ void MidiOut::AllNotesOff() {
 }
 
 void MidiOut::CheckPorts() {
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  if ((now - m_lastScanTime) >= std::chrono::seconds(5)) {
-    //time to scan the ports
-    unsigned int nPorts = m_pMidiOut->getPortCount();
-    if (nPorts != m_numPorts) {
-      if (nPorts < m_numPorts){
-        std::cout << "Lost MIDI interface." << std::endl;
-        close();
-      } else {
-        std::cout << "New MIDI interface detected." << std::endl;
-      }
-      m_foundMidiPort = false;
-      m_numPorts = nPorts;
+  unsigned int nPorts = m_pMidiOut->getPortCount();
+  if (nPorts != m_numPorts) {
+    if (nPorts < m_numPorts){
+      std::cout << "Lost MIDI interface." << std::endl;
+      close();
+    } else {
+      std::cout << "New MIDI interface detected." << std::endl;
     }
-    if (m_foundMidiPort == false) {
-      m_lastScanTime = now;
-      std::cout << "Scanning MIDI ports" << std::endl;
-      open();
-    }
+    m_foundMidiPort = false;
+    m_numPorts = nPorts;
   }
-
+  if (m_foundMidiPort == false) {
+    std::cout << "Scanning MIDI ports" << std::endl;
+    open();
+  }
 }
 
 void MidiOut::open() {

@@ -137,8 +137,6 @@ namespace MissingLink {
       int getCurrentDelayCompensation() const;
       int getCurrentStartStopSync() const;
 
-      void checkMidiPorts() const;
-
       TimePoint m_lastToggle;
   };
 
