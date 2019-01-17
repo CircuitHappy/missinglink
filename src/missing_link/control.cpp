@@ -46,8 +46,8 @@ void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
     return;
   }
 
-  if (onTriggered) {
-    onTriggered();
+  if (onButtonDown) {
+    onButtonDown();
   }
 }
 
@@ -120,4 +120,3 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
     onRotated(rotationAmount);
   }
 }
-

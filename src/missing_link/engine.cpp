@@ -76,6 +76,7 @@ Engine::Engine()
 
   auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(*this));
   uiProcess->onPlayStop = bind(&Engine::playStop, this);
+  uiProcess->onResetGesture = bind(&Engine::resetAtLoopStart, this);
   uiProcess->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
@@ -202,6 +203,10 @@ void Engine::playStop() {
     default:
       break;
   }
+}
+
+void Engine::resetAtLoopStart() {
+  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 5000, true);
 }
 
 void Engine::toggleMode() {

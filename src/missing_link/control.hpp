@@ -47,7 +47,7 @@ class Button : public Control {
 
     // Press down detected once.
     // TODO: break out into separate press states if needed.
-    std::function<void(void)> onTriggered;
+    std::function<void(void)> onButtonDown;
 
   private:
 

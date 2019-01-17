@@ -46,6 +46,8 @@ UserInputProcess::UserInputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(10))
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
+  , m_playButtonDown(false)
+  , m_tapButtonDown(false)
 {
   // Configure interrupt pin and clear initial interrupt
   m_pInterruptIn->SetEdgeMode(Pin::FALLING);
@@ -59,23 +61,29 @@ UserInputProcess::UserInputProcess(Engine &engine)
 
   // Register handlers
   auto playButton = unique_ptr<Button>(new Button(PLAY_BUTTON));
-  playButton->onTriggered = [=]() {
+  playButton->onButtonDown = [=]() {
     if (onPlayStop) {
+      m_playButtonDown = true;
       onPlayStop();
     }
   };
   m_controls.push_back(std::move(playButton));
 
   auto tapButton = unique_ptr<Button>(new Button(TAP_BUTTON));
-  tapButton->onTriggered = [=]() {
+  tapButton->onButtonDown = [=]() {
     if (onTapTempo) {
-      onTapTempo();
+      m_tapButtonDown = true; //this will never get reset until we have a button up function
+      if (m_playButtonDown) {
+        onResetGesture();
+      } else {
+        onTapTempo();
+      }
     }
   };
   m_controls.push_back(std::move(tapButton));
 
   auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON));
-  encoderButton->onTriggered = [=]() {
+  encoderButton->onButtonDown = [=]() {
     if (onEncoderPress) {
       onEncoderPress();
     }

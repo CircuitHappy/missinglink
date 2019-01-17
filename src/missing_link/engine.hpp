@@ -104,6 +104,7 @@ namespace MissingLink {
       std::vector<std::unique_ptr<Process>> m_processes;
 
       void playStop();
+      void resetAtLoopStart();
       void toggleMode();
       void startTimeline();
       void stopTimeline();
