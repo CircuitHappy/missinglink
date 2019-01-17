@@ -48,9 +48,11 @@ class Button : public Control {
     // Press down detected once.
     // TODO: break out into separate press states if needed.
     std::function<void(void)> onButtonDown;
+    std::function<void(void)> onButtonUp;
 
   private:
 
+    uint8_t m_lastState;
     TimePoint m_lastEvent;
     void handleInterrupt(uint8_t flag,
                          uint8_t state,

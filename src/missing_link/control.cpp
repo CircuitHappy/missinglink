@@ -27,7 +27,10 @@ void Control::HandleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander
   handleInterrupt(flag, state, pExpander);
 }
 
-Button::Button(int pinIndex) : Control({ pinIndex }) {}
+Button::Button(int pinIndex)
+  : Control({ pinIndex })
+  , m_lastState(0)
+{}
 
 Button::~Button() {}
 
@@ -40,15 +43,25 @@ void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
   if (tDiff < Millis(50)) {
     return;
   }
-
-  // check change to ON
-  if ((flag & state) == 0) {
+  //button state hasn't changed?
+  if (m_lastState == state) {
+    return;
+  }
+  // not flagged
+  if (flag == 0) {
     return;
   }
 
-  if (onButtonDown) {
-    onButtonDown();
+  if (state == 1) {
+    if (onButtonDown) {onButtonDown();}
+  } else {
+    if (onButtonUp) {onButtonUp();}
   }
+
+  m_lastState = state;
+  // if (onButtonDown) {
+  //   onButtonDown();
+  // }
 }
 
 

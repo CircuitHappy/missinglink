@@ -48,6 +48,7 @@ UserInputProcess::UserInputProcess(Engine &engine)
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
   , m_playButtonDown(false)
   , m_tapButtonDown(false)
+  , m_encoderButtonDown(false)
 {
   // Configure interrupt pin and clear initial interrupt
   m_pInterruptIn->SetEdgeMode(Pin::FALLING);
@@ -64,7 +65,16 @@ UserInputProcess::UserInputProcess(Engine &engine)
   playButton->onButtonDown = [=]() {
     if (onPlayStop) {
       m_playButtonDown = true;
-      onPlayStop();
+      if (m_encoderButtonDown) {
+        onEncoderAndPlay();
+      } else {
+        onPlayStop();
+      }
+    }
+  };
+  playButton->onButtonUp = [=]() {
+    if (onPlayStop) {
+      m_playButtonDown = false;
     }
   };
   m_controls.push_back(std::move(playButton));
@@ -72,12 +82,17 @@ UserInputProcess::UserInputProcess(Engine &engine)
   auto tapButton = unique_ptr<Button>(new Button(TAP_BUTTON));
   tapButton->onButtonDown = [=]() {
     if (onTapTempo) {
-      m_tapButtonDown = true; //this will never get reset until we have a button up function
+      m_encoderButtonDown = true;
       if (m_playButtonDown) {
-        onResetGesture();
+        onEncoderAndTap();
       } else {
         onTapTempo();
       }
+    }
+  };
+  tapButton->onButtonUp = [=]() {
+    if (onTapTempo) {
+      m_tapButtonDown = false;
     }
   };
   m_controls.push_back(std::move(tapButton));
@@ -85,7 +100,13 @@ UserInputProcess::UserInputProcess(Engine &engine)
   auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON));
   encoderButton->onButtonDown = [=]() {
     if (onEncoderPress) {
+      m_encoderButtonDown = true;
       onEncoderPress();
+    }
+  };
+  encoderButton->onButtonUp = [=]() {
+    if (onEncoderPress) {
+      m_encoderButtonDown = false;
     }
   };
   m_controls.push_back(std::move(encoderButton));
