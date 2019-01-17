@@ -319,11 +319,6 @@ void Engine::resetModeAdjust(int amount) {
   int num_options = 3;
   auto settings = m_settings.load();
   int mode = std::min(num_options - 1, std::max(0, settings.reset_mode + amount));
-  if ( (mode > 0) && (getCurrentPPQN() != 24) ) {
-    //set clock to 24 PPQN
-    settings.ppqn_index = 6;
-    m_pView->WriteDisplayTemporarily("    CLOCK NOW 24 PPQN    ", 3000, true);
-  }
   settings.reset_mode = mode;
   m_settings = settings;
   displayResetMode(mode, true);
@@ -386,7 +381,7 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 300, true);
+      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 30, true);
     break;
     case TRYING_TO_CONNECT :
       m_pView->WriteDisplayTemporarily("    SEARCHING FOR WIFI    ", oneSecond * 60, true);
