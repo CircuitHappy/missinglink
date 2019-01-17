@@ -52,8 +52,7 @@ void Engine::Process::sleep() {
 }
 
 Engine::Engine()
-  : m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
-  , m_running(true)
+  : m_running(true)
   , m_playState(PlayState::Stopped)
   , m_wifiStatus(WifiState::NO_WIFI_FOUND)
   , m_pWifiStatusFile(unique_ptr<WifiStatus>(new WifiStatus()))
@@ -62,6 +61,7 @@ Engine::Engine()
   , m_link(m_settings.load().tempo)
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
+  , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
 {
   Settings settings = m_settings.load();
 
@@ -327,6 +327,10 @@ void Engine::resetModeAdjust(int amount) {
   settings.reset_mode = mode;
   m_settings = settings;
   displayResetMode(mode, true);
+}
+
+std::shared_ptr<MissingLink::MidiOut> Engine::GetMidiOut() {
+  return m_pMidiOut;
 }
 
 void Engine::StartStopSyncAdjust(float amount) {

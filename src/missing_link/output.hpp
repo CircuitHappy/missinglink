@@ -21,8 +21,6 @@ namespace MissingLink {
       OutputProcess(Engine &engine);
       void Run() override;
 
-      std::shared_ptr<MidiOut> m_pMidiOut;
-
     private:
 
       void process() override;

@@ -24,7 +24,6 @@ using std::max;
 
 OutputProcess::OutputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(500))
-  , m_pMidiOut(std::shared_ptr<MidiOut>(engine.m_pMidiOut))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
   , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
@@ -44,7 +43,7 @@ void OutputProcess::Run() {
 }
 
 void OutputProcess::process() {
-
+  auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
   const auto model = m_engine.GetOutputModel(m_lastOutTime);
   m_lastOutTime = model.now;
@@ -52,7 +51,7 @@ void OutputProcess::process() {
   switch (playState) {
     case Engine::PlayState::Stopped:
       if (m_transportStopped == false) {
-        m_pMidiOut->StopTransport();
+        midiOut->StopTransport();
         m_transportStopped = true;
       }
       setClock(false);
@@ -72,7 +71,7 @@ void OutputProcess::process() {
       // stop playing on first clock of loop
       if (model.resetTriggered) {
         m_engine.SetPlayState(Engine::PlayState::Stopped);
-        m_pMidiOut->StopTransport(); //stop before start of next loop
+        midiOut->StopTransport(); //stop before start of next loop
         m_transportStopped = true;
       } else {
         //keep playing the clock
@@ -82,10 +81,11 @@ void OutputProcess::process() {
     default:
       break;
   }
-  if (model.midiClockTriggered) { m_pMidiOut->ClockOut(); } //always output midi clock
+  if (model.midiClockTriggered) { midiOut->ClockOut(); } //always output midi clock
 }
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
+  auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
   bool resetTrig = true;
   if (m_engine.getResetMode() == 2) {
@@ -95,7 +95,7 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
     setReset(resetTrig);
     //first reset trigger is start of sequence, tell midi to StartTransport
     if (m_transportStopped == true) {
-      m_pMidiOut->StartTransport();
+      midiOut->StartTransport();
       m_transportStopped = false;
     }
   }

@@ -49,8 +49,6 @@ namespace MissingLink {
         bool midiClockTriggered;
       };
 
-      std::shared_ptr<MidiOut> m_pMidiOut;
-
       class Process {
 
         public:
@@ -92,6 +90,8 @@ namespace MissingLink {
       int getWifiStatus();
       int getResetMode();
 
+      std::shared_ptr<MidiOut> GetMidiOut();
+
     private:
 
       std::atomic<bool> m_running;
@@ -105,6 +105,7 @@ namespace MissingLink {
 
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
+      std::shared_ptr<MidiOut> m_pMidiOut;
       std::vector<std::unique_ptr<Process>> m_processes;
 
       void playStop();
