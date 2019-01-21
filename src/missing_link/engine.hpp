@@ -105,6 +105,7 @@ namespace MissingLink {
 
       void playStop();
       void resetAtLoopStart();
+      void zeroTimeline();
       void toggleMode();
       void startTimeline();
       void stopTimeline();
