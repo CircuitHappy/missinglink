@@ -46,9 +46,9 @@ UserInputProcess::UserInputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(10))
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
-  , m_playButtonDown(false)
-  , m_tapButtonDown(false)
-  , m_encoderButtonDown(false)
+  //, m_playButtonDown(false)
+  //, m_tapButtonDown(false)
+  //, m_encoderButtonDown(false)
 {
   // Configure interrupt pin and clear initial interrupt
   m_pInterruptIn->SetEdgeMode(Pin::FALLING);
@@ -64,51 +64,53 @@ UserInputProcess::UserInputProcess(Engine &engine)
   auto playButton = unique_ptr<Button>(new Button(PLAY_BUTTON));
   playButton->onButtonDown = [=]() {
     if (onPlayStop) {
-      m_playButtonDown = true;
-      if (m_encoderButtonDown) {
-        onEncoderAndPlay();
-      } else {
-        onPlayStop();
-      }
+      onPlayStop();
+      //m_playButtonDown = true;
+      //if (m_encoderButtonDown) {
+      //  onEncoderAndPlay();
+      //} else {
+      //  onPlayStop();
+      //}
     }
   };
-  playButton->onButtonUp = [=]() {
-    if (onPlayStop) {
-      m_playButtonDown = false;
-    }
-  };
+  //playButton->onButtonUp = [=]() {
+  //  if (onPlayStop) {
+  //    m_playButtonDown = false;
+  //  }
+  //};
   m_controls.push_back(std::move(playButton));
 
   auto tapButton = unique_ptr<Button>(new Button(TAP_BUTTON));
   tapButton->onButtonDown = [=]() {
     if (onTapTempo) {
-      m_encoderButtonDown = true;
-      if (m_playButtonDown) {
-        onEncoderAndTap();
-      } else {
-        onTapTempo();
-      }
+      onTapTempo();
+      //m_encoderButtonDown = true;
+      //if (m_playButtonDown) {
+      //  onEncoderAndTap();
+      //} else {
+      //  onTapTempo();
+      //}
     }
   };
-  tapButton->onButtonUp = [=]() {
-    if (onTapTempo) {
-      m_tapButtonDown = false;
-    }
-  };
+  //tapButton->onButtonUp = [=]() {
+  //  if (onTapTempo) {
+  //    m_tapButtonDown = false;
+  //  }
+  //};
   m_controls.push_back(std::move(tapButton));
 
   auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON));
   encoderButton->onButtonDown = [=]() {
     if (onEncoderPress) {
-      m_encoderButtonDown = true;
+      //m_encoderButtonDown = true;
       onEncoderPress();
     }
   };
-  encoderButton->onButtonUp = [=]() {
-    if (onEncoderPress) {
-      m_encoderButtonDown = false;
-    }
-  };
+  //encoderButton->onButtonUp = [=]() {
+  //  if (onEncoderPress) {
+  //    m_encoderButtonDown = false;
+  //  }
+  //};
   m_controls.push_back(std::move(encoderButton));
 
   auto encoder = unique_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));

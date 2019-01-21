@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <bitset>
 #include "missing_link/control.hpp"
 
 using namespace std;
@@ -27,10 +28,7 @@ void Control::HandleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander
   handleInterrupt(flag, state, pExpander);
 }
 
-Button::Button(int pinIndex)
-  : Control({ pinIndex })
-  , m_lastState(0)
-{}
+Button::Button(int pinIndex) : Control({ pinIndex }) {}
 
 Button::~Button() {}
 
@@ -38,30 +36,21 @@ void Button::handleInterrupt(uint8_t flag, uint8_t state, shared_ptr<IOExpander>
 
   auto now = Clock::now();
   Millis tDiff = std::chrono::duration_cast<Millis>(now - m_lastEvent);
+
+  const bool isDown = ((flag & state) != 0);
+  if (isDown == m_bIsDown) { return; }
+
+  // Debounce (maybe unnecessary)
+  if (tDiff < Millis(10)) { return; }
+
   m_lastEvent = now;
+  m_bIsDown = isDown;
 
-  if (tDiff < Millis(50)) {
-    return;
+  if (isDown && onButtonDown) {
+    onButtonDown();
+  } else if (!isDown && onButtonUp) {
+    onButtonUp();
   }
-  //button state hasn't changed?
-  if (m_lastState == state) {
-    return;
-  }
-  // not flagged
-  if (flag == 0) {
-    return;
-  }
-
-  if (state == 1) {
-    if (onButtonDown) {onButtonDown();}
-  } else {
-    if (onButtonUp) {onButtonUp();}
-  }
-
-  m_lastState = state;
-  // if (onButtonDown) {
-  //   onButtonDown();
-  // }
 }
 
 
@@ -89,6 +78,8 @@ void RotaryEncoder::decode(bool aOn, bool bOn) {
   uint8_t bVal = bOn ? 0x01 : 0x00;
 
   unsigned int seq = (aVal ^ bVal) | (bVal << 1);
+  if (seq == m_lastEncSeq) { return; }
+
   unsigned int delta = (seq - m_lastEncSeq) & 0b11;
 
   m_lastEncSeq = seq;
