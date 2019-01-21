@@ -77,6 +77,8 @@ Engine::Engine()
 
   auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(*this));
   uiProcess->onPlayStop = bind(&Engine::playStop, this);
+  uiProcess->onEncoderAndTap = bind(&Engine::zeroTimeline, this);
+  uiProcess->onEncoderAndPlay = bind(&Engine::resetAtLoopStart, this);
   uiProcess->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
@@ -211,6 +213,16 @@ void Engine::playStop() {
     default:
       break;
   }
+}
+
+void Engine::resetAtLoopStart() {
+  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 2000, true);
+  //add output function here to set midi reset to true once merged with rtmidi-package
+}
+
+void Engine::zeroTimeline() {
+  m_pView->WriteDisplayTemporarily("    RESET TIMELINE NOW    ", 2000, true);
+  //add output function here to set midi reset to true once merged with rtmidi-package
 }
 
 void Engine::toggleMode() {

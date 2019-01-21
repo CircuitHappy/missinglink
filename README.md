@@ -1,156 +1,58 @@
-missinglink
-============
+# Setting up and building on a Raspberry Pi Zero W
+## Burn microSD card
+Get the latest OS here:
+https://www.raspberrypi.org/downloads/raspbian/
+## Edit /boot files
+Mount the SD card on your computer. You should see a "boot" volume
 
-_[NOTE 06/25/2017]: The project is intended to be configured and cross-compiled using the 
-procedures documented in [CHIP-SDK](https://github.com/NextThingCo/CHIP-SDK). Hopefully 
-[Gadget OS](https://github.com/NextThingCo/gadget-buildroot) is ready/stable for usage in 
-the near future as it will likely make this process much easier._
+### Enabling SSH
+Create an empty text file named ‘ssh’ at the root of `Volumes/boot`
 
-### Bootstrapping
+### Enabling UART console
+`sudo vi /Volumes/boot/config.txt`
 
-**macOS**
+At the bottom, last line, add enable_uart=1 on it's own line
 
-- Install virtualbox and vagrant as per [CHIP-SDK instructions](https://github.com/NextThingCo/CHIP-SDK)
+### Enable i2c
+In the same file, `/Volumes/boot/config.txt`
 
-- Create and provision the Ubuntu VM
+Uncomment the line that contains `dtparam=i2c_arm=on`
 
-```
-vagrant up
-```
+### Pre-configure WiFi Network
+Create a file named `wpa_supplicant.conf` at the root of `/boot`
 
-- Open a separate terminal window/tab and ssh into the VM
+The contents of this file should look like this:
 
-```
-vagrant ssh
-```
+`country=US
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+network={
+      ssid="viznet2"
+      psk="4646464646"
+      key_mgmt=WPA-PSK
+}`
 
-- Configure the project and build toolchain and dependencies via buildroot.
-This will probably take a long ass time, so be patient.
+## Boot your RPi Zero W
+Put the microSD card in the RPi Zero W's reader and power on the RPi.
 
-```
-cd missinglink
-bin/configure
-```
+SSH in to your RPi via your terminal `ssh pi@raspberrypi.local`
 
-On the VM, the home directory should now contain the following directories.
+Password should be the default password for the `pi` user.
 
-```
-CHIP-buildroot/
-CHIP-tools/
-chip-mtd-utils/
-missinglink/
-sunxi-tools/
-```
+## Get Missing Link building
+Install these files to get all the tools you will need to build and run the `missing_link` binary.
 
-`missinglink/` is a synced directory mirroring the repository clone on the host machine; changes made in this directory on the host are automatically reflected in the VM and vice versa. This allows source to be edited from within macOS even though cross-compilation is performed on the VM.
+`sudo apt-get install cmake git libconfig++-dev libconfig++9v5`
 
-Of the other directories, only `CHIP-buildroot` is necessary for cross-compilation. Flashing the CHIP using the other tools can only be done from a native Ubuntu host (not a VM).
+Clone the git repo in your home directory
 
+`cd ~/`
 
-**Ubuntu 16.04+**
+`git clone https://github.com/CircuitHappy/missinglink.git`
 
-- Run the provisioning script
+`sudo cmake -Bbuild -H.`
 
-```
-./setup_ubuntu1604.sh
-```
+`sudo make -C build`
 
-- Configure the project and build toolchain and dependencies via buildroot. 
-This will probably take a long ass time, so be patient.
+Run the binary `sudo ./build/bin/missing_link`
 
-```
-BUILDROOT_DIR=`pwd` bin/configure
-```
-
-The project directory should now contain the following directories.
-
-```
-CHIP-buildroot/
-CHIP-tools/
-chip-mtd-utils/
-sunxi-tools/
-```
-
-For cross-compilation, only `CHIP-buildroot` is necessary. To flash the CHIP with the buildroot image, follow the [CHIP-SDK instructions](https://github.com/NextThingCo/CHIP-SDK).
-
-### Building
-
-**macOS**
-
-- SSH into the VM if necessary and navigate to `missinglink/`. 
-_Recommend keeping a separate terminal window/tab/pane open within the VM for this_
-
-```
-vagrant ssh
-cd missinglink
-```
-
-- Build
-
-```
-bin/build
-```
-
-The built executables are output to `build/bin`.
-
-**Ubuntu 16.04+**
-
-- Build
-
-```
-bin/build
-```
-
-The built executables are output to `build/bin`.
-
-### Deploying
-
-**Important:** In order for the deploy script to work correctly, you must enable root 
-login via SSH on the CHIP. **This is for development purposes only.**
-
-**macOS**
-
-- **From macOS**, run the deploy script. 
-
-_Easier to do from macOS because the VM doesn't support multicast DNS properly. 
-If you want to manually specify the CHIP's IP address, you can do this from the VM._
-
-```
-bin/deploy
-```
-
-This will copy the built executables to the CHIP via scp. The default hostname is
-`missinglink.local` but can be overriden via the `CHIP_HOSTNAME` environment variable:
-
-```
-CHIP_HOSTNAME=192.168.0.43 bin/deploy
-```
-
-**Ubuntu 16.04+**
-
-- Run the deploy script
-
-
-```
-bin/deploy
-```
-
-This will copy the built executables to the CHIP via scp. The default hostname is
-`missinglink.local` but can be overriden via the `CHIP_HOSTNAME` environment variable:
-
-```
-CHIP_HOSTNAME=192.168.0.43 bin/deploy
-```
-**Installing updated init script**
-
-From host shell:
-
-`scp init/missing-link root@<nanopi>:/etc/init.d`
-
-From nanopi shell:
-
-`chmod 755 /etc/init.d/missing-link`
-`sudo update-rc.d missing-link defaults`
-Reboot and missing link should start automatically.
-
-Note: this means that you must run sudo service missing-link stop on the nanopi before deploying new dev binaries
+*Note: missing_link binary is expecting to talk to an LED driver, LED display, and GPIO expander over the i2c buss. You will have to disable some of these dependencies if you don't have those wired up to the RPi Zero W.*
