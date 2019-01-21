@@ -38,9 +38,7 @@ class UserInputProcess : public Engine::Process {
     std::shared_ptr<IOExpander> m_pExpander;
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
 
-    //bool m_playButtonDown;
-    //bool m_tapButtonDown;
-    //bool m_encoderButtonDown;
+    bool m_encoderButtonDown;
 
     int m_loopGuardCount = 0;
 };
