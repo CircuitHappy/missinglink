@@ -80,6 +80,7 @@ namespace MissingLink {
 
       const bool isRunning() const { return m_running; }
       const double GetNormalizedPhase() const;
+      const double GetBeatPhase() const;
       const OutputModel GetOutputModel(std::chrono::microseconds last) const;
 
       PlayState GetPlayState() const { return m_playState.load(); }

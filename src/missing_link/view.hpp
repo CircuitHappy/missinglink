@@ -30,7 +30,7 @@ namespace MissingLink {
       MainView();
       virtual ~MainView();
 
-      void SetAnimationLEDs(const float frame[NumAnimLEDs]);
+      void SetAnimationLEDs(const float frame[NumAnimLEDs], const float brightness);
       void ClearAnimationLEDs();
 
       // Set a value to be immediately written to the display.

@@ -46,7 +46,8 @@ namespace MissingLink {
     private:
 
       void process() override;
-      void animatePhase(float normalizedPhase, Engine::PlayState playState);
+      float getBrightnessFromPhase(double phase);
+      void animatePhase(float normalizedPhase, Engine::PlayState playState, float beatPhase);
 
       float getWifiStatusFrame(int wifiStatus);
 

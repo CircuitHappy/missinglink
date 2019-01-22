@@ -191,14 +191,21 @@ ViewUpdateProcess::ViewUpdateProcess(Engine &engine, std::shared_ptr<MainView> p
 
 void ViewUpdateProcess::process() {
   const auto phase = m_engine.GetNormalizedPhase();
+  const double beatPhase = m_engine.GetBeatPhase();
   const auto playState = m_engine.GetPlayState();
-  animatePhase(phase, playState);
+  const double brightnessMult = getBrightnessFromPhase(beatPhase);
+  animatePhase(phase, playState, brightnessMult);
   m_pView->displayWifiStatusFrame(getWifiStatusFrame(m_engine.getWifiStatus()));
   m_pView->ScrollTempMessage();
   m_pView->UpdateDisplay();
 }
 
-void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState playState) {
+float ViewUpdateProcess::getBrightnessFromPhase(double phase) {
+  //shape phase to what you want for brightness levels
+  return max(0.35, phase);
+}
+
+void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState playState, float brightness) {
 
   const int animFrameIndex = min(
     NUM_ANIM_FRAMES - 1,
@@ -207,13 +214,13 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
 
   switch (playState) {
     case Engine::PlayState::Cued:
-      m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex]);
+      m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex], brightness);
       break;
     case Engine::PlayState::Playing:
-      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
+      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex], brightness);
       break;
     case Engine::PlayState::CuedStop:
-      m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex]);
+      m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex], brightness);
       break;
     default:
       m_pView->ClearAnimationLEDs();
