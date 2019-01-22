@@ -62,6 +62,7 @@ Engine::Engine()
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
+  , m_QueueStartTransport(false)
 {
   Settings settings = m_settings.load();
 
@@ -78,7 +79,7 @@ Engine::Engine()
   auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(*this));
   uiProcess->onPlayStop = bind(&Engine::playStop, this);
   uiProcess->onEncoderAndTap = bind(&Engine::zeroTimeline, this);
-  uiProcess->onEncoderAndPlay = bind(&Engine::resetAtLoopStart, this);
+  uiProcess->onEncoderAndPlay = bind(&Engine::queueStartTransportAtLoopStart, this);
   uiProcess->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
@@ -181,6 +182,12 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   return output;
 }
 
+bool Engine::GetQueuedStartTransport() {
+  bool queued = m_QueueStartTransport;
+  if (queued) { m_QueueStartTransport = false; }
+  return queued;
+}
+
 void Engine::SetPlayState(PlayState state) {
   m_playState = state;
   if (state == PlayState::Stopped) {
@@ -215,14 +222,19 @@ void Engine::playStop() {
   }
 }
 
-void Engine::resetAtLoopStart() {
-  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 2000, true);
-  //add output function here to set midi reset to true once merged with rtmidi-package
+void Engine::queueStartTransportAtLoopStart() {
+  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 2500, true);
+  m_QueueStartTransport = true;
 }
 
 void Engine::zeroTimeline() {
-  m_pView->WriteDisplayTemporarily("    RESET TIMELINE NOW    ", 2000, true);
-  //add output function here to set midi reset to true once merged with rtmidi-package
+  const auto now = m_link.clock().micros() + std::chrono::milliseconds(-1 * getCurrentDelayCompensation());
+  auto timeline = m_link.captureAppSessionState();
+  const auto currentSettings = m_settings.load();
+  m_pView->WriteDisplayTemporarily("    RESET TIMELINE NOW    ", 2500, true);
+  timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(5), currentSettings.quantum);
+  m_link.commitAppSessionState(timeline);
+  m_QueueStartTransport = true;
 }
 
 void Engine::toggleMode() {

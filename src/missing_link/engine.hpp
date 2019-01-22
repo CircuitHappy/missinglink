@@ -87,6 +87,8 @@ namespace MissingLink {
       PlayState GetPlayState() const { return m_playState.load(); }
       void SetPlayState(PlayState state);
 
+      bool GetQueuedStartTransport();
+
       int getWifiStatus();
       int getResetMode();
 
@@ -106,10 +108,11 @@ namespace MissingLink {
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
       std::shared_ptr<MidiOut> m_pMidiOut;
+      std::atomic<bool> m_QueueStartTransport;
       std::vector<std::unique_ptr<Process>> m_processes;
 
       void playStop();
-      void resetAtLoopStart();
+      void queueStartTransportAtLoopStart();
       void zeroTimeline();
       void toggleMode();
       void startTimeline();

@@ -94,7 +94,8 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
   if (resetTriggered) {
     setReset(resetTrig);
     //first reset trigger is start of sequence, tell midi to StartTransport
-    if (m_transportStopped == true) {
+    //or, a manually queued MIDI Start Transport
+    if (m_transportStopped || m_engine.GetQueuedStartTransport()) {
       midiOut->StartTransport();
       m_transportStopped = false;
     }
