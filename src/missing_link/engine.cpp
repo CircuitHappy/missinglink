@@ -144,7 +144,8 @@ const double Engine::GetBeatPhase() const {
   const auto currentSettings = m_settings.load();
   const auto timeline = m_link.captureAppSessionState();
   const double beat = timeline.beatAtTime(now, currentSettings.quantum);
-  return min(1.0, max(0.0, (beat - (int)beat))); //return just the 0-0.9999 of the current beat value
+  float wholeNum;
+  return min(1.0, max(0.0, (double)modf((float)beat, &wholeNum))); //return just the 0-0.9999 of the current beat value
 }
 
 const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last) const {

@@ -22,9 +22,13 @@ MainView::MainView()
 
 MainView::~MainView() {}
 
-void MainView::SetAnimationLEDs(const float frame[NumAnimLEDs], const float brightness) {
+void MainView::SetAnimationLEDs(const float frame[NumAnimLEDs], const float brightness, const bool dontDimFullBright) {
   for (int i = 0; i < NumAnimLEDs; i ++) {
-    m_pLEDDriver->SetBrightness(frame[i] * brightness, ANIM_LED_START + i);
+    if (dontDimFullBright && (frame[i] == 1.0)) {
+      m_pLEDDriver->SetBrightness(frame[i], ANIM_LED_START + i);
+    } else {
+      m_pLEDDriver->SetBrightness(frame[i] * brightness, ANIM_LED_START + i);
+    }
   }
 }
 
