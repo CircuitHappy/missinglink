@@ -5,8 +5,11 @@
 
 #include <chrono>
 #include "missing_link/view.hpp"
+#include "missing_link/hw_defs.h"
+#include "missing_link/types.hpp"
 
 using namespace MissingLink;
+using namespace MissingLink::GPIO;
 
 namespace MissingLink {
 
@@ -15,6 +18,7 @@ namespace MissingLink {
 MainView::MainView()
   : m_pLEDDriver(std::unique_ptr<LEDDriver>(new LEDDriver()))
   , m_pDisplay(std::unique_ptr<SegmentDisplay>(new SegmentDisplay()))
+  , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
 {
   m_pLEDDriver->Configure();
   m_pDisplay->Init();
@@ -96,4 +100,12 @@ void MainView::UpdateDisplay() {
 
 void MainView::displayWifiStatusFrame(float frame) {
   m_pLEDDriver->SetBrightness(frame, WIFI_LED);
+}
+
+void MainView::setLogoLight(double phase) {
+  if (phase < 0.75) {
+    m_pLogoLight->Write(HIGH);
+  } else {
+    m_pLogoLight->Write(LOW);
+  }
 }

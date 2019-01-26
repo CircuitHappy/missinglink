@@ -26,11 +26,9 @@ OutputProcess::OutputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(500))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
-  , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
-  m_pLogoLight->Write(HIGH);
 }
 
 void OutputProcess::Run() {
@@ -211,6 +209,7 @@ void ViewUpdateProcess::process() {
   const double beatPhase = m_engine.GetBeatPhase();
   const auto playState = m_engine.GetPlayState();
   const double brightnessMult = getBrightnessFromPhase(beatPhase);
+  m_pView->setLogoLight(beatPhase);
   animatePhase(phase, playState, brightnessMult);
   m_pView->displayWifiStatusFrame(getWifiStatusFrame(m_engine.getWifiStatus()));
   m_pView->ScrollTempMessage();
@@ -240,7 +239,7 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
       m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex], 1.0, false);
       break;
     case Engine::PlayState::Playing:
-      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex], brightness, true);
+      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex], 1.0, true);
       break;
     case Engine::PlayState::CuedStop:
       m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex], 1.0, false);
