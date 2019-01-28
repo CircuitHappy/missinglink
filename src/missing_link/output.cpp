@@ -145,12 +145,12 @@ namespace MissingLink {
   };
 
   static const float PlayAnimationFrames[][6] = {
-    {1, 0.3, 0.3, 0.3, 0.3, 0.3},
-    {0.3, 1, 0.3, 0.3, 0.3, 0.3},
-    {0.3, 0.3, 1, 0.3, 0.3, 0.3},
-    {0.3, 0.3, 0.3, 1, 0.3, 0.3},
-    {0.3, 0.3, 0.3, 0.3, 1, 0.3},
-    {0.3, 0.3, 0.3, 0.3, 0.3, 1},
+    {1, 0.2, 0.2, 0.2, 0.2, 0.2},
+    {0.2, 1, 0.2, 0.2, 0.2, 0.2},
+    {0.2, 0.2, 1, 0.2, 0.2, 0.2},
+    {0.2, 0.2, 0.2, 1, 0.2, 0.2},
+    {0.2, 0.2, 0.2, 0.2, 1, 0.2},
+    {0.2, 0.2, 0.2, 0.2, 0.2, 1},
   };
 
   static const float CuedStopAnimationFrames[][6] = {
@@ -163,12 +163,12 @@ namespace MissingLink {
   };
 
   static const float StoppedAnimationFrames[][6] = {
-    {0.05, 0, 0, 0, 0.02, 0.03},
-    {0.03, 0.05, 0, 0, 0, 0.02},
-    {0.02, 0.03, 0.05, 0, 0, 0},
-    {0, 0.02, 0.03, 0.05, 0, 0},
-    {0, 0, 0.02, 0.03, 0.05, 0},
-    {0, 0, 0, 0.02, 0.03, 0.05},
+    {0.05, 0.05, 0, 0, 0.02, 0.03},
+    {0.03, 0.05, 0.05, 0, 0, 0.02},
+    {0.02, 0.03, 0.05, 0.05, 0, 0},
+    {0, 0.02, 0.03, 0.05, 0.05, 0},
+    {0, 0, 0.02, 0.03, 0.05, 0.05},
+    {0.05, 0, 0, 0.02, 0.03, 0.05},
   };
 
   //Animation for WIFI LED when AP is ready to connect to
@@ -245,7 +245,11 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
       m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex], 1.0, false);
       break;
     case Engine::PlayState::Stopped:
-        m_pView->SetAnimationLEDs(StoppedAnimationFrames[animFrameIndex], 1.0, false);
+        if (m_engine.GetNumberOfPeers() > 0) {
+          m_pView->SetAnimationLEDs(StoppedAnimationFrames[animFrameIndex], 1.0, false);
+        } else {
+          m_pView->ClearAnimationLEDs();
+        }
         break;
     default:
       m_pView->ClearAnimationLEDs();

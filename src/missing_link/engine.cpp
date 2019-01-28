@@ -148,6 +148,10 @@ const double Engine::GetBeatPhase() const {
   return min(1.0, max(0.0, (double)modf((float)beat, &wholeNum))); //return just the 0-0.9999 of the current beat value
 }
 
+const int Engine::GetNumberOfPeers() const {
+  return m_link.numPeers();
+}
+
 const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last) const {
   OutputModel output;
 
