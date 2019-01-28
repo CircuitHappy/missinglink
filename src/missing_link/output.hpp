@@ -10,6 +10,7 @@
 #include <string>
 #include "missing_link/gpio.hpp"
 #include "missing_link/view.hpp"
+//#include "missing_link/midi_out.hpp"
 
 namespace MissingLink {
 
@@ -27,10 +28,11 @@ namespace MissingLink {
       void setClock(bool high);
       void setReset(bool high);
 
-
       std::chrono::microseconds m_lastOutTime = std::chrono::microseconds(0);
       bool m_clockHigh = false;
       bool m_resetHigh = false;
+
+      bool m_transportStopped = true;
 
       std::unique_ptr<GPIO::Pin> m_pClockOut;
       std::unique_ptr<GPIO::Pin> m_pResetOut;

@@ -34,4 +34,4 @@ file(
 )
 
 add_executable(missing_link ${missing_link_sources})
-target_link_libraries(missing_link atomic pthread config++ Ableton::Link)
+target_link_libraries(missing_link atomic pthread config++ rtmidi Ableton::Link)

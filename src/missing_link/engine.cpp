@@ -61,6 +61,8 @@ Engine::Engine()
   , m_link(m_settings.load().tempo)
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
+  , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
+  , m_QueueStartTransport(false)
 {
   Settings settings = m_settings.load();
 
@@ -76,6 +78,8 @@ Engine::Engine()
 
   auto uiProcess = unique_ptr<UserInputProcess>(new UserInputProcess(*this));
   uiProcess->onPlayStop = bind(&Engine::playStop, this);
+  uiProcess->onEncoderAndTap = bind(&Engine::zeroTimeline, this);
+  uiProcess->onEncoderAndPlay = bind(&Engine::queueStartTransportAtLoopStart, this);
   uiProcess->onTapTempo = bind(&TapTempo::Tap, m_pTapTempo.get());
   uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
@@ -123,6 +127,7 @@ void Engine::Run() {
     prevWifiStatus = m_wifiStatus;
     m_wifiStatus = m_pWifiStatusFile->ReadStatus();
     if (prevWifiStatus != m_wifiStatus) displayTempWifiStatus(m_wifiStatus);
+    m_pMidiOut->CheckPorts();
     this_thread::sleep_for(chrono::seconds(1));
   }
 
@@ -164,6 +169,7 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   if (last == std::chrono::microseconds(0)) {
     output.clockTriggered = false;
     output.resetTriggered = false;
+    output.midiClockTriggered = false;
     return output;
   }
 
@@ -172,15 +178,27 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
 
   const int edgesPerBeat = currentSettings.getPPQN() * 2;
+  const int midiEdgesPerBeat = 24 * 2;
   const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
 
   const int edge = (int)floor(beats * (double)edgesPerBeat);
   const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
 
+  const int midiEdge = (int)floor(beats * (double)midiEdgesPerBeat);
+  const int midiLastEdge = (int)floor(lastBeats * (double)midiEdgesPerBeat);
+
   output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
   output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
 
+  output.midiClockTriggered = (midiEdge % 2 == 0) && (midiEdge != midiLastEdge);
+
   return output;
+}
+
+bool Engine::GetQueuedStartTransport() {
+  bool queued = m_QueueStartTransport;
+  if (queued) { m_QueueStartTransport = false; }
+  return queued;
 }
 
 void Engine::SetPlayState(PlayState state) {
@@ -215,6 +233,21 @@ void Engine::playStop() {
     default:
       break;
   }
+}
+
+void Engine::queueStartTransportAtLoopStart() {
+  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 2500, true);
+  m_QueueStartTransport = true;
+}
+
+void Engine::zeroTimeline() {
+  const auto now = m_link.clock().micros() + std::chrono::milliseconds(-1 * getCurrentDelayCompensation());
+  auto timeline = m_link.captureAppSessionState();
+  const auto currentSettings = m_settings.load();
+  m_pView->WriteDisplayTemporarily("    RESET TIMELINE NOW    ", 2500, true);
+  timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(5), currentSettings.quantum);
+  m_link.commitAppSessionState(timeline);
+  m_QueueStartTransport = true;
 }
 
 void Engine::toggleMode() {
@@ -323,14 +356,13 @@ void Engine::resetModeAdjust(int amount) {
   int num_options = 3;
   auto settings = m_settings.load();
   int mode = std::min(num_options - 1, std::max(0, settings.reset_mode + amount));
-  if ( (mode > 0) && (getCurrentPPQN() != 24) ) {
-    //set clock to 24 PPQN
-    settings.ppqn_index = 6;
-    m_pView->WriteDisplayTemporarily("    CLOCK NOW 24 PPQN    ", 3000, true);
-  }
   settings.reset_mode = mode;
   m_settings = settings;
   displayResetMode(mode, true);
+}
+
+std::shared_ptr<MissingLink::MidiOut> Engine::GetMidiOut() {
+  return m_pMidiOut;
 }
 
 void Engine::StartStopSyncAdjust(float amount) {
@@ -386,7 +418,7 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 300, true);
+      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 30, true);
     break;
     case TRYING_TO_CONNECT :
       m_pView->WriteDisplayTemporarily("    SEARCHING FOR WIFI    ", oneSecond * 60, true);

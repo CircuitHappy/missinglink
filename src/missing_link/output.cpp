@@ -41,18 +41,20 @@ void OutputProcess::Run() {
 }
 
 void OutputProcess::process() {
-
+  auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
-  if (playState == Engine::PlayState::Stopped) {
-    setClock(false);
-    setReset(false);
-    return;
-  }
-
   const auto model = m_engine.GetOutputModel(m_lastOutTime);
   m_lastOutTime = model.now;
 
   switch (playState) {
+    case Engine::PlayState::Stopped:
+      if (m_transportStopped == false) {
+        midiOut->StopTransport();
+        m_transportStopped = true;
+      }
+      setClock(false);
+      setReset(false);
+      break;
     case Engine::PlayState::Cued:
       // start playing on first clock of loop
       if (!model.resetTriggered) {
@@ -67,6 +69,8 @@ void OutputProcess::process() {
       // stop playing on first clock of loop
       if (model.resetTriggered) {
         m_engine.SetPlayState(Engine::PlayState::Stopped);
+        midiOut->StopTransport(); //stop before start of next loop
+        m_transportStopped = true;
       } else {
         //keep playing the clock
         triggerOutputs(model.clockTriggered, model.resetTriggered);
@@ -75,16 +79,27 @@ void OutputProcess::process() {
     default:
       break;
   }
+  if (model.midiClockTriggered) { midiOut->ClockOut(); } //always output midi clock
 }
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
+  auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
   bool resetTrig = true;
   if (m_engine.getResetMode() == 2) {
     resetTrig = false;
   }
-  if (resetTriggered) { setReset(resetTrig); }
+  if (resetTriggered) {
+    setReset(resetTrig);
+    //first reset trigger is start of sequence, tell midi to StartTransport
+    //or, a manually queued MIDI Start Transport
+    if (m_transportStopped || m_engine.GetQueuedStartTransport()) {
+      midiOut->StartTransport();
+      m_transportStopped = false;
+    }
+  }
   if (clockTriggered) { setClock(true); }
+
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     switch (m_engine.getResetMode()) {

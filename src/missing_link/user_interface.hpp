@@ -24,6 +24,8 @@ class UserInputProcess : public Engine::Process {
     // These will be called from input polling thread
     std::function<void()> onPlayStop;
     std::function<void()> onTapTempo;
+    std::function<void()> onEncoderAndTap;
+    std::function<void()> onEncoderAndPlay;
     std::function<void()> onEncoderPress;
     std::function<void(float)> onEncoderRotate;
 
@@ -35,6 +37,8 @@ class UserInputProcess : public Engine::Process {
     std::vector<std::unique_ptr<Control>> m_controls;
     std::shared_ptr<IOExpander> m_pExpander;
     std::unique_ptr<GPIO::Pin> m_pInterruptIn;
+
+    bool m_encoderButtonDown;
 
     int m_loopGuardCount = 0;
 };
