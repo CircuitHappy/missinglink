@@ -91,7 +91,7 @@ UserInputProcess::UserInputProcess(Engine &engine)
 
   auto encoder = unique_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
   encoder->onRotated = [=](float amount) {
-    if (onEncoderRotate) { onEncoderRotate(amount); }
+    if (onEncoderRotate && !m_encoderButtonDown) { onEncoderRotate(amount); }
   };
   m_controls.push_back(std::move(encoder));
 }
