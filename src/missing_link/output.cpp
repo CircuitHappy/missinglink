@@ -142,14 +142,6 @@ namespace MissingLink {
 
   static const int NUM_ANIM_FRAMES = 6;
 
-  // static const float CueAnimationFrames[][6] =  {
-  //   {1, 0, 0, 0, 0, 0},
-  //   {0.3, 1, 0, 0, 0, 0},
-  //   {0.2, 0.3, 1, 0, 0, 0},
-  //   {0.1, 0.2, 0.3, 1, 0, 0},
-  //   {0.05, 0.1, 0.2, 0.3, 1, 0},
-  //   {0.025, 0.05, 0.1, 0.2, 0.3, 1},
-  // };
   static const float CueAnimationFrames[][6] =  {
     {0.2, 0, 0, 0.1, 0.2, 0.3},
     {0.2, 0.2, 0, 0, 0.1, 0.2},
@@ -169,12 +161,12 @@ namespace MissingLink {
   };
 
   static const float CuedStopAnimationFrames[][6] = {
-    {0.03, 0.1, 0.2, 0.3, 0.4, 0.5},
+    {0, 0.1, 0.2, 0.3, 0.4, 0.5},
     {0, 0.03, 0.1, 0.2, 0.3, 0.4},
     {0, 0, 0.03, 0.1, 0.2, 0.3},
     {0, 0, 0, 0.03, 0.1, 0.2},
     {0, 0, 0, 0, 0.03, 0.1},
-    {0, 0, 0, 0, 0, 0.03},
+    {0.01, 0, 0, 0, 0, 0},
   };
 
   static const float StoppedAnimationFrames[][6] = {
@@ -223,27 +215,14 @@ void ViewUpdateProcess::process() {
   const auto phase = m_engine.GetNormalizedPhase();
   const double beatPhase = m_engine.GetBeatPhase();
   const auto playState = m_engine.GetPlayState();
-  const double brightnessMult = getBrightnessFromPhase(beatPhase);
   m_pView->setLogoLight(beatPhase);
-  animatePhase(phase, playState, brightnessMult);
+  animatePhase(phase, playState);
   m_pView->displayWifiStatusFrame(getWifiStatusFrame(m_engine.getWifiStatus()));
   m_pView->ScrollTempMessage();
   m_pView->UpdateDisplay();
 }
 
-float ViewUpdateProcess::getBrightnessFromPhase(double phase) {
-  //shape phase to what you want for brightness levels
-  double bright = 0;
-  phase = abs(phase);
-  if (phase < 0.5) {
-    bright = max(phase, 0.1);
-  } else {
-    bright = 1.0;
-  }
-  return bright;
-}
-
-void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState playState, float brightness) {
+void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState playState) {
 
   const int animFrameIndex = min(
     NUM_ANIM_FRAMES - 1,
@@ -252,17 +231,17 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
 
   switch (playState) {
     case Engine::PlayState::Cued:
-      m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex], 1.0, false);
+      m_pView->SetAnimationLEDs(CueAnimationFrames[animFrameIndex]);
       break;
     case Engine::PlayState::Playing:
-      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex], 1.0, true);
+      m_pView->SetAnimationLEDs(PlayAnimationFrames[animFrameIndex]);
       break;
     case Engine::PlayState::CuedStop:
-      m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex], 1.0, false);
+      m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex]);
       break;
     case Engine::PlayState::Stopped:
         if (m_engine.GetNumberOfPeers() > 0) {
-          m_pView->SetAnimationLEDs(StoppedAnimationFrames[animFrameIndex], 1.0, false);
+          m_pView->SetAnimationLEDs(StoppedAnimationFrames[animFrameIndex]);
         } else {
           m_pView->ClearAnimationLEDs();
         }
