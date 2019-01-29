@@ -149,8 +149,14 @@ const double Engine::GetBeatPhase() const {
   const auto currentSettings = m_settings.load();
   const auto timeline = m_link.captureAppSessionState();
   const double beat = timeline.beatAtTime(now, currentSettings.quantum);
-  float wholeNum;
-  return min(1.0, max(0.0, (double)modf((float)beat, &wholeNum))); //return just the 0-0.9999 of the current beat value
+  float wholeNum, beatPhase; //whole num needed for modf, but not used otherwise
+  //invert negative beatPhase values
+  if (beat < 0) {
+    beatPhase = min(1.0, max(0.0, (double)modf((currentSettings.quantum + (float)beat), &wholeNum)));
+  } else {
+    beatPhase = min(1.0, max(0.0, (double)modf((float)beat, &wholeNum)));
+  }
+  return beatPhase; //return just the 0-1.0 of the current beat value
 }
 
 const int Engine::GetNumberOfPeers() const {
