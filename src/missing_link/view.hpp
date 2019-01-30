@@ -55,6 +55,8 @@ namespace MissingLink {
 
       void setLogoLight(double phase);
 
+      void flashLedRing();
+
     private:
 
       TimePoint m_tempMessageExpiration;
@@ -71,5 +73,7 @@ namespace MissingLink {
       std::unique_ptr<SegmentDisplay> m_pDisplay;
 
       std::unique_ptr<GPIO::Pin> m_pLogoLight;
+
+      double m_addLedBrightness;
   };
 }

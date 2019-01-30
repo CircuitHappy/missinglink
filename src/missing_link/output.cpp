@@ -85,6 +85,7 @@ void OutputProcess::process() {
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
   auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
+  auto mainView = m_engine.GetMainView();
   bool resetTrig = true;
   if (m_engine.getResetMode() == 2) {
     resetTrig = false;
@@ -95,6 +96,7 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
     //or, a manually queued MIDI Start Transport
     if (m_transportStopped || m_engine.GetQueuedStartTransport()) {
       midiOut->StartTransport();
+      mainView->flashLedRing();
       m_transportStopped = false;
     }
   }

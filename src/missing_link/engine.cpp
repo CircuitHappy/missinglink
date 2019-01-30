@@ -373,6 +373,10 @@ std::shared_ptr<MissingLink::MidiOut> Engine::GetMidiOut() {
   return m_pMidiOut;
 }
 
+std::shared_ptr<MissingLink::MainView> Engine::GetMainView() {
+  return m_pView;
+}
+
 void Engine::StartStopSyncAdjust(float amount) {
   //clockwise set value to true, counterclock set value to false
   auto settings = m_settings.load();

@@ -95,6 +95,7 @@ namespace MissingLink {
       int getResetMode();
 
       std::shared_ptr<MidiOut> GetMidiOut();
+      std::shared_ptr<MainView> GetMainView();
 
     private:
 
