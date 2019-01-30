@@ -242,7 +242,7 @@ void Engine::playStop() {
 }
 
 void Engine::queueStartTransportAtLoopStart() {
-  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 2500, true);
+  m_pView->WriteDisplayTemporarily("    RESET AT LOOP START    ", 3000, true);
   m_QueueStartTransport = true;
 }
 
@@ -250,7 +250,7 @@ void Engine::zeroTimeline() {
   const auto now = m_link.clock().micros() + std::chrono::milliseconds(-1 * getCurrentDelayCompensation());
   auto timeline = m_link.captureAppSessionState();
   const auto currentSettings = m_settings.load();
-  m_pView->WriteDisplayTemporarily("    RESET TIMELINE NOW    ", 2500, true);
+  m_pView->WriteDisplayTemporarily("    RESET TIMELINE NOW    ", 3000, true);
   timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(5), currentSettings.quantum);
   m_link.commitAppSessionState(timeline);
   m_QueueStartTransport = true;
