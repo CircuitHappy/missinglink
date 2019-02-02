@@ -8,7 +8,7 @@ using namespace MissingLink;
 MidiOut::MidiOut()
   : m_pMidiOut(std::unique_ptr<RtMidiOut>(new RtMidiOut()))
   , m_foundMidiPort(false)
-  , m_numPorts(0)
+  , m_numPorts(1)
 {
   open();
 }
@@ -69,20 +69,18 @@ void MidiOut::CheckPorts() {
       std::cout << "Lost MIDI interface." << std::endl;
       close();
     } else {
+      //number of ports is greater than previously known
       std::cout << "New MIDI interface detected." << std::endl;
+      open();
     }
-    m_foundMidiPort = false;
     m_numPorts = nPorts;
-  }
-  if (m_foundMidiPort == false) {
-    std::cout << "Scanning MIDI ports" << std::endl;
-    open();
   }
 }
 
 void MidiOut::open() {
   // Check available ports.
   unsigned int nPorts = m_pMidiOut->getPortCount();
+  m_foundMidiPort = false;
   std::cout << "Found " << nPorts << " MIDI port(s)" << std::endl;
   if ( nPorts > 1 ) {
     m_numPorts = nPorts;
