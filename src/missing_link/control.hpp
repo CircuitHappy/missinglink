@@ -46,12 +46,15 @@ class Button : public Control {
     virtual ~Button();
 
     // Press down detected once.
-    // TODO: break out into separate press states if needed.
-    std::function<void(void)> onTriggered;
+    std::function<void(void)> onButtonDown;
+
+    // Release up detected once
+    std::function<void(void)> onButtonUp;
 
   private:
 
     TimePoint m_lastEvent;
+    bool m_bIsDown = false;
     void handleInterrupt(uint8_t flag,
                          uint8_t state,
                          std::shared_ptr<IOExpander> pExpander) override;
