@@ -43,6 +43,10 @@ Install these files to get all the tools you will need to build and run the `mis
 
 `sudo apt-get install cmake git libconfig++-dev libconfig++9v5`
 
+Install MIDI support libraries
+
+`sudo apt-get librtmidi-dev`
+
 Clone the git repo in your home directory
 
 `cd ~/`
