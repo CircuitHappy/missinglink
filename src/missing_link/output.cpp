@@ -26,11 +26,9 @@ OutputProcess::OutputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(500))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
-  , m_pLogoLight(std::unique_ptr<Pin>(new Pin(ML_LOGO_PIN, Pin::OUT)))
 {
   m_pClockOut->Write(LOW);
   m_pResetOut->Write(LOW);
-  m_pLogoLight->Write(HIGH);
 }
 
 void OutputProcess::Run() {
@@ -43,18 +41,20 @@ void OutputProcess::Run() {
 }
 
 void OutputProcess::process() {
-
+  auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
-  if (playState == Engine::PlayState::Stopped) {
-    setClock(false);
-    setReset(false);
-    return;
-  }
-
   const auto model = m_engine.GetOutputModel(m_lastOutTime);
   m_lastOutTime = model.now;
 
   switch (playState) {
+    case Engine::PlayState::Stopped:
+      if (m_transportStopped == false) {
+        midiOut->StopTransport();
+        m_transportStopped = true;
+      }
+      setClock(false);
+      setReset(false);
+      break;
     case Engine::PlayState::Cued:
       // start playing on first clock of loop
       if (!model.resetTriggered) {
@@ -69,6 +69,8 @@ void OutputProcess::process() {
       // stop playing on first clock of loop
       if (model.resetTriggered) {
         m_engine.SetPlayState(Engine::PlayState::Stopped);
+        midiOut->StopTransport(); //stop before start of next loop
+        m_transportStopped = true;
       } else {
         //keep playing the clock
         triggerOutputs(model.clockTriggered, model.resetTriggered);
@@ -77,16 +79,29 @@ void OutputProcess::process() {
     default:
       break;
   }
+  if (model.midiClockTriggered) { midiOut->ClockOut(); } //always output midi clock
 }
 
 void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
+  auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
+  auto mainView = m_engine.GetMainView();
   bool resetTrig = true;
   if (m_engine.getResetMode() == 2) {
     resetTrig = false;
   }
-  if (resetTriggered) { setReset(resetTrig); }
+  if (resetTriggered) {
+    setReset(resetTrig);
+    //first reset trigger is start of sequence, tell midi to StartTransport
+    //or, a manually queued MIDI Start Transport
+    if (m_transportStopped || m_engine.GetQueuedStartTransport()) {
+      midiOut->StartTransport();
+      mainView->flashLedRing();
+      m_transportStopped = false;
+    }
+  }
   if (clockTriggered) { setClock(true); }
+
   if (clockTriggered || resetTriggered) {
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
     switch (m_engine.getResetMode()) {
@@ -130,30 +145,39 @@ namespace MissingLink {
   static const int NUM_ANIM_FRAMES = 6;
 
   static const float CueAnimationFrames[][6] =  {
-    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
-    {1, 0.1, 0.1, 0.1, 0.1, 1},
-    {1, 1, 0.1, 0.1, 0.1, 1},
-    {1, 1, 0.1, 0.1, 1, 1},
-    {1, 1, 1, 0.1, 1, 1},
-    {1, 1, 1, 1, 1, 1}
+    {0.2, 0, 0, 0.1, 0.2, 0.3},
+    {0.2, 0.2, 0, 0, 0.1, 0.2},
+    {0.2, 0.2, 0.2, 0, 0, 0.1},
+    {0.2, 0.2, 0.2, 0.2, 0, 0},
+    {0.2, 0.2, 0.2, 0.2, 0.2, 0},
+    {0.2, 0.2, 0.2, 0.2, 0.2, 0.2},
   };
 
   static const float PlayAnimationFrames[][6] = {
     {1, 0.1, 0.1, 0.1, 0.1, 0.1},
-    {1, 1, 0.1, 0.1, 0.1, 0.1},
-    {1, 1, 1, 0.1, 0.1, 0.1},
-    {1, 1, 1, 1, 0.1, 0.1},
-    {1, 1, 1, 1, 1, 0.1},
-    {1, 1, 1, 1, 1, 1},
+    {0.1, 1, 0.1, 0.1, 0.1, 0.1},
+    {0.1, 0.1, 1, 0.1, 0.1, 0.1},
+    {0.1, 0.1, 0.1, 1, 0.1, 0.1},
+    {0.1, 0.1, 0.1, 0.1, 1, 0.1},
+    {0.1, 0.1, 0.1, 0.1, 0.1, 1},
   };
 
   static const float CuedStopAnimationFrames[][6] = {
-    {1, 0.1, 0.1, 0.1, 0.1, 0.1},
-    {0, 1, 0.1, 0.1, 0.1, 0.1},
-    {0, 0, 1, 0.1, 0.1, 0.1},
-    {0, 0, 0, 1, 0.1, 0.1},
-    {0, 0, 0, 0, 1, 0.1},
-    {0, 0, 0, 0, 0, 1},
+    {0, 0.1, 0.2, 0.3, 0.4, 0.5},
+    {0, 0.03, 0.1, 0.2, 0.3, 0.4},
+    {0, 0, 0.03, 0.1, 0.2, 0.3},
+    {0, 0, 0, 0.03, 0.1, 0.2},
+    {0, 0, 0, 0, 0.03, 0.1},
+    {0.01, 0, 0, 0, 0, 0},
+  };
+
+  static const float StoppedAnimationFrames[][6] = {
+    {0.05, 0, 0, 0.02, 0.02, 0.03},
+    {0.03, 0.05, 0, 0, 0.02, 0.02},
+    {0.02, 0.03, 0.05, 0, 0, 0.02},
+    {0.02, 0.02, 0.03, 0.05, 0, 0},
+    {0, 0.02, 0.02, 0.03, 0.05, 0},
+    {0, 0, 0.02, 0.02, 0.03, 0.05},
   };
 
   //Animation for WIFI LED when AP is ready to connect to
@@ -191,7 +215,9 @@ ViewUpdateProcess::ViewUpdateProcess(Engine &engine, std::shared_ptr<MainView> p
 
 void ViewUpdateProcess::process() {
   const auto phase = m_engine.GetNormalizedPhase();
+  const double beatPhase = m_engine.GetBeatPhase();
   const auto playState = m_engine.GetPlayState();
+  m_pView->setLogoLight(beatPhase);
   animatePhase(phase, playState);
   m_pView->displayWifiStatusFrame(getWifiStatusFrame(m_engine.getWifiStatus()));
   m_pView->ScrollTempMessage();
@@ -215,6 +241,13 @@ void ViewUpdateProcess::animatePhase(float normalizedPhase, Engine::PlayState pl
     case Engine::PlayState::CuedStop:
       m_pView->SetAnimationLEDs(CuedStopAnimationFrames[animFrameIndex]);
       break;
+    case Engine::PlayState::Stopped:
+        if (m_engine.GetNumberOfPeers() > 0) {
+          m_pView->SetAnimationLEDs(StoppedAnimationFrames[animFrameIndex]);
+        } else {
+          m_pView->ClearAnimationLEDs();
+        }
+        break;
     default:
       m_pView->ClearAnimationLEDs();
       break;

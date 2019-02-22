@@ -46,6 +46,7 @@ UserInputProcess::UserInputProcess(Engine &engine)
   : Engine::Process(engine, std::chrono::microseconds(10))
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
+  , m_encoderButtonDown(false)
 {
   // Configure interrupt pin and clear initial interrupt
   m_pInterruptIn->SetEdgeMode(Pin::FALLING);
@@ -59,34 +60,38 @@ UserInputProcess::UserInputProcess(Engine &engine)
 
   // Register handlers
   auto playButton = unique_ptr<Button>(new Button(PLAY_BUTTON));
-  playButton->onTriggered = [=]() {
-    if (onPlayStop) {
-      onPlayStop();
+  playButton->onButtonDown = [=]() {
+    if (m_encoderButtonDown) {
+      if (onEncoderAndPlay) { onEncoderAndPlay(); }
+    } else {
+      if (onPlayStop) { onPlayStop(); }
     }
   };
   m_controls.push_back(std::move(playButton));
 
   auto tapButton = unique_ptr<Button>(new Button(TAP_BUTTON));
-  tapButton->onTriggered = [=]() {
-    if (onTapTempo) {
-      onTapTempo();
+  tapButton->onButtonDown = [=]() {
+    if (m_encoderButtonDown) {
+      if (onEncoderAndTap) { onEncoderAndTap(); }
+    } else {
+      if (onTapTempo) { onTapTempo(); }
     }
   };
   m_controls.push_back(std::move(tapButton));
 
   auto encoderButton = unique_ptr<Button>(new Button(ENC_BUTTON));
-  encoderButton->onTriggered = [=]() {
-    if (onEncoderPress) {
-      onEncoderPress();
-    }
+  encoderButton->onButtonDown = [=]() {
+    m_encoderButtonDown = true;
+    if (onEncoderPress) { onEncoderPress(); }
+  };
+  encoderButton->onButtonUp = [=]() {
+    m_encoderButtonDown = false;
   };
   m_controls.push_back(std::move(encoderButton));
 
   auto encoder = unique_ptr<RotaryEncoder>(new RotaryEncoder(ENC_A, ENC_B));
   encoder->onRotated = [=](float amount) {
-    if (onEncoderRotate) {
-      onEncoderRotate(amount);
-    }
+    if (onEncoderRotate && !m_encoderButtonDown) { onEncoderRotate(amount); }
   };
   m_controls.push_back(std::move(encoder));
 }

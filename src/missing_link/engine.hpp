@@ -16,6 +16,7 @@
 #include "missing_link/settings.hpp"
 #include "missing_link/view.hpp"
 #include "missing_link/wifi_status.hpp"
+#include "missing_link/midi_out.hpp"
 
 namespace MissingLink {
 
@@ -45,6 +46,7 @@ namespace MissingLink {
         double tempo;
         bool clockTriggered;
         bool resetTriggered;
+        bool midiClockTriggered;
       };
 
       class Process {
@@ -80,13 +82,20 @@ namespace MissingLink {
 
       const bool isRunning() const { return m_running; }
       const double GetNormalizedPhase() const;
+      const double GetBeatPhase() const;
+      const int GetNumberOfPeers() const;
       const OutputModel GetOutputModel(std::chrono::microseconds last) const;
 
       PlayState GetPlayState() const { return m_playState.load(); }
       void SetPlayState(PlayState state);
 
+      bool GetQueuedStartTransport();
+
       int getWifiStatus();
       int getResetMode();
+
+      std::shared_ptr<MidiOut> GetMidiOut();
+      std::shared_ptr<MainView> GetMainView();
 
     private:
 
@@ -101,9 +110,13 @@ namespace MissingLink {
 
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
+      std::shared_ptr<MidiOut> m_pMidiOut;
+      std::atomic<bool> m_QueueStartTransport;
       std::vector<std::unique_ptr<Process>> m_processes;
 
       void playStop();
+      void queueStartTransportAtLoopStart();
+      void zeroTimeline();
       void toggleMode();
       void startTimeline();
       void stopTimeline();

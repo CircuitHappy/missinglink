@@ -13,6 +13,7 @@
 #include "missing_link/types.hpp"
 #include "missing_link/display.hpp"
 #include "missing_link/led_driver.hpp"
+#include "missing_link/gpio.hpp"
 
 namespace MissingLink {
 
@@ -52,6 +53,10 @@ namespace MissingLink {
       // Draw a frame of the WiFi Status LED
       void displayWifiStatusFrame(float frame);
 
+      void setLogoLight(double phase);
+
+      void flashLedRing();
+
     private:
 
       TimePoint m_tempMessageExpiration;
@@ -66,5 +71,9 @@ namespace MissingLink {
 
       std::unique_ptr<LEDDriver> m_pLEDDriver;
       std::unique_ptr<SegmentDisplay> m_pDisplay;
+
+      std::unique_ptr<GPIO::Pin> m_pLogoLight;
+
+      double m_addLedBrightness;
   };
 }
