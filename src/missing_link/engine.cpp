@@ -63,8 +63,12 @@ Engine::Engine()
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
   , m_QueueStartTransport(false)
+  , m_currIpAddr("0.0.0.0")
+  , m_currIpAddrViewSegment(0)
 {
   Settings settings = m_settings.load();
+
+  SysInfo sysInfo;
 
   m_link.enable(true);
 
@@ -262,7 +266,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1.5 seconds
   if (now - m_lastToggle < std::chrono::milliseconds(1500)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 6);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 7);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -325,6 +329,8 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::StartStopSync:
       StartStopSyncAdjust(amount);
       break;
+    case InputMode::DisplayIP:
+      ipAddressAdjust(amount > 0.0 ? 1 : -1);
     default:
       break;
   }
@@ -367,6 +373,14 @@ void Engine::resetModeAdjust(int amount) {
   settings.reset_mode = mode;
   m_settings = settings;
   displayResetMode(mode, true);
+}
+
+void Engine::ipAddressAdjust(int amount) {
+  int num_positions = 4;
+  int curr_pos = m_currIpAddrViewSegment;
+  int pos = std::min(num_positions - 1, std::max(0, curr_pos + amount));
+  m_currIpAddrViewSegment = pos;
+  displayIpAddrSegment(pos, true);
 }
 
 std::shared_ptr<MissingLink::MidiOut> Engine::GetMidiOut() {
@@ -420,6 +434,11 @@ void Engine::displayCurrentMode() {
       m_pView->WriteDisplayTemporarily("    SYNC START/STOP    ", 3000, true);
       displayStartStopSync(getCurrentStartStopSync(), false);
       break;
+    }
+    case InputMode::DisplayIP: {
+      m_currIpAddr = sysInfo.GetIP();
+      m_pView->WriteDisplayTemporarily("    IP ADDRESS    ", 3000, true);
+      displayIpAddrSegment(0, false);
     }
     default:
       break;
@@ -492,6 +511,23 @@ void Engine::displayStartStopSync(bool sync, bool force) {
   } else {
     m_pView->WriteDisplay("OFF", force);
   }
+}
+
+void Engine::displayIpAddrSegment(int pos, bool force) {
+  std::string s = m_currIpAddr;
+  std::string results[4];
+  std::string delimiter = ".";
+  std::cout << "curr IP " + s << std::endl;
+  for (int c=0; c < 4; c++) {
+    std::cout << "s: " + s << std::endl;
+    results[c] = s.substr(0, s.find(delimiter));
+    if (c < 3) {
+      results[c] = results[c] + '.';
+    }
+    std::cout << "found " + results[c] << std::endl;
+    s.erase(0, s.find(delimiter) + 1);
+  }
+  m_pView->WriteDisplay(results[pos], force);
 }
 
 double Engine::getCurrentTempo() const {
