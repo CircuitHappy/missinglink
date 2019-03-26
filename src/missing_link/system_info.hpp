@@ -1,5 +1,4 @@
 #include <cstdlib>
-#include <rtmidi/RtMidi.h>
 
 namespace MissingLink {
 
