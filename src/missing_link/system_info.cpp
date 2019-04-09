@@ -1,6 +1,7 @@
 // system_info.cpp
-#include <string.h>
-#include <cstdlib>
+#include <string>
+//#include <cstdlib>
+#include <iostream>
 #include "missing_link/system_info.hpp"
 
 using namespace MissingLink;

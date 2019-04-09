@@ -437,7 +437,7 @@ void Engine::displayCurrentMode() {
     }
     case InputMode::DisplayIP: {
       m_currIpAddr = sysInfo.GetIP();
-      m_pView->WriteDisplayTemporarily("    IP ADDRESS    ", 3000, true);
+      m_pView->WriteDisplayTemporarily("    IP ADDRESS    ", 2200, true);
       displayIpAddrSegment(0, false);
     }
     default:
