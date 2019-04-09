@@ -86,7 +86,7 @@ void MidiOut::open() {
     m_numPorts = nPorts;
     // Open Port 1 which should be the USB MIDI adapter.
     try {
-      std::cout << "Trying to open port 1" << std::endl;
+      std::cout << "Trying to open port 1: " << m_pMidiOut->getPortName(1) << std::endl;
       m_pMidiOut->openPort( 1 );
       m_foundMidiPort = true;
       std::cout << "Port 1 Ready" << std::endl;
@@ -103,7 +103,7 @@ void MidiOut::open() {
 void MidiOut::close() {
   m_foundMidiPort = false;
   //close open MIDI port
-  std::cout << "Closing open MIDI port." << std::endl;
+  std::cout << "Closing open MIDI port: " << m_pMidiOut->getPortName(1) << std::endl;
   try {
     m_pMidiOut->closePort();
   } catch (RtMidiError &error) {
