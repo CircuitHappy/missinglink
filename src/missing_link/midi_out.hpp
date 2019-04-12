@@ -22,13 +22,16 @@ class MidiOut {
 
   protected:
 
-    std::unique_ptr<RtMidiOut> m_pMidiOut;
     std::vector<unsigned char> m_message;
-    std::atomic<bool> m_foundMidiPort;
     unsigned int m_numPorts;
 
-    void open();
-    void close();
+    bool m_block_midi;
+
+    std::vector<std::unique_ptr<RtMidiOut>> m_ports; //repository for all the known hardware ports, port 0 is internal software port
+
+    unsigned int CountPorts();
+    void init_ports();
+    void close_ports();
 
 };
 
