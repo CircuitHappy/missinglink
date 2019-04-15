@@ -110,7 +110,7 @@ void MidiOut::init_ports() {
   if (nPorts != 1) { std::cout << "Found " << nPorts << " MIDI port(s)" << std::endl; }
   m_numPorts = nPorts;
   for (unsigned int i = 1; i < nPorts; i++) {
-    std::shared_ptr<RtMidiOut> port = std::shared_ptr<RtMidiOut>(new RtMidiOut());
+    auto port = std::shared_ptr<RtMidiOut>(new RtMidiOut());
     m_ports.push_back(port);
     try {
       std::cout << "Trying to open port " << i << ", " << port->getPortName(i) << std::endl;
