@@ -25,9 +25,9 @@ class MidiOut {
     std::vector<unsigned char> m_message;
     unsigned int m_numPorts;
 
-    bool m_block_midi;
+    std::atomic<bool> m_block_midi;
 
-    std::vector<std::unique_ptr<RtMidiOut>> m_ports; //repository for all the known hardware ports, port 0 is internal software port
+    std::vector<std::shared_ptr<RtMidiOut>> m_ports; //repository for all the known hardware ports, port 0 is internal software port
 
     unsigned int CountPorts();
     void init_ports();

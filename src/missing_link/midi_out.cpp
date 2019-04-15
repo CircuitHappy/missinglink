@@ -19,63 +19,65 @@ MidiOut::~MidiOut() {
 }
 
 void MidiOut::ClockOut() {
-  //send clock to all open ports, but only if there is hardware plugged in
-  if ((m_block_midi == false) && (m_numPorts > 1)) {
-    //output clock messages
-    m_message.clear();
-    m_message.push_back( 0xF8 );
-    for(auto & port : m_ports) {
-      try {
-        port->sendMessage( &m_message );
-      } catch (RtMidiError &error) {
-        error.printMessage();
-        init_ports();
-        break;
-      }
+  //send clock to all open hardware ports (ignore port 0, so numPorts needs to be 2 or more)
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
+  }
+  m_message.clear();
+  m_message.push_back( 0xF8 );
+  for(auto & port : m_ports) {
+    try {
+      port->sendMessage( &m_message );
+    } catch (RtMidiError &error) {
+      error.printMessage();
+      init_ports();
+      break;
     }
   }
 }
 
 void MidiOut::StartTransport() {
-  //send Start Transport to all open ports, but only if there is hardware plugged in
-  if ((m_block_midi == false) && (m_numPorts > 1)) {
-    //output clock messages
-    m_message.clear();
-    m_message.push_back( 0xFA );
-    for(auto & port : m_ports) {
-      try {
-        port->sendMessage( &m_message );
-      } catch (RtMidiError &error) {
-        error.printMessage();
-        init_ports();
-        break;
-      }
+  //send Start Transport to all open hardware ports (ignore port 0, so numPorts needs to be 2 or more)
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
+  }
+  m_message.clear();
+  m_message.push_back( 0xFA );
+  for(auto & port : m_ports) {
+    try {
+      port->sendMessage( &m_message );
+    } catch (RtMidiError &error) {
+      error.printMessage();
+      init_ports();
+      break;
     }
   }
 }
 
 void MidiOut::StopTransport() {
-  //send Stop Transport to all open ports, but only if there is hardware plugged in
-  if ((m_block_midi == false) && (m_numPorts > 1)) {
-    //output clock messages
-    m_message.clear();
-    m_message.push_back( 0xFC );
-    for(auto & port : m_ports) {
-      try {
-        port->sendMessage( &m_message );
-      } catch (RtMidiError &error) {
-        error.printMessage();
-        init_ports();
-        break;
-      }
+  //send Stop Transport to all open hardware ports (ignore port 0, so numPorts needs to be 2 or more)
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
+  }
+  //output clock messages
+  m_message.clear();
+  m_message.push_back( 0xFC );
+  for(auto & port : m_ports) {
+    try {
+      port->sendMessage( &m_message );
+    } catch (RtMidiError &error) {
+      error.printMessage();
+      init_ports();
+      break;
     }
   }
 }
 
 void MidiOut::AllNotesOff() {
-  if ((m_block_midi == false) && (m_numPorts > 1)) {
-  //output All Notes Off messages
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
   }
+  //output All Notes Off messages
 }
 
 void MidiOut::CheckPorts() {
@@ -94,7 +96,7 @@ void MidiOut::CheckPorts() {
 
 unsigned int MidiOut::CountPorts() {
   unsigned int count;
-  auto midi = std::unique_ptr<RtMidiOut>(new RtMidiOut());
+  auto midi = std::shared_ptr<RtMidiOut>(new RtMidiOut());
   count = midi->getPortCount();
   midi.reset();
   return count;
@@ -108,10 +110,11 @@ void MidiOut::init_ports() {
   if (nPorts != 1) { std::cout << "Found " << nPorts << " MIDI port(s)" << std::endl; }
   m_numPorts = nPorts;
   for (unsigned int i = 1; i < nPorts; i++) {
-    m_ports.push_back(std::move(std::unique_ptr<RtMidiOut>(new RtMidiOut())));
+    std::shared_ptr<RtMidiOut> port = std::shared_ptr<RtMidiOut>(new RtMidiOut());
+    m_ports.push_back(port);
     try {
-      std::cout << "Trying to open port " << i << ", " << m_ports[i-1]->getPortName(i) << std::endl;
-      m_ports[i-1]->openPort(i);
+      std::cout << "Trying to open port " << i << ", " << port->getPortName(i) << std::endl;
+      port->openPort(i);
       std::cout << "Port Ready" << std::endl;
     } catch (RtMidiError &error) {
       error.printMessage();
