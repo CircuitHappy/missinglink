@@ -517,14 +517,11 @@ void Engine::displayIpAddrSegment(int pos, bool force) {
   std::string s = m_currIpAddr;
   std::string results[4];
   std::string delimiter = ".";
-  std::cout << "curr IP " + s << std::endl;
   for (int c=0; c < 4; c++) {
-    std::cout << "s: " + s << std::endl;
     results[c] = s.substr(0, s.find(delimiter));
     if (c < 3) {
       results[c] = results[c] + '.';
     }
-    std::cout << "found " + results[c] << std::endl;
     s.erase(0, s.find(delimiter) + 1);
   }
   m_pView->WriteDisplay(results[pos], force);
