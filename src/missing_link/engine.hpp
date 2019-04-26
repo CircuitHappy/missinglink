@@ -17,6 +17,7 @@
 #include "missing_link/view.hpp"
 #include "missing_link/wifi_status.hpp"
 #include "missing_link/midi_out.hpp"
+#include "missing_link/system_info.hpp"
 
 namespace MissingLink {
 
@@ -37,7 +38,8 @@ namespace MissingLink {
         Clock,
         ResetMode,
         DelayCompensation,
-        StartStopSync
+        StartStopSync,
+        DisplayIP
       };
 
       /// Model for engine output processes
@@ -112,7 +114,11 @@ namespace MissingLink {
       std::unique_ptr<TapTempo> m_pTapTempo;
       std::shared_ptr<MidiOut> m_pMidiOut;
       std::atomic<bool> m_QueueStartTransport;
+      std::string m_currIpAddr;
+      std::atomic<int> m_currIpAddrViewSegment;
       std::vector<std::unique_ptr<Process>> m_processes;
+
+      SysInfo sysInfo;
 
       void playStop();
       void queueStartTransportAtLoopStart();
@@ -129,6 +135,7 @@ namespace MissingLink {
       void resetModeAdjust(int amount);
       void delayCompensationAdjust(int amount);
       void StartStopSyncAdjust(float amount);
+      void ipAddressAdjust(int amount);
 
       void displayCurrentMode();
       void displayTempWifiStatus(WifiState status);
@@ -138,6 +145,7 @@ namespace MissingLink {
       void displayResetMode(int mode, bool force);
       void displayDelayCompensation(int delay, bool force);
       void displayStartStopSync(bool sync, bool force);
+      void displayIpAddrSegment(int pos, bool force);
 
       double getCurrentTempo() const;
       int getCurrentQuantum() const;

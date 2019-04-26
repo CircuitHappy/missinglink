@@ -6,107 +6,135 @@
 using namespace MissingLink;
 
 MidiOut::MidiOut()
-  : m_pMidiOut(std::unique_ptr<RtMidiOut>(new RtMidiOut()))
-  , m_foundMidiPort(false)
-  , m_numPorts(1)
+  : m_numPorts(1)
+  , m_block_midi(true)
+  , m_ports()
 {
-  open();
+  init_ports();
 }
 
 MidiOut::~MidiOut() {
-  close();
+  m_block_midi = true;
+  close_ports();
 }
 
 void MidiOut::ClockOut() {
-  if (m_foundMidiPort) {
-    //output clock messages
-    m_message.clear();
-    m_message.push_back( 0xF8 );
+  //send clock to all open hardware ports (ignore port 0, so numPorts needs to be 2 or more)
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
+  }
+  m_message.clear();
+  m_message.push_back( 0xF8 );
+  for(auto & port : m_ports) {
     try {
-      m_pMidiOut->sendMessage( &m_message );
+      port->sendMessage( &m_message );
     } catch (RtMidiError &error) {
       error.printMessage();
-      close();
+      init_ports();
+      break;
     }
   }
 }
+
 void MidiOut::StartTransport() {
-  if (m_foundMidiPort) {
-    //output Start Transport messages
-    m_message.clear();
-    m_message.push_back( 0xFA );
+  //send Start Transport to all open hardware ports (ignore port 0, so numPorts needs to be 2 or more)
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
+  }
+  m_message.clear();
+  m_message.push_back( 0xFA );
+  for(auto & port : m_ports) {
     try {
-      m_pMidiOut->sendMessage( &m_message );
+      port->sendMessage( &m_message );
     } catch (RtMidiError &error) {
       error.printMessage();
-      close();
+      init_ports();
+      break;
     }
   }
 }
+
 void MidiOut::StopTransport() {
-  if (m_foundMidiPort) {
-    //output Stop Transport messages
-    m_message.clear();
-    m_message.push_back( 0xFC );
+  //send Stop Transport to all open hardware ports (ignore port 0, so numPorts needs to be 2 or more)
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
+  }
+  //output clock messages
+  m_message.clear();
+  m_message.push_back( 0xFC );
+  for(auto & port : m_ports) {
     try {
-      m_pMidiOut->sendMessage( &m_message );
+      port->sendMessage( &m_message );
     } catch (RtMidiError &error) {
       error.printMessage();
-      close();
+      init_ports();
+      break;
     }
   }
 }
+
 void MidiOut::AllNotesOff() {
-  if (m_foundMidiPort) {
-  //output All Notes Off messages
+  if (m_block_midi || (m_numPorts < 2)) {
+    return;
   }
+  //output All Notes Off messages
 }
 
 void MidiOut::CheckPorts() {
-  unsigned int nPorts = m_pMidiOut->getPortCount();
+  unsigned int nPorts = CountPorts();
   if (nPorts != m_numPorts) {
     if (nPorts < m_numPorts){
       std::cout << "Lost MIDI interface." << std::endl;
-      close();
     } else {
       //number of ports is greater than previously known
       std::cout << "New MIDI interface detected." << std::endl;
-      open();
     }
+    init_ports();
     m_numPorts = nPorts;
   }
 }
 
-void MidiOut::open() {
-  // Check available ports.
-  unsigned int nPorts = m_pMidiOut->getPortCount();
-  m_foundMidiPort = false;
-  std::cout << "Found " << nPorts << " MIDI port(s)" << std::endl;
-  if ( nPorts > 1 ) {
-    m_numPorts = nPorts;
-    // Open Port 1 which should be the USB MIDI adapter.
+unsigned int MidiOut::CountPorts() {
+  unsigned int count;
+  auto midi = std::shared_ptr<RtMidiOut>(new RtMidiOut());
+  count = midi->getPortCount();
+  midi.reset();
+  return count;
+}
+
+void MidiOut::init_ports() {
+  m_block_midi = true;
+  close_ports();
+  // Add all available ports, excluding port 0 (internal software port)
+  unsigned int nPorts = CountPorts();
+  if (nPorts != 1) { std::cout << "Found " << nPorts << " MIDI port(s)" << std::endl; }
+  m_numPorts = nPorts;
+  for (unsigned int i = 1; i < nPorts; i++) {
+    auto port = std::shared_ptr<RtMidiOut>(new RtMidiOut());
+    m_ports.push_back(port);
     try {
-      std::cout << "Trying to open port 1" << std::endl;
-      m_pMidiOut->openPort( 1 );
-      m_foundMidiPort = true;
-      std::cout << "Port 1 Ready" << std::endl;
+      std::cout << "Trying to open port " << i << ", " << port->getPortName(i) << std::endl;
+      port->openPort(i);
+      std::cout << "Port Ready" << std::endl;
     } catch (RtMidiError &error) {
       error.printMessage();
     }
-  } else {
+  }
+  m_block_midi = false;
+  if (nPorts == 1) {
     //If there's only 1 port available, that's a software port, not hardware
     std::cout << "No External MIDI ports available!" << std::endl;
-    m_foundMidiPort = false;
   }
 }
 
-void MidiOut::close() {
-  m_foundMidiPort = false;
-  //close open MIDI port
-  std::cout << "Closing open MIDI port." << std::endl;
-  try {
-    m_pMidiOut->closePort();
-  } catch (RtMidiError &error) {
-    error.printMessage();
+void MidiOut::close_ports() {
+  for(auto & port : m_ports) {
+  /* std::cout << *it; ... */
+    try {
+      port->closePort();
+    } catch (RtMidiError &error) {
+      error.printMessage();
+    }
   }
+  m_ports.clear();
 }

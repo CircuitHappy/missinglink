@@ -69,8 +69,17 @@ void MainView::ScrollTempMessage() {
       m_lastTempMessageFrame = now + std::chrono::milliseconds(150);
       int messageLength = m_tempScrollingMessage.length();
       m_scrollOffset ++;
+      if (m_tempScrollingMessage.at(m_scrollOffset) == '.') {
+        m_scrollOffset ++;
+      }
       if ((m_scrollOffset + 3) > (messageLength - 1)) m_scrollOffset = 0;
-      m_tempDisplayValues.push(m_tempScrollingMessage.substr(m_scrollOffset, 4));
+      int charCount = 4;
+      for (int c = 0; c < charCount; c ++) {
+        if (m_tempScrollingMessage.at(c + m_scrollOffset) == '.') {
+          charCount ++;
+        }
+      }
+      m_tempDisplayValues.push(m_tempScrollingMessage.substr(m_scrollOffset, charCount));
     }
   }
 }
