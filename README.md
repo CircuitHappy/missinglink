@@ -26,8 +26,8 @@ The contents of this file should look like this:
 `country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 network={
-      ssid="viznet2"
-      psk="4646464646"
+      ssid="your_network"
+      psk="your_password"
       key_mgmt=WPA-PSK
 }`
 
