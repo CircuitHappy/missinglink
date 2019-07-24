@@ -1,6 +1,7 @@
 // midiout.cpp
 #include <iostream>
 #include <cstdlib>
+#include <string>
 #include "missing_link/midi_out.hpp"
 
 using namespace MissingLink;
@@ -84,10 +85,10 @@ void MidiOut::CheckPorts() {
   unsigned int nPorts = CountPorts();
   if (nPorts != m_numPorts) {
     if (nPorts < m_numPorts){
-      std::cout << "Lost MIDI interface." << std::endl;
+      std::cout << "MIDI Out: Lost interface." << std::endl;
     } else {
       //number of ports is greater than previously known
-      std::cout << "New MIDI interface detected." << std::endl;
+      std::cout << "MIDI Out: New interface detected." << std::endl;
     }
     init_ports();
     m_numPorts = nPorts;
@@ -107,23 +108,25 @@ void MidiOut::init_ports() {
   close_ports();
   // Add all available ports, excluding port 0 (internal software port)
   unsigned int nPorts = CountPorts();
-  if (nPorts != 1) { std::cout << "Found " << nPorts << " MIDI port(s)" << std::endl; }
+  if (nPorts != 1) { std::cout << "MIDI Out: Found " << nPorts << " MIDI port(s)" << std::endl; }
   m_numPorts = nPorts;
-  for (unsigned int i = 1; i < nPorts; i++) {
+  for (unsigned int i = 2; i < nPorts; i++) {
     auto port = std::shared_ptr<RtMidiOut>(new RtMidiOut());
-    m_ports.push_back(port);
-    try {
-      std::cout << "Trying to open port " << i << ", " << port->getPortName(i) << std::endl;
-      port->openPort(i);
-      std::cout << "Port Ready" << std::endl;
-    } catch (RtMidiError &error) {
-      error.printMessage();
+    if (port->getPortName(i).find("RtMidi") == std::string::npos) {
+      m_ports.push_back(port);
+      try {
+        std::cout << "MIDI Out: Trying to open port " << i << ", " << port->getPortName(i) << std::endl;
+        port->openPort(i);
+        std::cout << "MIDI Out: Port " << i << " Ready" << std::endl;
+      } catch (RtMidiError &error) {
+        error.printMessage();
+      }
     }
   }
   m_block_midi = false;
-  if (nPorts == 1) {
+  if (nPorts <= 1) {
     //If there's only 1 port available, that's a software port, not hardware
-    std::cout << "No External MIDI ports available!" << std::endl;
+    std::cout << "MIDI Out: No External ports available!" << std::endl;
   }
 }
 

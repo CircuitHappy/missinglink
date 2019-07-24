@@ -62,6 +62,7 @@ Engine::Engine()
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
+  , m_pMidiIn(std::shared_ptr<MidiIn>(new MidiIn()))
   , m_QueueStartTransport(false)
   , m_currIpAddr("0.0.0.0")
   , m_currIpAddrViewSegment(0)
@@ -385,6 +386,10 @@ void Engine::ipAddressAdjust(int amount) {
 
 std::shared_ptr<MissingLink::MidiOut> Engine::GetMidiOut() {
   return m_pMidiOut;
+}
+
+std::shared_ptr<MissingLink::MidiIn> Engine::GetMidiIn() {
+  return m_pMidiIn;
 }
 
 std::shared_ptr<MissingLink::MainView> Engine::GetMainView() {
