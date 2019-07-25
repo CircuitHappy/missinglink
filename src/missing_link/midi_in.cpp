@@ -28,8 +28,7 @@ void MidiIn::messageCallback( double deltatime, std::vector< unsigned char > *me
   MidiIn *midiIn = static_cast<MidiIn *>(userData);
   switch ((int)message->at(0)) {
     case 248:
-      std::cout << "clock tick delta: " << deltatime << std::endl;
-      midiIn->clockInPerTick();
+      midiIn->clockInAvgDelta(deltatime);
       break;
     case 250:
       midiIn->startTransport();
@@ -45,35 +44,45 @@ void MidiIn::messageCallback( double deltatime, std::vector< unsigned char > *me
   }
 }
 
-void MidiIn::clockInPerQn() {
-  //receive MIDI Clock Here
-  const auto now = steady_clock::now();
+void MidiIn::clockInPerQn(double deltatime) {
+  //based on rtmidi tests/midiclock.cpp
   static int clockCount = 0;
-  static auto startClockTime = now;
-
   clockCount += 1;
 
-  // if (intervalSinceLast >= milliseconds(5000)) {
-  //   clockCount = 1;
-  // }
-
-  if (clockCount == 1) {
-    startClockTime = now;
-  }
-
   if (clockCount == 24) {
-    const auto totalInterval = now - startClockTime;
-    const double newTempo = (int)((seconds(60)/totalInterval) + 0.5);
+    double bpm = 60.0 / 24.0 / deltatime;
 
     if (onNewTempo) {
-      onNewTempo(newTempo);
+      onNewTempo(bpm);
+    }
+    clockCount = 0;
+  }
+}
+
+void MidiIn::clockInAvgDelta(double deltatime) {
+  //based on rtmidi tests/midiclock.cpp
+  //but average each deltatime to smooth it out
+  static int clockCount = 0;
+  static double deltaAvg = 0;
+  clockCount += 1;
+  if (clockCount == 1) {
+    deltaAvg = deltatime;
+  }
+
+  deltaAvg = (deltaAvg + deltatime) * 0.5;
+
+  if (clockCount == 24) {
+    double bpm = 60.0 / 24.0 / deltaAvg;
+
+    if (onNewTempo) {
+      onNewTempo(bpm);
     }
     clockCount = 0;
   }
 }
 
 void MidiIn::clockInPerTick() {
-  //receive MIDI Clock Here
+  //adapted from tap_tempo.cpp
   const auto now = steady_clock::now();
   static int clockCount = 0;
   static auto lastClockTime = now;
@@ -85,6 +94,7 @@ void MidiIn::clockInPerTick() {
   clockCount += 1;
 
   if (clockCount == 1) {
+    //we only have one clock pulse. Not enough to measure tempo.
     lastClockTime = now;
     return;
   }
@@ -96,13 +106,15 @@ void MidiIn::clockInPerTick() {
   const auto qn = 24 * clockInterval;
   const double newTempo = (int)((seconds(60)/qn) + 0.5);
   lastClockTime = now;
-  //update tempo at second clock tick and then every quarternote afterward
+  // update tempo at second clock tick, to get some tempo going quickly
   if (clockCount == 2) {
     if (onNewTempo) {
       onNewTempo(newTempo);
     }
   }
+  // and then update tempo every quarternote afterward
   if ((clockCount % 24) == 0) {
+    //average with previous tempo in hopes of smoothing things out
     avgTempo = (int)(((newTempo + lastTempo) * 0.5) + 0.5);
     if (onNewTempo) {
       onNewTempo(avgTempo);

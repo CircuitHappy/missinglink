@@ -31,7 +31,8 @@ class MidiIn {
 
     std::vector<std::shared_ptr<RtMidiIn>> m_ports; //repository for all the known hardware ports, port 0 is internal software port
 
-    void clockInPerQn();
+    void clockInPerQn(double deltatime);
+    void clockInAvgDelta(double deltatime);
     void clockInPerTick();
     void startTransport();
     void continueTransport();
