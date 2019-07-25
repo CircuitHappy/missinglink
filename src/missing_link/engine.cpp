@@ -92,6 +92,9 @@ Engine::Engine()
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
+  m_pMidiIn->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
+  m_pMidiIn->onStartTransport = bind(&Engine::zeroTimeline, this);
+
   m_link.setNumPeersCallback([this](std::size_t numPeers) {
     std::string message = "    " + std::to_string(numPeers) + " LINKS    ";
     m_pView->WriteDisplayTemporarily(message, 2000, true);
