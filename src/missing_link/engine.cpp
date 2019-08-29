@@ -56,6 +56,7 @@ Engine::Engine()
   , m_playState(PlayState::Stopped)
   , m_wifiStatus(WifiState::NO_WIFI_FOUND)
   , m_pWifiStatusFile(unique_ptr<WifiStatus>(new WifiStatus()))
+  , m_pApModeFile(std::unique_ptr<FileIO::TextFile>(new FileIO::TextFile("/tmp/ApMode")))
   , m_settings(Settings::Load())
   , m_inputMode(InputMode::BPM)
   , m_link(m_settings.load().tempo)
@@ -88,6 +89,8 @@ Engine::Engine()
   uiProcess->onEncoderRotate = bind(&Engine::routeEncoderAdjust, this, placeholders::_1);
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
   m_processes.push_back(std::move(uiProcess));
+
+  updateApModeFile();
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
@@ -266,7 +269,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1.5 seconds
   if (now - m_lastToggle < std::chrono::milliseconds(1500)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 7);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % (int)InputMode::NUM_MODES);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -329,6 +332,9 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::StartStopSync:
       StartStopSyncAdjust(amount);
       break;
+    case InputMode::ApMode:
+      apModeAdjust(amount);
+      break;
     case InputMode::DisplayIP:
       ipAddressAdjust(amount > 0.0 ? 1 : -1);
     default:
@@ -373,6 +379,16 @@ void Engine::resetModeAdjust(int amount) {
   settings.reset_mode = mode;
   m_settings = settings;
   displayResetMode(mode, true);
+}
+
+void Engine::apModeAdjust(int amount) {
+  int num_options = 3;
+  auto settings = m_settings.load();
+  int mode = std::min(num_options - 1, std::max(0, settings.ap_mode + amount));
+  settings.ap_mode = mode;
+  updateApModeFile();
+  m_settings = settings;
+  displayApMode(mode, true);
 }
 
 void Engine::ipAddressAdjust(int amount) {
@@ -433,6 +449,11 @@ void Engine::displayCurrentMode() {
     case InputMode::StartStopSync: {
       m_pView->WriteDisplayTemporarily("    SYNC START/STOP    ", 3000, true);
       displayStartStopSync(getCurrentStartStopSync(), false);
+      break;
+    }
+    case InputMode::ApMode: {
+      m_pView->WriteDisplayTemporarily("    AP MODE    ", 2000, true);
+      displayApMode(getCurrentApMode(), false);
       break;
     }
     case InputMode::DisplayIP: {
@@ -501,6 +522,23 @@ void Engine::displayResetMode(int mode, bool force) {
   }
 }
 
+void Engine::displayApMode(int mode, bool force) {
+  switch (mode) {
+    case 0:
+      m_pView->WriteDisplay("AUTO", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("ON", force);
+      break;
+    case 2:
+      m_pView->WriteDisplay("OFF", force);
+      break;
+    default:
+      m_pView->WriteDisplay("WHAT", force);
+      break;
+  }
+}
+
 void Engine::displayDelayCompensation(int delay, bool force) {
   m_pView->WriteDisplay(std::to_string(delay), force);
 }
@@ -555,4 +593,29 @@ int Engine::getCurrentDelayCompensation() const {
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;
+}
+
+int Engine::getCurrentApMode() const {
+  auto settings = m_settings.load();
+  return settings.ap_mode;
+}
+
+void Engine::updateApModeFile() {
+  auto settings = m_settings.load();
+  std::string mode;
+  switch (settings.ap_mode) {
+    case 0:
+      mode = "auto";
+      break;
+    case 1:
+      mode = "on";
+      break;
+    case 2:
+      mode = "off";
+      break;
+    default:
+      mode = "auto";
+      break;
+  }
+  m_pApModeFile->Write(mode);
 }

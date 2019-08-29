@@ -18,6 +18,7 @@
 #include "missing_link/wifi_status.hpp"
 #include "missing_link/midi_out.hpp"
 #include "missing_link/system_info.hpp"
+#include "missing_link/file_io.hpp"
 
 namespace MissingLink {
 
@@ -39,7 +40,9 @@ namespace MissingLink {
         ResetMode,
         DelayCompensation,
         StartStopSync,
-        DisplayIP
+        ApMode,
+        DisplayIP,
+        NUM_MODES
       };
 
       /// Model for engine output processes
@@ -105,6 +108,7 @@ namespace MissingLink {
       std::atomic<PlayState> m_playState;
       std::atomic<WifiState> m_wifiStatus;
       std::shared_ptr<WifiStatus> m_pWifiStatusFile;
+      std::unique_ptr<FileIO::TextFile> m_pApModeFile;
       std::atomic<Settings> m_settings;
       std::atomic<InputMode> m_inputMode;
 
@@ -135,6 +139,7 @@ namespace MissingLink {
       void resetModeAdjust(int amount);
       void delayCompensationAdjust(int amount);
       void StartStopSyncAdjust(float amount);
+      void apModeAdjust(int amount);
       void ipAddressAdjust(int amount);
 
       void displayCurrentMode();
@@ -143,6 +148,7 @@ namespace MissingLink {
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
       void displayResetMode(int mode, bool force);
+      void displayApMode(int mode, bool force);
       void displayDelayCompensation(int delay, bool force);
       void displayStartStopSync(bool sync, bool force);
       void displayIpAddrSegment(int pos, bool force);
@@ -153,6 +159,9 @@ namespace MissingLink {
       int getCurrentResetMode() const;
       int getCurrentDelayCompensation() const;
       int getCurrentStartStopSync() const;
+      int getCurrentApMode() const;
+
+      void updateApModeFile();
 
       TimePoint m_lastToggle;
   };
