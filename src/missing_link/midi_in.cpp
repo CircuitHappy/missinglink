@@ -12,6 +12,8 @@ using namespace MissingLink;
 MidiIn::MidiIn()
   : m_numPorts(0)
   , m_block_midi(true)
+  , m_deltaAmount(0.0)
+  , m_clockCount(0)
   , m_ports()
 {
   init_ports();
@@ -26,9 +28,11 @@ void MidiIn::messageCallback( double deltatime, std::vector< unsigned char > *me
   //delta time seems to be 0.0 for start/stop/clock messages
   //unsigned int nBytes = message->size();
   MidiIn *midiIn = static_cast<MidiIn *>(userData);
+  midiIn->addDeltaTime(deltatime);
   switch ((int)message->at(0)) {
     case 248:
-      midiIn->clockInAvgDelta(deltatime);
+      midiIn->clockInAvgDelta(midiIn->getDeltaTime());
+      midiIn->zeroDeltaTime();
       break;
     case 250:
       midiIn->startTransport();
@@ -42,6 +46,18 @@ void MidiIn::messageCallback( double deltatime, std::vector< unsigned char > *me
     default:
       break;
   }
+}
+
+double MidiIn::getDeltaTime() {
+  return m_deltaAmount;
+}
+
+void MidiIn::addDeltaTime(double delta) {
+  m_deltaAmount += delta;
+}
+
+void MidiIn::zeroDeltaTime() {
+  m_deltaAmount = 0;
 }
 
 void MidiIn::clockInPerQn(double deltatime) {
@@ -62,22 +78,29 @@ void MidiIn::clockInPerQn(double deltatime) {
 void MidiIn::clockInAvgDelta(double deltatime) {
   //based on rtmidi tests/midiclock.cpp
   //but average each deltatime to smooth it out
-  static int clockCount = 0;
   static double deltaAvg = 0;
-  clockCount += 1;
-  if (clockCount == 1) {
+  static double avgTempo = 0;
+  m_clockCount += 1;
+  if (m_clockCount == 1) {
     deltaAvg = deltatime;
+    //perhaps re-align the Link grid here
   }
 
   deltaAvg = (deltaAvg + deltatime) * 0.5;
 
-  if (clockCount == 24) {
-    double bpm = 60.0 / 24.0 / deltaAvg;
+  if (m_clockCount == 24) {
+    double bpm = (int)(60.0 / 24.0 / deltaAvg);
+
+    if (abs(avgTempo - bpm) < 5) {
+      avgTempo = (int)(((avgTempo + bpm) * 0.5) + 0.5);
+    } else {
+      avgTempo = bpm;
+    }
 
     if (onNewTempo) {
-      onNewTempo(bpm);
+      onNewTempo(avgTempo);
     }
-    clockCount = 0;
+    m_clockCount = 0;
   }
 }
 
