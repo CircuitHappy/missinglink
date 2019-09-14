@@ -17,6 +17,8 @@
 using namespace std;
 using namespace MissingLink;
 
+Thread::Thread(){}
+
 Engine::Process::Process(Engine &engine, std::chrono::microseconds sleepTime)
   : m_engine(engine)
   , m_sleepTime(sleepTime)
@@ -31,6 +33,7 @@ void Engine::Process::Run() {
   if (m_pThread != nullptr) { return; }
   m_bStopped = false;
   m_pThread = unique_ptr<thread>(new thread(&Process::run, this));
+  m_pThread->Thread::setScheduling(this, SCHED_RR, 2);
 }
 
 void Engine::Process::Stop() {

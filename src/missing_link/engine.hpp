@@ -10,6 +10,7 @@
 #include <chrono>
 #include <memory>
 #include <thread>
+#include <pthread.h>
 #include <ableton/Link.hpp>
 #include "missing_link/types.hpp"
 #include "missing_link/tap_tempo.hpp"
@@ -20,6 +21,17 @@
 #include "missing_link/system_info.hpp"
 
 namespace MissingLink {
+
+  class Thread : public std::thread {
+
+  public:
+
+    Thread();
+    static void setScheduling(std::thread &th, int policy, int priority);
+
+  private:
+    sched_param sch_params;
+  };
 
   class Engine {
 
