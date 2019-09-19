@@ -23,7 +23,7 @@ using std::min;
 using std::max;
 
 OutputProcess::OutputProcess(Engine &engine)
-  : Engine::Process(engine, std::chrono::microseconds(500))
+  : Engine::Process(engine, std::chrono::microseconds(50))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
