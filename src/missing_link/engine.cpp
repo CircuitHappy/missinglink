@@ -66,6 +66,7 @@ Engine::Engine()
   , m_QueueStartTransport(false)
   , m_currIpAddr("0.0.0.0")
   , m_currIpAddrViewSegment(0)
+  , m_rebootScrollPosition(0)
 {
   Settings settings = m_settings.load();
 
@@ -330,13 +331,17 @@ void Engine::routeEncoderAdjust(float amount) {
       delayCompensationAdjust(amount);
       break;
     case InputMode::StartStopSync:
-      StartStopSyncAdjust(amount);
+      StartStopSyncAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::ApMode:
-      apModeAdjust(amount);
+      apModeAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::DisplayIP:
       ipAddressAdjust(amount > 0.0 ? 1 : -1);
+      break;
+    case InputMode::RebootScroll:
+      rebootScrollAdjust(amount > 0.0 ? 1 : -1);
+      break;
     default:
       break;
   }
@@ -386,9 +391,19 @@ void Engine::apModeAdjust(int amount) {
   auto settings = m_settings.load();
   int mode = std::min(num_options - 1, std::max(0, settings.ap_mode + amount));
   settings.ap_mode = mode;
-  updateApModeFile();
   m_settings = settings;
   displayApMode(mode, true);
+  updateApModeFile();
+}
+
+void Engine::rebootScrollAdjust(int amount) {
+  int num_options = 6;
+  m_rebootScrollPosition = std::min(num_options - 1, std::max(0, m_rebootScrollPosition + amount));
+  displayRebootMenu(m_rebootScrollPosition, true);
+  //restart missing link when we get to the final menu item
+  if (m_rebootScrollPosition == (num_options - 1)) {
+    startRebootProcess(); //calls localhost/api/reboot
+  }
 }
 
 void Engine::ipAddressAdjust(int amount) {
@@ -420,6 +435,7 @@ void Engine::StartStopSyncAdjust(float amount) {
 
 void Engine::displayCurrentMode() {
   const int holdTime = 1500;
+  m_rebootScrollPosition = 0;
   switch (m_inputMode) {
     case InputMode::BPM: {
       m_pView->WriteDisplayTemporarily("BPM", holdTime);
@@ -460,6 +476,11 @@ void Engine::displayCurrentMode() {
       m_currIpAddr = sysInfo.GetIP();
       m_pView->WriteDisplayTemporarily("    IP ADDRESS    ", 2200, true);
       displayIpAddrSegment(0, false);
+      break;
+    }
+    case InputMode::RebootScroll: {
+      m_pView->WriteDisplayTemporarily("    REBOOT MISSING LINK    ", 3200, true);
+      displayRebootMenu(0, false);
     }
     default:
       break;
@@ -470,10 +491,10 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 30, true);
+      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 10, true);
     break;
     case TRYING_TO_CONNECT :
-      m_pView->WriteDisplayTemporarily("    SEARCHING FOR WIFI    ", oneSecond * 60, true);
+      m_pView->WriteDisplayTemporarily("    STARTING UP NETWORK    ", oneSecond * 60, true);
       break;
     case NO_WIFI_FOUND :
       m_pView->WriteDisplayTemporarily("    NO WIFI FOUND    ", oneSecond * 10, true);
@@ -481,9 +502,9 @@ void Engine::displayTempWifiStatus(WifiState status) {
     case WIFI_CONNECTED :
       m_pView->WriteDisplayTemporarily("    WIFI CONNECTED    ", oneSecond * 5, true);
       break;
-      case REBOOT :
-        m_pView->WriteDisplayTemporarily("BOOT", oneSecond * 10, false);
-        break;
+    case REBOOT :
+      m_pView->WriteDisplayTemporarily("BOOT", oneSecond * 10, false);
+      break;
     default :
       break;
   }
@@ -535,6 +556,35 @@ void Engine::displayApMode(int mode, bool force) {
       break;
     default:
       m_pView->WriteDisplay("WHAT", force);
+      break;
+  }
+}
+
+void Engine::displayRebootMenu(int mode, bool force) {
+  switch (mode) {
+    case 0:
+      m_pView->WriteDisplay("--->", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("-->R", force);
+      break;
+    case 2:
+      m_pView->WriteDisplay("->RE", force);
+      break;
+    case 3:
+      m_pView->WriteDisplay(">REB", force);
+      break;
+    case 4:
+      m_pView->WriteDisplay("REBO", force);
+      break;
+    case 5:
+      m_pView->WriteDisplay("EBOO", force);
+      break;
+    case 6:
+      m_pView->WriteDisplay("BOOT", force);
+      break;
+    default:
+      m_pView->WriteDisplay(">>>>", force);
       break;
   }
 }
@@ -618,4 +668,8 @@ void Engine::updateApModeFile() {
       break;
   }
   m_pApModeFile->Write(mode);
+}
+
+void Engine::startRebootProcess() {
+  system("curl http://127.0.0.1/api/reboot");
 }
