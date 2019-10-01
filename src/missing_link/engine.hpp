@@ -59,7 +59,7 @@ namespace MissingLink {
 
         public:
 
-          Process(Engine &engine, std::chrono::microseconds sleepTime);
+          Process(Engine &engine, std::chrono::microseconds LowPrioritySleepTime, std::chrono::microseconds HiPrioritySleepTime);
           virtual ~Process();
 
           virtual void Run();
@@ -78,7 +78,8 @@ namespace MissingLink {
         private:
 
           void sleep();
-          std::chrono::microseconds m_sleepTime;
+          std::chrono::microseconds m_LowPriSleepTime;
+          std::chrono::microseconds m_HiPriSleepTime;
           std::atomic<bool> m_bStopped;
       };
 

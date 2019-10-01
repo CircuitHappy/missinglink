@@ -43,7 +43,7 @@ namespace MissingLink {
 }
 
 UserInputProcess::UserInputProcess(Engine &engine)
-  : Engine::Process(engine, std::chrono::microseconds(10))
+  : Engine::Process(engine, std::chrono::microseconds(10), std::chrono::microseconds(10))
   , m_pExpander(shared_ptr<IOExpander>(new IOExpander()))
   , m_pInterruptIn(unique_ptr<Pin>(new Pin(ML_INTERRUPT_PIN, Pin::IN)))
   , m_encoderButtonDown(false)

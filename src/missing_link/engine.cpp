@@ -17,9 +17,10 @@
 using namespace std;
 using namespace MissingLink;
 
-Engine::Process::Process(Engine &engine, std::chrono::microseconds sleepTime)
+Engine::Process::Process(Engine &engine, std::chrono::microseconds LowPrioritySleepTime, std::chrono::microseconds HiPrioritySleepTime)
   : m_engine(engine)
-  , m_sleepTime(sleepTime)
+  , m_LowPriSleepTime(LowPrioritySleepTime)
+  , m_HiPriSleepTime(HiPrioritySleepTime)
   , m_bStopped(true)
 {}
 
@@ -48,7 +49,11 @@ void Engine::Process::run() {
 }
 
 void Engine::Process::sleep() {
-  std::this_thread::sleep_for(m_sleepTime);
+  if (m_engine.getWifiStatus() == WifiState::TRYING_TO_CONNECT) {
+    std::this_thread::sleep_for(m_LowPriSleepTime);
+  } else {
+    std::this_thread::sleep_for(m_HiPriSleepTime);
+  }
 }
 
 Engine::Engine()
