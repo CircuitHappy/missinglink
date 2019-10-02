@@ -402,7 +402,7 @@ void Engine::apModeAdjust(int amount) {
 }
 
 void Engine::rebootScrollAdjust(int amount) {
-  int num_options = 6;
+  int num_options = 7;
   m_rebootScrollPosition = std::min(num_options - 1, std::max(0, m_rebootScrollPosition + amount));
   displayRebootMenu(m_rebootScrollPosition, true);
   //restart missing link when we get to the final menu item
