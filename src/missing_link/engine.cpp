@@ -72,6 +72,7 @@ Engine::Engine()
   , m_currIpAddr("0.0.0.0")
   , m_currIpAddrViewSegment(0)
   , m_rebootScrollPosition(0)
+  , m_apResetScrollPosition(0)
 {
   Settings settings = m_settings.load();
 
@@ -344,6 +345,9 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::DisplayIP:
       ipAddressAdjust(amount > 0.0 ? 1 : -1);
       break;
+    case InputMode::ApResetScroll:
+      apResetScrollAdjust(amount > 0.0 ? 1 : -1);
+      break;
     case InputMode::RebootScroll:
       rebootScrollAdjust(amount > 0.0 ? 1 : -1);
       break;
@@ -401,11 +405,21 @@ void Engine::apModeAdjust(int amount) {
   updateApModeFile();
 }
 
+void Engine::apResetScrollAdjust(int amount) {
+  int num_options = 6;
+  m_apResetScrollPosition = std::min(num_options - 1, std::max(0, m_apResetScrollPosition + amount));
+  displayApResetMenu(m_apResetScrollPosition, true);
+  //restart missing link when we get to the final menu item
+  if (m_apResetScrollPosition == (num_options - 1)) {
+    startResetApModeSettings(); //calls localhost/api/reset_ap_settings
+  }
+}
+
 void Engine::rebootScrollAdjust(int amount) {
   int num_options = 7;
   m_rebootScrollPosition = std::min(num_options - 1, std::max(0, m_rebootScrollPosition + amount));
   displayRebootMenu(m_rebootScrollPosition, true);
-  //restart missing link when we get to the final menu item
+  //reset ap settings when we get to the final menu item
   if (m_rebootScrollPosition == (num_options - 1)) {
     startRebootProcess(); //calls localhost/api/reboot
   }
@@ -441,6 +455,7 @@ void Engine::StartStopSyncAdjust(float amount) {
 void Engine::displayCurrentMode() {
   const int holdTime = 1500;
   m_rebootScrollPosition = 0;
+  m_apResetScrollPosition = 0;
   switch (m_inputMode) {
     case InputMode::BPM: {
       m_pView->WriteDisplayTemporarily("BPM", holdTime);
@@ -483,11 +498,18 @@ void Engine::displayCurrentMode() {
       displayIpAddrSegment(0, false);
       break;
     }
+    case InputMode::ApResetScroll: {
+      m_pView->WriteDisplayTemporarily("    AP SETTINGS RESET    ", 3200, true);
+      displayApResetMenu(0, false);
+      break;
+    }
     case InputMode::RebootScroll: {
       m_pView->WriteDisplayTemporarily("    REBOOT MISSING LINK    ", 3200, true);
       displayRebootMenu(0, false);
+      break;
     }
     default:
+      m_pView->WriteDisplayTemporarily("    LOL WUT    ", 3200, true);
       break;
   }
 }
@@ -594,6 +616,32 @@ void Engine::displayRebootMenu(int mode, bool force) {
   }
 }
 
+void Engine::displayApResetMenu(int mode, bool force) {
+  switch (mode) {
+    case 0:
+      m_pView->WriteDisplay("--->", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("-->R", force);
+      break;
+    case 2:
+      m_pView->WriteDisplay("->RE", force);
+      break;
+    case 3:
+      m_pView->WriteDisplay(">RES", force);
+      break;
+    case 4:
+      m_pView->WriteDisplay("RESE", force);
+      break;
+    case 5:
+      m_pView->WriteDisplay("ESET", force);
+      break;
+    default:
+      m_pView->WriteDisplay(">>>>", force);
+      break;
+  }
+}
+
 void Engine::displayDelayCompensation(int delay, bool force) {
   m_pView->WriteDisplay(std::to_string(delay), force);
 }
@@ -677,4 +725,8 @@ void Engine::updateApModeFile() {
 
 void Engine::startRebootProcess() {
   system("curl http://127.0.0.1/api/reboot");
+}
+
+void Engine::startResetApModeSettings() {
+  system("curl http://127.0.0.1/api/reset_ap_settings");
 }

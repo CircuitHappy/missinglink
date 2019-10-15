@@ -41,6 +41,7 @@ namespace MissingLink {
         DelayCompensation,
         StartStopSync,
         ApMode,
+        ApResetScroll,
         DisplayIP,
         RebootScroll,
         NUM_MODES
@@ -123,6 +124,7 @@ namespace MissingLink {
       std::string m_currIpAddr;
       std::atomic<int> m_currIpAddrViewSegment;
       std::atomic<int> m_rebootScrollPosition;
+      std::atomic<int> m_apResetScrollPosition;
       std::vector<std::unique_ptr<Process>> m_processes;
 
       SysInfo sysInfo;
@@ -143,6 +145,7 @@ namespace MissingLink {
       void delayCompensationAdjust(int amount);
       void StartStopSyncAdjust(float amount);
       void apModeAdjust(int amount);
+      void apResetScrollAdjust(int amount);
       void rebootScrollAdjust(int amount);
       void ipAddressAdjust(int amount);
 
@@ -153,6 +156,7 @@ namespace MissingLink {
       void displayPPQN(int ppqn, bool force);
       void displayResetMode(int mode, bool force);
       void displayApMode(int mode, bool force);
+      void displayApResetMenu(int mode, bool force);
       void displayRebootMenu(int mode, bool force);
       void displayDelayCompensation(int delay, bool force);
       void displayStartStopSync(bool sync, bool force);
@@ -167,7 +171,7 @@ namespace MissingLink {
       int getCurrentApMode() const;
 
       void updateApModeFile();
-
+      void startResetApModeSettings();
       void startRebootProcess();
 
       TimePoint m_lastToggle;
