@@ -374,7 +374,7 @@ void Engine::ppqnAdjust(int amount) {
 
 void Engine::clockPwAdjust(int amount) {
   auto settings = m_settings.load();
-  int pw = std::min(95, std::max(5, (int)(settings.clock_pulse_width) + amount));
+  int pw = std::min(99, std::max(1, (int)(settings.clock_pulse_width) + amount));
   settings.clock_pulse_width = pw;
   m_settings = settings;
   displayClockPw(pw, true);
