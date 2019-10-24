@@ -100,10 +100,10 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
       m_transportStopped = false;
     }
   }
-  if (clockTriggered) { setClock(true); }
+  setClock(clockTriggered);
 
   if (clockTriggered || resetTriggered) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(5));
     switch (m_engine.getResetMode()) {
       case 0:
         if (playState == Engine::PlayState::Playing) {
@@ -124,7 +124,6 @@ void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
         setReset(false);
         break;
     }
-    setClock(false);
   }
 }
 

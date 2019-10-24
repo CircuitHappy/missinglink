@@ -185,6 +185,7 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
 
   const auto currentSettings = m_settings.load();
   const double beats = timeline.beatAtTime(now, currentSettings.quantum);
+  const double clockPhase = (beats - (int)beats) * currentSettings.getPPQN();
   const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
 
   const int edgesPerBeat = currentSettings.getPPQN() * 2;
@@ -197,8 +198,10 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   const int midiEdge = (int)floor(beats * (double)midiEdgesPerBeat);
   const int midiLastEdge = (int)floor(lastBeats * (double)midiEdgesPerBeat);
 
-  output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
-  output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
+  //m_pView->WriteDisplay(std::to_string((clockPhase - (int)clockPhase)), true);
+  output.clockTriggered = ((clockPhase - (int)clockPhase) < (double)(currentSettings.clock_pulse_width / 100.0));
+  output.resetTriggered = (edge % 2 == 0) && (edge != lastEdge);
+  //output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
 
   output.midiClockTriggered = (midiEdge % 2 == 0) && (midiEdge != midiLastEdge);
 
@@ -317,8 +320,11 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::Loop:
       loopAdjust(amount > 0.0 ? 1 : -1);
       break;
-    case InputMode::Clock:
+    case InputMode::ClockPPQN:
       ppqnAdjust(amount > 0.0 ? 1 : -1);
+      break;
+    case InputMode::ClockPw:
+      clockPwAdjust(amount);
       break;
     case InputMode::ResetMode:
       resetModeAdjust(amount > 0.0 ? 1 : -1);
@@ -364,6 +370,15 @@ void Engine::ppqnAdjust(int amount) {
   m_settings = settings;
   int ppqn = Settings::ppqn_options[index];
   displayPPQN(ppqn, true);
+}
+
+void Engine::clockPwAdjust(int amount) {
+  auto settings = m_settings.load();
+  int pw = std::min(95, std::max(5, (int)(settings.clock_pulse_width) + amount));
+  settings.clock_pulse_width = pw;
+  m_settings = settings;
+  displayClockPw(pw, true);
+
 }
 
 void Engine::resetModeAdjust(int amount) {
@@ -415,9 +430,14 @@ void Engine::displayCurrentMode() {
       displayQuantum(getCurrentQuantum(), false);
       break;
     }
-    case InputMode::Clock: {
+    case InputMode::ClockPPQN: {
       m_pView->WriteDisplayTemporarily("PPQN", holdTime);
       displayPPQN(getCurrentPPQN(), false);
+      break;
+    }
+    case InputMode::ClockPw: {
+      m_pView->WriteDisplayTemporarily("    PULSE WIDTH   ", 3000, true);
+      displayClockPw(getCurrentClockPw(), false);
       break;
     }
     case InputMode::ResetMode: {
@@ -484,6 +504,10 @@ void Engine::displayPPQN(int ppqn, bool force) {
   m_pView->WriteDisplay(std::to_string(ppqn), force);
 }
 
+void Engine::displayClockPw(int pw, bool force) {
+  m_pView->WriteDisplay(std::to_string(pw), force);
+}
+
 void Engine::displayResetMode(int mode, bool force) {
   switch (mode) {
     case 0:
@@ -540,6 +564,11 @@ int Engine::getCurrentQuantum() const {
 int Engine::getCurrentPPQN() const {
   auto settings = m_settings.load();
   return Settings::ppqn_options[settings.ppqn_index];
+}
+
+int Engine::getCurrentClockPw() const {
+  auto settings = m_settings.load();
+  return settings.clock_pulse_width;
 }
 
 int Engine::getCurrentResetMode() const {
