@@ -20,7 +20,7 @@ struct Settings {
   bool start_stop_sync;
 
   // Defaults
-  Settings() : tempo(120.0), quantum(4), ppqn_index(2), clock_pulse_width(20), reset_mode(0), delay_compensation(0), start_stop_sync(false) {}
+  Settings() : tempo(120.0), quantum(4), ppqn_index(2), clock_pulse_width(5), reset_mode(0), delay_compensation(0), start_stop_sync(false) {}
 
   // Load from config file
   static Settings Load();

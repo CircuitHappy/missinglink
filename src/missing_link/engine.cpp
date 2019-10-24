@@ -436,7 +436,7 @@ void Engine::displayCurrentMode() {
       break;
     }
     case InputMode::ClockPw: {
-      m_pView->WriteDisplayTemporarily("    PULSE WIDTH   ", 3000, true);
+      m_pView->WriteDisplayTemporarily("    PULSE WIDTH   ", 2200, true);
       displayClockPw(getCurrentClockPw(), false);
       break;
     }
