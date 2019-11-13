@@ -199,8 +199,14 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   const int midiLastEdge = (int)floor(lastBeats * (double)midiEdgesPerBeat);
 
   //m_pView->WriteDisplay(std::to_string((clockPhase - (int)clockPhase)), true);
-  output.clockTriggered = ((clockPhase - (int)clockPhase) < (double)(currentSettings.clock_pulse_width / 100.0));
-  output.resetTriggered = (edge % 2 == 0) && (edge != lastEdge);
+  if ((clockPhase - (int)clockPhase) < (double)(currentSettings.clock_pulse_width / 100.0)) {
+    output.clockTriggered = true;
+  };
+  if ((int)clockPhase == 2) {
+    output.resetTriggered = true;
+  } else {
+    output.resetTriggered = false;
+  }
   //output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
 
   output.midiClockTriggered = (midiEdge % 2 == 0) && (midiEdge != midiLastEdge);
