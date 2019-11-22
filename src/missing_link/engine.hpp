@@ -17,7 +17,6 @@
 #include "missing_link/view.hpp"
 #include "missing_link/wifi_status.hpp"
 #include "missing_link/midi_out.hpp"
-#include "missing_link/midi_in.hpp"
 #include "missing_link/system_info.hpp"
 
 namespace MissingLink {
@@ -98,7 +97,7 @@ namespace MissingLink {
       int getResetMode();
 
       std::shared_ptr<MidiOut> GetMidiOut();
-      std::shared_ptr<MidiIn> GetMidiIn();
+      //std::shared_ptr<MidiIn> GetMidiIn();
       std::shared_ptr<MainView> GetMainView();
 
     private:
@@ -115,7 +114,7 @@ namespace MissingLink {
       std::shared_ptr<MainView> m_pView;
       std::unique_ptr<TapTempo> m_pTapTempo;
       std::shared_ptr<MidiOut> m_pMidiOut;
-      std::shared_ptr<MidiIn> m_pMidiIn;
+      //std::shared_ptr<MidiIn> m_pMidiIn;
       std::atomic<bool> m_QueueStartTransport;
       std::string m_currIpAddr;
       std::atomic<int> m_currIpAddrViewSegment;

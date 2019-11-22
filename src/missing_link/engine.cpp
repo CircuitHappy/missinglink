@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
+#include "missing_link/midi_in.hpp"
 #include "missing_link/user_interface.hpp"
 
 #define MIN_TEMPO 20.0
@@ -62,7 +63,7 @@ Engine::Engine()
   , m_pView(shared_ptr<MainView>(new MainView()))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
-  , m_pMidiIn(std::shared_ptr<MidiIn>(new MidiIn()))
+  //, m_pMidiIn(std::shared_ptr<MidiIn>(new MidiIn()))
   , m_QueueStartTransport(false)
   , m_currIpAddr("0.0.0.0")
   , m_currIpAddrViewSegment(0)
@@ -78,6 +79,11 @@ Engine::Engine()
   auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(*this));
   m_processes.push_back(std::move(outputProcess));
 
+  auto midiInProcess = unique_ptr<MidiInProcess>(new MidiInProcess(*this));
+  midiInProcess->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
+  midiInProcess->onStartTransport = bind(&Engine::zeroTimeline, this);
+  m_processes.push_back(std::move(midiInProcess));
+
   auto viewProcess = unique_ptr<ViewUpdateProcess>(new ViewUpdateProcess(*this, m_pView));
   m_processes.push_back(std::move(viewProcess));
 
@@ -92,8 +98,8 @@ Engine::Engine()
 
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
-  m_pMidiIn->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
-  m_pMidiIn->onStartTransport = bind(&Engine::zeroTimeline, this);
+  //m_pMidiIn->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
+  //m_pMidiIn->onStartTransport = bind(&Engine::zeroTimeline, this);
 
   m_link.setNumPeersCallback([this](std::size_t numPeers) {
     std::string message = "    " + std::to_string(numPeers) + " LINKS    ";
@@ -391,9 +397,9 @@ std::shared_ptr<MissingLink::MidiOut> Engine::GetMidiOut() {
   return m_pMidiOut;
 }
 
-std::shared_ptr<MissingLink::MidiIn> Engine::GetMidiIn() {
-  return m_pMidiIn;
-}
+// std::shared_ptr<MissingLink::MidiIn> Engine::GetMidiIn() {
+//   return m_pMidiIn;
+// }
 
 std::shared_ptr<MissingLink::MainView> Engine::GetMainView() {
   return m_pView;

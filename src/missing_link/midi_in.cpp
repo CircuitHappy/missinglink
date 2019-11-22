@@ -4,63 +4,84 @@
 #include <ctime>
 #include <ratio>
 #include <string>
+#include "missing_link/engine.hpp"
 #include "missing_link/midi_in.hpp"
+
+#include <typeinfo>
 
 using namespace std::chrono;
 using namespace MissingLink;
 
-MidiIn::MidiIn()
-  : m_numPorts(0)
+MidiInProcess::MidiInProcess(Engine &engine)
+  : Engine::Process(engine, std::chrono::microseconds(100))
+  , m_numPorts(0)
   , m_block_midi(true)
-  , m_deltaAmount(0.0)
   , m_clockCount(0)
   , m_ports()
 {
   init_ports();
 }
 
-MidiIn::~MidiIn() {
-  m_block_midi = true;
-  close_ports();
-}
+// MidiIn::~MidiIn() {
+//   m_block_midi = true;
+//   close_ports();
+// }
 
-void MidiIn::messageCallback( double deltatime, std::vector< unsigned char > *message, void *userData ) {
-  //delta time seems to be 0.0 for start/stop/clock messages
-  //unsigned int nBytes = message->size();
-  MidiIn *midiIn = static_cast<MidiIn *>(userData);
-  midiIn->addDeltaTime(deltatime);
-  switch ((int)message->at(0)) {
-    case 248:
-      midiIn->clockInAvgDelta(midiIn->getDeltaTime());
-      midiIn->zeroDeltaTime();
-      break;
-    case 250:
-      midiIn->startTransport();
-      break;
-    case 251:
-      midiIn->continueTransport();
-      break;
-    case 252:
-      midiIn->stopTransport();
-      break;
-    default:
-      break;
+void MidiInProcess::Run() {
+  Process::Run();
+  sched_param param;
+  param.sched_priority = 90;
+  if(::pthread_setschedparam(m_pThread->native_handle(), SCHED_FIFO, &param) < 0) {
+    std::cerr << "Failed to set output thread priority\n";
   }
 }
 
-double MidiIn::getDeltaTime() {
-  return m_deltaAmount;
+void MidiInProcess::process() {
+  int nBytes, portCt;
+  std::vector<unsigned char> message;
+  high_resolution_clock::time_point now;
+  duration<double> time_span;
+  //std::cout << "Port count: " << m_ports.size() << std::endl;
+  portCt = 0;
+  for(auto & port : m_ports) {
+    //std::cout << "port (" << portCt << ") " << typeid(port).name() << std::endl;
+    try {
+      port->getMessage(&message);
+      nBytes = message.size();
+      if (nBytes > 1) {
+        std::cout << "nBytes: " << nBytes << std::endl;
+      }
+      for ( int i=0; i<nBytes; i++ ){
+        switch ((int)message[i]) {
+          // case: clock pulse
+          case 248:
+            now = high_resolution_clock::now();
+            time_span = duration_cast<duration<double>>(now - m_prevClockTime);
+            m_prevClockTime = now;
+            clockInAvgDelta(time_span.count());
+            //clockInPerQn(time_span.count());
+            break;
+          case 250:
+            startTransport();
+            break;
+          case 251:
+            continueTransport();
+            break;
+          case 252:
+            stopTransport();
+            break;
+          default:
+            break;
+        }
+      }
+    } catch (RtMidiError &error) {
+      error.printMessage();
+    }
+    portCt ++;
+  }
 }
 
-void MidiIn::addDeltaTime(double delta) {
-  m_deltaAmount += delta;
-}
-
-void MidiIn::zeroDeltaTime() {
-  m_deltaAmount = 0;
-}
-
-void MidiIn::clockInPerQn(double deltatime) {
+void MidiInProcess::clockInPerQn(double deltatime) {
   //based on rtmidi tests/midiclock.cpp
   static int clockCount = 0;
   clockCount += 1;
@@ -75,7 +96,7 @@ void MidiIn::clockInPerQn(double deltatime) {
   }
 }
 
-void MidiIn::clockInAvgDelta(double deltatime) {
+void MidiInProcess::clockInAvgDelta(double deltatime) {
   //based on rtmidi tests/midiclock.cpp
   //but average each deltatime to smooth it out
   static double deltaAvg = 0;
@@ -104,7 +125,7 @@ void MidiIn::clockInAvgDelta(double deltatime) {
   }
 }
 
-void MidiIn::clockInPerTick() {
+void MidiInProcess::clockInPerTick() {
   //adapted from tap_tempo.cpp
   const auto now = steady_clock::now();
   static int clockCount = 0;
@@ -146,25 +167,25 @@ void MidiIn::clockInPerTick() {
   }
 }
 
-void MidiIn::startTransport() {
-  //react to starttransport message
-  //std::cout << "MIDI In: start transport" << std::endl;
+void MidiInProcess::startTransport() {
+  // react to starttransport message
+  std::cout << "MIDI In: start transport" << std::endl;
   if (onNewTempo) {
     onStartTransport();
   }
 }
 
-void MidiIn::continueTransport() {
+void MidiInProcess::continueTransport() {
   //react to continueTransport message
   std::cout << "MIDI In: continue transport" << std::endl;
 }
 
-void MidiIn::stopTransport() {
+void MidiInProcess::stopTransport() {
   //react to StopTransport message
   std::cout << "MIDI In: stop transport" << std::endl;
 }
 
-void MidiIn::CheckPorts() {
+void MidiInProcess::CheckPorts() {
   unsigned int nPorts = CountPorts();
   if (nPorts != m_numPorts) {
     if (nPorts < m_numPorts){
@@ -178,7 +199,7 @@ void MidiIn::CheckPorts() {
   }
 }
 
-unsigned int MidiIn::CountPorts() {
+unsigned int MidiInProcess::CountPorts() {
   unsigned int count;
   auto midi = std::shared_ptr<RtMidiIn>(new RtMidiIn());
   count = midi->getPortCount();
@@ -186,21 +207,21 @@ unsigned int MidiIn::CountPorts() {
   return count;
 }
 
-void MidiIn::init_ports() {
+void MidiInProcess::init_ports() {
   m_block_midi = true;
   close_ports();
   // Add all available ports, excluding port 0 (internal software port)
   unsigned int nPorts = CountPorts();
   if (nPorts != 1) { std::cout << "MIDI In: Found " << nPorts << " MIDI In port(s)" << std::endl; }
   m_numPorts = nPorts;
-  for (unsigned int i = 2; i < nPorts; i++) {
+  for (unsigned int i = 1; i < nPorts; i++) {
     auto port = std::shared_ptr<RtMidiIn>(new RtMidiIn());
     if (port->getPortName(i).find("RtMidi") == std::string::npos) {
       m_ports.push_back(port);
       try {
         std::cout << "MIDI In: Trying to open port " << i << ", " << port->getPortName(i) << std::endl;
         port->openPort(i);
-        port->setCallback(&messageCallback,(void *)this);
+        //port->setCallback(&messageCallback,(void *)this);
         port->ignoreTypes( false, false, false ); // Don't ignore sysex, timing, or active sensing messages.
         std::cout << "MIDI In: Port " << i << " Ready" << std::endl;
       } catch (RtMidiError &error) {
@@ -216,7 +237,7 @@ void MidiIn::init_ports() {
   }
 }
 
-void MidiIn::close_ports() {
+void MidiInProcess::close_ports() {
   for(auto & port : m_ports) {
   /* std::cout << *it; ... */
     try {
