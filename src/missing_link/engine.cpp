@@ -97,8 +97,6 @@ Engine::Engine()
   uiProcess->onEncoderPress = bind(&Engine::toggleMode, this);
   m_processes.push_back(std::move(uiProcess));
 
-  updateApModeFile();
-
   m_pTapTempo->onNewTempo = bind(&Engine::setTempo, this, placeholders::_1);
 
   m_link.setNumPeersCallback([this](std::size_t numPeers) {
@@ -339,17 +337,11 @@ void Engine::routeEncoderAdjust(float amount) {
     case InputMode::StartStopSync:
       StartStopSyncAdjust(amount > 0.0 ? 1 : -1);
       break;
-    case InputMode::ApMode:
-      apModeAdjust(amount > 0.0 ? 1 : -1);
-      break;
     case InputMode::DisplayIP:
       ipAddressAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::ApResetScroll:
       apResetScrollAdjust(amount > 0.0 ? 1 : -1);
-      break;
-    case InputMode::RebootScroll:
-      rebootScrollAdjust(amount > 0.0 ? 1 : -1);
       break;
     default:
       break;
@@ -395,16 +387,6 @@ void Engine::resetModeAdjust(int amount) {
   displayResetMode(mode, true);
 }
 
-void Engine::apModeAdjust(int amount) {
-  int num_options = 3;
-  auto settings = m_settings.load();
-  int mode = std::min(num_options - 1, std::max(0, settings.ap_mode + amount));
-  settings.ap_mode = mode;
-  m_settings = settings;
-  displayApMode(mode, true);
-  updateApModeFile();
-}
-
 void Engine::apResetScrollAdjust(int amount) {
   int num_options = 6;
   m_apResetScrollPosition = std::min(num_options - 1, std::max(0, m_apResetScrollPosition + amount));
@@ -412,16 +394,6 @@ void Engine::apResetScrollAdjust(int amount) {
   //restart missing link when we get to the final menu item
   if (m_apResetScrollPosition == (num_options - 1)) {
     startResetApModeSettings(); //calls localhost/api/reset_ap_settings
-  }
-}
-
-void Engine::rebootScrollAdjust(int amount) {
-  int num_options = 7;
-  m_rebootScrollPosition = std::min(num_options - 1, std::max(0, m_rebootScrollPosition + amount));
-  displayRebootMenu(m_rebootScrollPosition, true);
-  //reset ap settings when we get to the final menu item
-  if (m_rebootScrollPosition == (num_options - 1)) {
-    startRebootProcess(); //calls localhost/api/reboot
   }
 }
 
@@ -487,11 +459,6 @@ void Engine::displayCurrentMode() {
       displayStartStopSync(getCurrentStartStopSync(), false);
       break;
     }
-    case InputMode::ApMode: {
-      m_pView->WriteDisplayTemporarily("    AP MODE    ", 2000, true);
-      displayApMode(getCurrentApMode(), false);
-      break;
-    }
     case InputMode::DisplayIP: {
       m_currIpAddr = sysInfo.GetIP();
       m_pView->WriteDisplayTemporarily("    IP ADDRESS    ", 2200, true);
@@ -501,11 +468,6 @@ void Engine::displayCurrentMode() {
     case InputMode::ApResetScroll: {
       m_pView->WriteDisplayTemporarily("    AP SETTINGS RESET    ", 3200, true);
       displayApResetMenu(0, false);
-      break;
-    }
-    case InputMode::RebootScroll: {
-      m_pView->WriteDisplayTemporarily("    REBOOT MISSING LINK    ", 3200, true);
-      displayRebootMenu(0, false);
       break;
     }
     default:
@@ -566,52 +528,6 @@ void Engine::displayResetMode(int mode, bool force) {
       break;
     default:
       m_pView->WriteDisplay("WHAT", force);
-      break;
-  }
-}
-
-void Engine::displayApMode(int mode, bool force) {
-  switch (mode) {
-    case 0:
-      m_pView->WriteDisplay("AUTO", force);
-      break;
-    case 1:
-      m_pView->WriteDisplay("ON", force);
-      break;
-    case 2:
-      m_pView->WriteDisplay("OFF", force);
-      break;
-    default:
-      m_pView->WriteDisplay("WHAT", force);
-      break;
-  }
-}
-
-void Engine::displayRebootMenu(int mode, bool force) {
-  switch (mode) {
-    case 0:
-      m_pView->WriteDisplay("--->", force);
-      break;
-    case 1:
-      m_pView->WriteDisplay("-->R", force);
-      break;
-    case 2:
-      m_pView->WriteDisplay("->RE", force);
-      break;
-    case 3:
-      m_pView->WriteDisplay(">REB", force);
-      break;
-    case 4:
-      m_pView->WriteDisplay("REBO", force);
-      break;
-    case 5:
-      m_pView->WriteDisplay("EBOO", force);
-      break;
-    case 6:
-      m_pView->WriteDisplay("BOOT", force);
-      break;
-    default:
-      m_pView->WriteDisplay(">>>>", force);
       break;
   }
 }
@@ -696,35 +612,6 @@ int Engine::getCurrentDelayCompensation() const {
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;
-}
-
-int Engine::getCurrentApMode() const {
-  auto settings = m_settings.load();
-  return settings.ap_mode;
-}
-
-void Engine::updateApModeFile() {
-  auto settings = m_settings.load();
-  std::string mode;
-  switch (settings.ap_mode) {
-    case 0:
-      mode = "auto";
-      break;
-    case 1:
-      mode = "on";
-      break;
-    case 2:
-      mode = "off";
-      break;
-    default:
-      mode = "auto";
-      break;
-  }
-  m_pApModeFile->Write(mode);
-}
-
-void Engine::startRebootProcess() {
-  system("curl http://127.0.0.1/api/reboot");
 }
 
 void Engine::startResetApModeSettings() {

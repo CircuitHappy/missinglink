@@ -40,10 +40,8 @@ namespace MissingLink {
         ResetMode,
         DelayCompensation,
         StartStopSync,
-        ApMode,
         ApResetScroll,
         DisplayIP,
-        RebootScroll,
         NUM_MODES
       };
 
@@ -144,9 +142,7 @@ namespace MissingLink {
       void resetModeAdjust(int amount);
       void delayCompensationAdjust(int amount);
       void StartStopSyncAdjust(float amount);
-      void apModeAdjust(int amount);
       void apResetScrollAdjust(int amount);
-      void rebootScrollAdjust(int amount);
       void ipAddressAdjust(int amount);
 
       void displayCurrentMode();
@@ -155,9 +151,7 @@ namespace MissingLink {
       void displayQuantum(int quantum, bool force);
       void displayPPQN(int ppqn, bool force);
       void displayResetMode(int mode, bool force);
-      void displayApMode(int mode, bool force);
       void displayApResetMenu(int mode, bool force);
-      void displayRebootMenu(int mode, bool force);
       void displayDelayCompensation(int delay, bool force);
       void displayStartStopSync(bool sync, bool force);
       void displayIpAddrSegment(int pos, bool force);
@@ -170,9 +164,7 @@ namespace MissingLink {
       int getCurrentStartStopSync() const;
       int getCurrentApMode() const;
 
-      void updateApModeFile();
       void startResetApModeSettings();
-      void startRebootProcess();
 
       TimePoint m_lastToggle;
   };
