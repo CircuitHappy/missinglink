@@ -17,7 +17,7 @@ SysInfo::~SysInfo() {
 
 std::string SysInfo::GetIP() {
   bool foundWlan = false;
-  FILE * fp = popen("ifconfig wlan0", "r");
+  FILE * fp = popen("ifconfig uap0", "r");
   std::string result = "000.000.000.000";
   std::string line;
   if (fp) {
@@ -36,7 +36,7 @@ std::string SysInfo::GetIP() {
     pclose(fp);
   }
   if (foundWlan == false) {
-    fp = popen("ifconfig uap0", "r");
+    fp = popen("ifconfig wlan0", "r");
     if (fp) {
       char *p=NULL; size_t n;
       while ((getline(&p, &n, fp) > 0) && p) {

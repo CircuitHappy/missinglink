@@ -17,9 +17,10 @@
 using namespace std;
 using namespace MissingLink;
 
-Engine::Process::Process(Engine &engine, std::chrono::microseconds sleepTime)
+Engine::Process::Process(Engine &engine, std::chrono::microseconds LowPrioritySleepTime, std::chrono::microseconds HiPrioritySleepTime)
   : m_engine(engine)
-  , m_sleepTime(sleepTime)
+  , m_LowPriSleepTime(LowPrioritySleepTime)
+  , m_HiPriSleepTime(HiPrioritySleepTime)
   , m_bStopped(true)
 {}
 
@@ -48,7 +49,11 @@ void Engine::Process::run() {
 }
 
 void Engine::Process::sleep() {
-  std::this_thread::sleep_for(m_sleepTime);
+  if (m_engine.getWifiStatus() == WifiState::TRYING_TO_CONNECT) {
+    std::this_thread::sleep_for(m_LowPriSleepTime);
+  } else {
+    std::this_thread::sleep_for(m_HiPriSleepTime);
+  }
 }
 
 Engine::Engine()
@@ -56,6 +61,7 @@ Engine::Engine()
   , m_playState(PlayState::Stopped)
   , m_wifiStatus(WifiState::NO_WIFI_FOUND)
   , m_pWifiStatusFile(unique_ptr<WifiStatus>(new WifiStatus()))
+  , m_pApModeFile(std::unique_ptr<FileIO::TextFile>(new FileIO::TextFile("/tmp/ApMode")))
   , m_settings(Settings::Load())
   , m_inputMode(InputMode::BPM)
   , m_link(m_settings.load().tempo)
@@ -65,6 +71,8 @@ Engine::Engine()
   , m_QueueStartTransport(false)
   , m_currIpAddr("0.0.0.0")
   , m_currIpAddrViewSegment(0)
+  , m_rebootScrollPosition(0)
+  , m_apResetScrollPosition(0)
 {
   Settings settings = m_settings.load();
 
@@ -266,7 +274,7 @@ void Engine::toggleMode() {
   auto now = Clock::now();
   // Only switch to next mode if toggle pressed twice within 1.5 seconds
   if (now - m_lastToggle < std::chrono::milliseconds(1500)) {
-    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % 7);
+    m_inputMode = static_cast<InputMode>((static_cast<int>(m_inputMode.load()) + 1) % (int)InputMode::NUM_MODES);
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
@@ -327,10 +335,14 @@ void Engine::routeEncoderAdjust(float amount) {
       delayCompensationAdjust(amount);
       break;
     case InputMode::StartStopSync:
-      StartStopSyncAdjust(amount);
+      StartStopSyncAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::DisplayIP:
       ipAddressAdjust(amount > 0.0 ? 1 : -1);
+      break;
+    case InputMode::ApResetScroll:
+      apResetScrollAdjust(amount > 0.0 ? 1 : -1);
+      break;
     default:
       break;
   }
@@ -375,6 +387,16 @@ void Engine::resetModeAdjust(int amount) {
   displayResetMode(mode, true);
 }
 
+void Engine::apResetScrollAdjust(int amount) {
+  int num_options = 6;
+  m_apResetScrollPosition = std::min(num_options - 1, std::max(0, m_apResetScrollPosition + amount));
+  displayApResetMenu(m_apResetScrollPosition, true);
+  //restart missing link when we get to the final menu item
+  if (m_apResetScrollPosition == (num_options - 1)) {
+    startResetApModeSettings(); //calls localhost/api/reset_ap_settings
+  }
+}
+
 void Engine::ipAddressAdjust(int amount) {
   int num_positions = 4;
   int curr_pos = m_currIpAddrViewSegment;
@@ -404,6 +426,8 @@ void Engine::StartStopSyncAdjust(float amount) {
 
 void Engine::displayCurrentMode() {
   const int holdTime = 1500;
+  m_rebootScrollPosition = 0;
+  m_apResetScrollPosition = 0;
   switch (m_inputMode) {
     case InputMode::BPM: {
       m_pView->WriteDisplayTemporarily("BPM", holdTime);
@@ -439,8 +463,15 @@ void Engine::displayCurrentMode() {
       m_currIpAddr = sysInfo.GetIP();
       m_pView->WriteDisplayTemporarily("    IP ADDRESS    ", 2200, true);
       displayIpAddrSegment(0, false);
+      break;
+    }
+    case InputMode::ApResetScroll: {
+      m_pView->WriteDisplayTemporarily("    AP SETTINGS RESET    ", 3200, true);
+      displayApResetMenu(0, false);
+      break;
     }
     default:
+      m_pView->WriteDisplayTemporarily("    LOL WUT    ", 3200, true);
       break;
   }
 }
@@ -449,10 +480,10 @@ void Engine::displayTempWifiStatus(WifiState status) {
   const int oneSecond = 1000;
   switch (status) {
     case AP_MODE :
-      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 30, true);
+      m_pView->WriteDisplayTemporarily("    ACCESS POINT MODE    ", oneSecond * 10, true);
     break;
     case TRYING_TO_CONNECT :
-      m_pView->WriteDisplayTemporarily("    SEARCHING FOR WIFI    ", oneSecond * 60, true);
+      m_pView->WriteDisplayTemporarily("    STARTING UP NETWORK    ", oneSecond * 60, true);
       break;
     case NO_WIFI_FOUND :
       m_pView->WriteDisplayTemporarily("    NO WIFI FOUND    ", oneSecond * 10, true);
@@ -460,9 +491,9 @@ void Engine::displayTempWifiStatus(WifiState status) {
     case WIFI_CONNECTED :
       m_pView->WriteDisplayTemporarily("    WIFI CONNECTED    ", oneSecond * 5, true);
       break;
-      case REBOOT :
-        m_pView->WriteDisplayTemporarily("BOOT", oneSecond * 10, false);
-        break;
+    case REBOOT :
+      m_pView->WriteDisplayTemporarily("BOOT", oneSecond * 10, false);
+      break;
     default :
       break;
   }
@@ -497,6 +528,32 @@ void Engine::displayResetMode(int mode, bool force) {
       break;
     default:
       m_pView->WriteDisplay("WHAT", force);
+      break;
+  }
+}
+
+void Engine::displayApResetMenu(int mode, bool force) {
+  switch (mode) {
+    case 0:
+      m_pView->WriteDisplay("--->", force);
+      break;
+    case 1:
+      m_pView->WriteDisplay("-->R", force);
+      break;
+    case 2:
+      m_pView->WriteDisplay("->RE", force);
+      break;
+    case 3:
+      m_pView->WriteDisplay(">RES", force);
+      break;
+    case 4:
+      m_pView->WriteDisplay("RESE", force);
+      break;
+    case 5:
+      m_pView->WriteDisplay("ESET", force);
+      break;
+    default:
+      m_pView->WriteDisplay(">>>>", force);
       break;
   }
 }
@@ -555,4 +612,8 @@ int Engine::getCurrentDelayCompensation() const {
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;
+}
+
+void Engine::startResetApModeSettings() {
+  system("curl http://127.0.0.1/api/reset_ap_settings");
 }

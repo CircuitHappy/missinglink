@@ -45,6 +45,7 @@ Settings Settings::Load() {
     settings.reset_mode = config.lookup("reset_mode");
     settings.delay_compensation = config.lookup("delay_compensation");
     settings.start_stop_sync = config.lookup("start_stop_sync");
+    settings.ap_mode = config.lookup("ap_mode");
   } catch (const SettingNotFoundException &exc) {
     std::cerr << "One or more settings missing from config file" << std::endl;
   }
@@ -57,7 +58,8 @@ Settings Settings::Load() {
     "\n  ppqn: " << settings.getPPQN() <<
     "\n  reset_mode: " << settings.reset_mode <<
     "\n  delay_compensation: " << settings.delay_compensation <<
-    "\n  start_stop_sync: " << settings.start_stop_sync << std::endl;
+    "\n  start_stop_sync: " << settings.start_stop_sync <<
+    "\n  ap_mode: " << settings.ap_mode << std::endl;
 
   return settings;
 }
@@ -78,6 +80,7 @@ void Settings::Save(const Settings settings) {
   root.add("reset_mode", Setting::TypeInt) = settings.reset_mode;
   root.add("delay_compensation", Setting::TypeInt) = settings.delay_compensation;
   root.add("start_stop_sync", Setting::TypeBoolean) = settings.start_stop_sync;
+  root.add("ap_mode", Setting::TypeInt) = settings.ap_mode;
 
   try {
     config.write(file);

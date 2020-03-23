@@ -23,7 +23,7 @@ using std::min;
 using std::max;
 
 OutputProcess::OutputProcess(Engine &engine)
-  : Engine::Process(engine, std::chrono::microseconds(500))
+  : Engine::Process(engine, std::chrono::seconds(1), std::chrono::microseconds(100))
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
@@ -209,7 +209,7 @@ namespace MissingLink {
 }
 
 ViewUpdateProcess::ViewUpdateProcess(Engine &engine, std::shared_ptr<MainView> pView)
-  : Engine::Process(engine, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(15)))
+  : Engine::Process(engine, std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(15)), std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::milliseconds(15)))
   , m_pView(pView)
 {}
 
