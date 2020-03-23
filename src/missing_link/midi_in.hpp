@@ -41,6 +41,7 @@ class MidiInProcess : public Engine::Process {
 
     void clockInPerQn(double deltatime);
     void clockInAvgDelta(double deltatime);
+    void clockInAvgCount(double deltatime);
     void clockInPerTick();
     void startTransport();
     void continueTransport();

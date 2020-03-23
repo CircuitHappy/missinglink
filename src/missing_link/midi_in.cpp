@@ -58,7 +58,7 @@ void MidiInProcess::process() {
             now = high_resolution_clock::now();
             time_span = duration_cast<duration<double>>(now - m_prevClockTime);
             m_prevClockTime = now;
-            clockInAvgDelta(time_span.count());
+            clockInAvgCount(time_span.count());
             //clockInPerQn(time_span.count());
             break;
           case 250:
@@ -93,6 +93,47 @@ void MidiInProcess::clockInPerQn(double deltatime) {
       onNewTempo(bpm);
     }
     clockCount = 0;
+  }
+}
+
+void MidiInProcess::clockInAvgCount(double deltatime) {
+  //based on rtmidi tests/midiclock.cpp
+  //but average each deltatime to smooth it out
+  static double deltaAvg = 0;
+  static double prevTempo = 0;
+  static double avgTempo = 0;
+  static int tempoStableCount = 0;
+  m_clockCount += 1;
+  if (m_clockCount == 1) {
+    deltaAvg = deltatime;
+    //perhaps re-align the Link grid here
+  }
+
+  deltaAvg = (deltaAvg + deltatime) * 0.5;
+
+  if (m_clockCount == 24) {
+    double bpm = (int)(60.0 / 24.0 / deltaAvg);
+
+    if (abs(avgTempo - bpm) < 5) {
+      avgTempo = (int)(((avgTempo + bpm) * 0.5) + 0.5);
+    } else {
+      avgTempo = bpm;
+    }
+
+    if (prevTempo == avgTempo) {
+      tempoStableCount ++;
+    } else {
+      tempoStableCount = 0;
+    }
+
+    if (tempoStableCount == 4) {
+      if (onNewTempo) {
+        onNewTempo(avgTempo);
+        tempoStableCount = 0;
+      }
+    }
+    prevTempo = avgTempo;
+    m_clockCount = 0;
   }
 }
 
