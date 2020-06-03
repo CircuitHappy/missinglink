@@ -40,7 +40,8 @@ Settings Settings::Load() {
 
   try {
     settings.tempo = config.lookup("tempo");
-    settings.quantum = config.lookup("quantum");
+    settings.loop_size = config.lookup("loop_size");
+    settings.launch_quant = config.lookup("launch_quant");
     settings.ppqn_index = config.lookup("ppqn_index");
     settings.reset_mode = config.lookup("reset_mode");
     settings.delay_compensation = config.lookup("delay_compensation");
@@ -54,7 +55,8 @@ Settings Settings::Load() {
     "Loaded Settings: " <<
     ML_CONFIG_FILE <<
     "\n  tempo: " << settings.tempo <<
-    "\n  quantum: " << settings.quantum <<
+    "\n  launch_quant: " << settings.launch_quant <<
+    "\n  loop_size: " << settings.loop_size <<
     "\n  ppqn: " << settings.getPPQN() <<
     "\n  reset_mode: " << settings.reset_mode <<
     "\n  delay_compensation: " << settings.delay_compensation <<
@@ -75,7 +77,8 @@ void Settings::Save(const Settings settings) {
 
   Setting &root = config.getRoot();
   root.add("tempo", Setting::TypeFloat) = settings.tempo;
-  root.add("quantum", Setting::TypeInt) = settings.quantum;
+  root.add("loop_size", Setting::TypeInt) = settings.loop_size;
+  root.add("launch_quant", Setting::TypeInt) = settings.launch_quant;
   root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
   root.add("reset_mode", Setting::TypeInt) = settings.reset_mode;
   root.add("delay_compensation", Setting::TypeInt) = settings.delay_compensation;

@@ -214,7 +214,7 @@ ViewUpdateProcess::ViewUpdateProcess(Engine &engine, std::shared_ptr<MainView> p
 {}
 
 void ViewUpdateProcess::process() {
-  const auto phase = m_engine.GetNormalizedPhase();
+  const auto phase = m_engine.GetNormalizedLoopPhase();
   const double beatPhase = m_engine.GetBeatPhase();
   const auto playState = m_engine.GetPlayState();
   m_pView->setLogoLight(beatPhase);

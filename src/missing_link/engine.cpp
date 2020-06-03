@@ -148,23 +148,24 @@ void Engine::Run() {
   }
 }
 
-const double Engine::GetNormalizedPhase() const {
+const double Engine::GetNormalizedLoopPhase() const {
   const auto now = m_link.clock().micros() + std::chrono::milliseconds(getCurrentDelayCompensation());
   const auto currentSettings = m_settings.load();
   const auto timeline = m_link.captureAppSessionState();
-  const double phase = timeline.phaseAtTime(now, currentSettings.quantum);
-  return min(1.0, max(0.0, phase / (double)currentSettings.quantum));
+  const double phase = timeline.phaseAtTime(now, currentSettings.loop_size);
+  return min(1.0, max(0.0, phase / (double)currentSettings.loop_size));
 }
 
 const double Engine::GetBeatPhase() const {
   const auto now = m_link.clock().micros() + std::chrono::milliseconds(getCurrentDelayCompensation());
   const auto currentSettings = m_settings.load();
   const auto timeline = m_link.captureAppSessionState();
-  const double beat = timeline.beatAtTime(now, currentSettings.quantum);
+  const int quant = (m_playState == PlayState::Playing) ? currentSettings.loop_size : getLaunchQuantize();
+  const double beat = timeline.beatAtTime(now, quant);
   float wholeNum, beatPhase; //whole num needed for modf, but not used otherwise
   //invert negative beatPhase values
   if (beat < 0) {
-    beatPhase = min(1.0, max(0.0, (double)modf((currentSettings.quantum + (float)beat), &wholeNum)));
+    beatPhase = min(1.0, max(0.0, (double)modf((quant + (float)beat), &wholeNum)));
   } else {
     beatPhase = min(1.0, max(0.0, (double)modf((float)beat, &wholeNum)));
   }
@@ -178,8 +179,12 @@ const int Engine::GetNumberOfPeers() const {
 const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last) const {
   OutputModel output;
 
+  const auto currentSettings = m_settings.load();
+
   const auto now = m_link.clock().micros() - std::chrono::milliseconds(getCurrentDelayCompensation());
   output.now = now;
+
+  const int quant = (m_playState == PlayState::Playing) ? currentSettings.loop_size : getLaunchQuantize();
 
   auto timeline = m_link.captureAudioSessionState();
   output.tempo = timeline.tempo();
@@ -191,13 +196,12 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
     return output;
   }
 
-  const auto currentSettings = m_settings.load();
-  const double beats = timeline.beatAtTime(now, currentSettings.quantum);
-  const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
+  const double beats = timeline.beatAtTime(now, quant);
+  const double lastBeats = timeline.beatAtTime(last, quant);
 
   const int edgesPerBeat = currentSettings.getPPQN() * 2;
   const int midiEdgesPerBeat = 24 * 2;
-  const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
+  const int edgesPerLoop = edgesPerBeat * quant;
 
   const int edge = (int)floor(beats * (double)edgesPerBeat);
   const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
@@ -211,6 +215,15 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   output.midiClockTriggered = (midiEdge % 2 == 0) && (midiEdge != midiLastEdge);
 
   return output;
+}
+
+int Engine::getLaunchQuantize() const {
+  const auto currentSettings = m_settings.load();
+  if (currentSettings.launch_quant == 0) {
+    return currentSettings.loop_size;
+  } else {
+    return currentSettings.launch_quant;
+  }
 }
 
 bool Engine::GetQueuedStartTransport() {
@@ -265,7 +278,7 @@ void Engine::zeroTimeline() {
   auto timeline = m_link.captureAppSessionState();
   const auto currentSettings = m_settings.load();
   m_pView->WriteDisplayTemporarily("    ZERO TIMELINE    ", 2500, true);
-  timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(5), currentSettings.quantum);
+  timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(5), currentSettings.loop_size);
   m_link.commitAppSessionState(timeline);
   m_QueueStartTransport = true;
 }
@@ -284,10 +297,10 @@ void Engine::startTimeline() {
   auto timeline = m_link.captureAppSessionState();
   auto now = m_link.clock().micros();
   if (m_link.numPeers() == 0){
-    timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(1), m_settings.load().quantum);
+    timeline.forceBeatAtTime(0, now + std::chrono::milliseconds(1), m_settings.load().loop_size);
     timeline.setIsPlaying(true, now + std::chrono::milliseconds(1));
   } else {
-    timeline.setIsPlayingAndRequestBeatAtTime(true, now, 0, m_settings.load().quantum);
+    timeline.setIsPlayingAndRequestBeatAtTime(true, now, 0, m_settings.load().loop_size);
   }
   m_link.commitAppSessionState(timeline);
 }
@@ -295,7 +308,7 @@ void Engine::startTimeline() {
 void Engine::stopTimeline() {
   auto timeline = m_link.captureAppSessionState();
   auto now = m_link.clock().micros();
-  timeline.setIsPlayingAndRequestBeatAtTime(false, now, 0, m_settings.load().quantum);
+  timeline.setIsPlayingAndRequestBeatAtTime(false, now, 0, m_settings.load().loop_size);
   m_link.commitAppSessionState(timeline);
 }
 
@@ -324,6 +337,9 @@ void Engine::routeEncoderAdjust(float amount) {
       break;
     case InputMode::Loop:
       loopAdjust(amount > 0.0 ? 1 : -1);
+      break;
+    case InputMode::LaunchQuant:
+      launchQuantAdjust(amount > 0.0 ? 1 : -1);
       break;
     case InputMode::Clock:
       ppqnAdjust(amount > 0.0 ? 1 : -1);
@@ -354,10 +370,18 @@ void Engine::tempoAdjust(float amount) {
 
 void Engine::loopAdjust(int amount) {
   auto settings = m_settings.load();
-  int quantum = std::max(1, settings.quantum + amount);
-  settings.quantum = quantum;
+  int loop_size = std::max(1, settings.loop_size + amount);
+  settings.loop_size = loop_size;
   m_settings = settings;
-  displayQuantum(quantum, true);
+  displayLoopSize(loop_size, true);
+}
+
+void Engine::launchQuantAdjust(int amount) {
+  auto settings = m_settings.load();
+  int quant = std::max(0, settings.launch_quant + amount);
+  settings.launch_quant = quant;
+  m_settings = settings;
+  displayLaunchQuant(quant, true);
 }
 
 void Engine::delayCompensationAdjust(int amount) {
@@ -436,7 +460,12 @@ void Engine::displayCurrentMode() {
     }
     case InputMode::Loop: {
       m_pView->WriteDisplayTemporarily("LOOP", holdTime);
-      displayQuantum(getCurrentQuantum(), false);
+      displayLoopSize(getCurrentLoopSize(), false);
+      break;
+    }
+    case InputMode::LaunchQuant: {
+      m_pView->WriteDisplayTemporarily("    QUANTIZATION    ", 3000, true);
+      displayLaunchQuant(getCurrentLaunchQuant(), false);
       break;
     }
     case InputMode::Clock: {
@@ -507,8 +536,18 @@ void Engine::displayTempo(double tempo, bool force) {
   m_pView->WriteDisplay(stringStream.str(), force);
 }
 
-void Engine::displayQuantum(int quantum, bool force) {
-  m_pView->WriteDisplay(std::to_string(quantum), force);
+void Engine::displayLoopSize(int loop_size, bool force) {
+  m_pView->WriteDisplay(std::to_string(loop_size), force);
+}
+
+void Engine::displayLaunchQuant(int quant, bool force) {
+  std::string out;
+  if (quant == 0) {
+    out = "LOOP";
+  } else {
+    out = std::to_string(quant);
+  }
+  m_pView->WriteDisplay(out, force);
 }
 
 void Engine::displayPPQN(int ppqn, bool force) {
@@ -589,9 +628,14 @@ double Engine::getCurrentTempo() const {
   return timeline.tempo();
 }
 
-int Engine::getCurrentQuantum() const {
+int Engine::getCurrentLoopSize() const {
   auto settings = m_settings.load();
-  return settings.quantum;
+  return settings.loop_size;
+}
+
+int Engine::getCurrentLaunchQuant() const {
+  auto settings = m_settings.load();
+  return settings.launch_quant;
 }
 
 int Engine::getCurrentPPQN() const {

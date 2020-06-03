@@ -36,6 +36,7 @@ namespace MissingLink {
       enum class InputMode {
         BPM,
         Loop,
+        LaunchQuant,
         Clock,
         ResetMode,
         DelayCompensation,
@@ -87,7 +88,7 @@ namespace MissingLink {
       void Run();
 
       const bool isRunning() const { return m_running; }
-      const double GetNormalizedPhase() const;
+      const double GetNormalizedLoopPhase() const;
       const double GetBeatPhase() const;
       const int GetNumberOfPeers() const;
       const OutputModel GetOutputModel(std::chrono::microseconds last) const;
@@ -138,6 +139,7 @@ namespace MissingLink {
       void routeEncoderAdjust(float amount);
       void tempoAdjust(float amount);
       void loopAdjust(int amount);
+      void launchQuantAdjust(int amount);
       void ppqnAdjust(int amount);
       void resetModeAdjust(int amount);
       void delayCompensationAdjust(int amount);
@@ -148,7 +150,8 @@ namespace MissingLink {
       void displayCurrentMode();
       void displayTempWifiStatus(WifiState status);
       void displayTempo(double tempo, bool force);
-      void displayQuantum(int quantum, bool force);
+      void displayLoopSize(int loop_size, bool force);
+      void displayLaunchQuant(int quant, bool force);
       void displayPPQN(int ppqn, bool force);
       void displayResetMode(int mode, bool force);
       void displayApResetMenu(int mode, bool force);
@@ -157,7 +160,9 @@ namespace MissingLink {
       void displayIpAddrSegment(int pos, bool force);
 
       double getCurrentTempo() const;
-      int getCurrentQuantum() const;
+      int getCurrentLoopSize() const;
+      int getCurrentLaunchQuant() const;
+      int getLaunchQuantize() const;
       int getCurrentPPQN() const;
       int getCurrentResetMode() const;
       int getCurrentDelayCompensation() const;
