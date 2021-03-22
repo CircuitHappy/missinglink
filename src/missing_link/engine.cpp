@@ -111,7 +111,7 @@ Engine::Engine()
   });
 
   m_link.setStartStopCallback([this](const bool isPlaying) {
-    std::string message;
+    // std::string message;
     const auto timeline = m_link.captureAppSessionState();
     if (timeline.isPlaying()) {
       m_playState = PlayState::Cued;
@@ -146,6 +146,17 @@ void Engine::Run() {
   for (auto &process : m_processes) {
     process->Stop();
   }
+}
+
+const ableton::Link::SessionState Engine::getAudioSessionState()
+{
+  return m_link.captureAudioSessionState();
+}
+
+const std::chrono::microseconds Engine::getDelayCompNow()
+{
+  // return m_pLink->clock().micros() + std::chrono::milliseconds(getCurrentDelayCompensation()) - std::chrono::microseconds(BUFFER_LENGTH * SAMPLE_SIZE);
+  return m_link.clock().micros() + std::chrono::milliseconds(getCurrentDelayCompensation());
 }
 
 const double Engine::GetNormalizedPhase() const {
@@ -278,6 +289,17 @@ void Engine::toggleMode() {
   }
   m_lastToggle = Clock::now();
   displayCurrentMode();
+}
+
+void Engine::startTimeline(std::chrono::microseconds hostTime) {
+  auto timeline = m_link.captureAppSessionState();
+  if (m_link.numPeers() == 0){
+    timeline.forceBeatAtTime(0, hostTime + std::chrono::milliseconds(1), m_settings.load().quantum);
+    timeline.setIsPlaying(true, hostTime + std::chrono::milliseconds(1));
+  } else {
+    timeline.setIsPlayingAndRequestBeatAtTime(true, hostTime, 0, m_settings.load().quantum);
+  }
+  m_link.commitAppSessionState(timeline);
 }
 
 void Engine::startTimeline() {

@@ -87,6 +87,8 @@ namespace MissingLink {
       void Run();
 
       const bool isRunning() const { return m_running; }
+      const ableton::Link::SessionState getAudioSessionState();
+      const std::chrono::microseconds getDelayCompNow();
       const double GetNormalizedPhase() const;
       const double GetBeatPhase() const;
       const int GetNumberOfPeers() const;
@@ -96,6 +98,8 @@ namespace MissingLink {
       void SetPlayState(PlayState state);
 
       bool GetQueuedStartTransport();
+
+      void startTimeline(std::chrono::microseconds hostTime);
 
       int getWifiStatus();
       int getResetMode();

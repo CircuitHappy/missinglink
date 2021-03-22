@@ -14,6 +14,42 @@
 
 namespace MissingLink {
 
+  struct buffer_t {
+    bool state;
+    std::chrono::microseconds timestamp;
+  };
+
+  class OutputJack {
+
+    public:
+
+      enum output_mode_t {
+        CLOCK_NORMAL       = 0,
+        CLOCK_ALWAYS_ON    = 1,
+        RESET_TRIGGER      = 2,
+        RUN_HIGH           = 3,
+      };
+
+      OutputJack(Engine * pEngine, uint8_t pin, output_mode_t mode, uint8_t ppqn);
+      void begin();
+      // void setBuffer(const std::chrono::microseconds last, const std::chrono::microseconds now, Engine::PlayState playState, const double qnPhase, const double beat);
+      void setJack(const double beat, const bool resetTrig, const Engine::PlayState playState);
+      void writeToJack(bool state);
+  private:
+
+      Engine * m_pEngine;
+      uint8_t m_trigHighCount;
+      std::unique_ptr<GPIO::Pin> m_pGpioPin;
+      output_mode_t m_outMode;
+      uint8_t m_ppqn;
+      bool m_currentState;
+      int m_lastCalcNum;
+      int m_sampleCount;
+
+      bool calcClockTrig(double beat);
+      bool calcResetTrig(double beat, double quantum);
+  };
+
   class OutputProcess : public Engine::Process {
 
     public:
@@ -24,18 +60,14 @@ namespace MissingLink {
     private:
 
       void process() override;
-      void triggerOutputs(bool clockTriggered, bool resetTriggered);
-      void setClock(bool high);
-      void setReset(bool high);
 
-      std::chrono::microseconds m_lastOutTime = std::chrono::microseconds(0);
-      bool m_clockHigh = false;
-      bool m_resetHigh = false;
-
+      std::chrono::microseconds m_lastTime = std::chrono::microseconds(0);
+      double m_lastBeat;
       bool m_transportStopped = true;
 
-      std::unique_ptr<GPIO::Pin> m_pClockOut;
-      std::unique_ptr<GPIO::Pin> m_pResetOut;
+      std::unique_ptr<OutputJack> m_pOutA;
+      std::unique_ptr<OutputJack> m_pOutB;
+
   };
 
   class ViewUpdateProcess : public Engine::Process {

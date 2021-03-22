@@ -23,12 +23,12 @@ using std::min;
 using std::max;
 
 OutputProcess::OutputProcess(Engine &engine)
-  : Engine::Process(engine, std::chrono::seconds(1), std::chrono::microseconds(100))
-  , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
-  , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
+  : Engine::Process(engine, std::chrono::seconds(1), std::chrono::microseconds(SAMPLE_SIZE))
+  , m_lastBeat(0.0)
+  , m_pOutA(std::unique_ptr<OutputJack>(new OutputJack(&engine, ML_CLOCK_PIN, OutputJack::CLOCK_NORMAL, 4)))
+  , m_pOutB(std::unique_ptr<OutputJack>(new OutputJack(&engine, ML_RESET_PIN, OutputJack::RESET_TRIGGER, 2)))
 {
-  m_pClockOut->Write(LOW);
-  m_pResetOut->Write(LOW);
+
 }
 
 void OutputProcess::Run() {
@@ -41,103 +41,151 @@ void OutputProcess::Run() {
 }
 
 void OutputProcess::process() {
-  auto midiOut = m_engine.GetMidiOut();
-  auto playState = m_engine.GetPlayState();
-  const auto model = m_engine.GetOutputModel(m_lastOutTime);
-  m_lastOutTime = model.now;
+    double quantum = 4.0;
+    auto sessionState = m_engine.getAudioSessionState();
+    std::chrono::microseconds hostTime = m_engine.getDelayCompNow();
+    // auto beginHostTime = m_pEngine->getDelayCompNow() + std::chrono::microseconds(BUFFER_LENGTH * SAMPLE_SIZE);
+    // std::chrono::microseconds lastTime = beginHostTime - std::chrono::microseconds(SAMPLE_SIZE);
+    auto playState = m_engine.GetPlayState();
 
-  switch (playState) {
-    case Engine::PlayState::Stopped:
-      if (m_transportStopped == false) {
-        midiOut->StopTransport();
-        m_transportStopped = true;
-      }
-      setClock(false);
-      setReset(false);
-      break;
-    case Engine::PlayState::Cued:
-      // start playing on first clock of loop
-      if (!model.resetTriggered) {
+    bool resetTriggered = false;
+
+    // const auto hostTime = beginHostTime + std::chrono::microseconds(llround(i * SAMPLE_SIZE)); //maybe not llround
+    const double beats = sessionState.phaseAtTime(hostTime, quantum);
+    // const double beats = sessionState.beatAtTime(hostTime, quantum);
+
+    // m_pOutA->writeToJack(((int)beats % 4) == 0);
+    // m_pOutB->writeToJack((int)phase < 1.0);
+
+    const int edgesPerBeat = 24; //24 ppqn, times 2
+    const int edgesPerLoop = edgesPerBeat * quantum;
+    const int edge = (int)floor(beats * (double)edgesPerBeat);
+    const int lastEdge = (int)floor(m_lastBeat * (double)edgesPerBeat);
+
+    resetTriggered = ((edge % 2 == 0) && (edge != lastEdge)) && (edge % edgesPerLoop == 0);
+
+    switch (playState)
+    {
+      case Engine::PlayState::Stopped:
+        if (m_transportStopped == false) {
+          m_transportStopped = true;
+        }
         break;
-      }
-      // Deliberate fallthrough here
-      m_engine.SetPlayState(Engine::PlayState::Playing);
-    case Engine::PlayState::Playing:
-      triggerOutputs(model.clockTriggered, model.resetTriggered);
-      break;
-    case Engine::PlayState::CuedStop:
-      // stop playing on first clock of loop
-      if (model.resetTriggered) {
-        m_engine.SetPlayState(Engine::PlayState::Stopped);
-        midiOut->StopTransport(); //stop before start of next loop
-        m_transportStopped = true;
-      } else {
-        //keep playing the clock
-        triggerOutputs(model.clockTriggered, model.resetTriggered);
-      }
-      break;
-    default:
-      break;
-  }
-  if (model.midiClockTriggered) { midiOut->ClockOut(); } //always output midi clock
+
+      case Engine::PlayState::Cued:
+        // start playing on first clock of loop
+        if (resetTriggered == false) {
+          break;
+        }
+        // Deliberate fallthrough here
+        m_engine.startTimeline(hostTime);
+        m_engine.SetPlayState(Engine::PlayState::Playing);
+        playState = Engine::PlayState::Playing;
+
+      case Engine::PlayState::Playing:
+        break;
+
+      case Engine::PlayState::CuedStop:
+        // stop playing at start of next loop
+        if (resetTriggered) {
+          m_engine.SetPlayState(Engine::PlayState::Stopped);
+          playState = Engine::PlayState::Stopped;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    m_pOutA->setJack(beats, resetTriggered, playState);
+    m_pOutB->setJack(beats, resetTriggered, playState);
+
+    m_lastTime = hostTime;
+    m_lastBeat = beats;
 }
 
-void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
-  auto midiOut = m_engine.GetMidiOut();
-  auto playState = m_engine.GetPlayState();
-  auto mainView = m_engine.GetMainView();
-  bool resetTrig = true;
-  if (m_engine.getResetMode() == 2) {
-    resetTrig = false;
-  }
-  if (resetTriggered) {
-    setReset(resetTrig);
-    //first reset trigger is start of sequence, tell midi to StartTransport
-    //or, a manually queued MIDI Start Transport
-    if (m_transportStopped || m_engine.GetQueuedStartTransport()) {
-      midiOut->StartTransport();
-      mainView->flashLedRing();
-      m_transportStopped = false;
-    }
-  }
-  if (clockTriggered) { setClock(true); }
+OutputJack::OutputJack(Engine * pEngine, uint8_t pin, output_mode_t mode, uint8_t ppqn)
+  : m_pEngine(pEngine)
+  , m_trigHighCount(0)
+  , m_pGpioPin(std::unique_ptr<Pin>(new Pin(pin, Pin::OUT)))
+  , m_outMode(mode)
+  , m_ppqn(ppqn)
+  , m_currentState(false)
+  , m_lastCalcNum(-1)
+  , m_sampleCount(0)
+{
 
-  if (clockTriggered || resetTriggered) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    switch (m_engine.getResetMode()) {
-      case 0:
-        if (playState == Engine::PlayState::Playing) {
-          setReset(false);
+}
+
+void OutputJack::setJack(const double beat, const bool resetTrig, const Engine::PlayState playState)
+{
+  bool clockTriggered = false;
+  bool high = false;
+
+  if (m_trigHighCount > 0) {
+    m_trigHighCount --;
+    high = true;
+  } else {
+    switch (m_outMode)
+    {
+      case CLOCK_NORMAL:
+        if ((playState == Engine::PlayState::Playing) || (playState == Engine::PlayState::CuedStop))
+        {
+          high = calcClockTrig(beat);
+          clockTriggered = high;
         }
         break;
-      case 1:
-        if (playState == Engine::PlayState::Playing) {
-          setReset(true);
+      case CLOCK_ALWAYS_ON:
+        high = calcClockTrig(beat);
+        clockTriggered = high;
+        break;
+      case RESET_TRIGGER:
+        if ((playState == Engine::PlayState::Playing) || (playState == Engine::PlayState::CuedStop))
+        {
+          high = resetTrig;
+          clockTriggered = high;
         }
         break;
-      case 2:
-        if (playState == Engine::PlayState::Playing) {
-          setReset(true);
+      case RUN_HIGH:
+        if ((playState == Engine::PlayState::Playing) || (playState == Engine::PlayState::CuedStop))
+        {
+          high = true;
+          //not a trigger so we do not need to set clockTriggered
         }
         break;
       default:
-        setReset(false);
+        high = false;
         break;
     }
-    setClock(false);
+    if (clockTriggered) {
+      m_trigHighCount = (TRIG_LENGTH / SAMPLE_SIZE) - 1;
+    }
   }
+  writeToJack(high);
 }
 
-void OutputProcess::setClock(bool high) {
-  if (m_clockHigh == high) { return; }
-  m_clockHigh = high;
-  m_pClockOut->Write(high ? HIGH : LOW);
+bool OutputJack::calcClockTrig(double beat)
+{
+  double wholeNum;
+  double clockPhase = modf(beat, &wholeNum) * m_ppqn;
+  int currentClockNum = floor(clockPhase);
+  bool trig = (currentClockNum != m_lastCalcNum) ? true : false;
+  m_lastCalcNum = currentClockNum;
+  return trig;
 }
 
-void OutputProcess::setReset(bool high) {
-  if (m_resetHigh == high) { return; }
-  m_resetHigh = high;
-  m_pResetOut->Write(high ? HIGH : LOW);
+bool OutputJack::calcResetTrig(double beat, double quantum)
+{
+  uint8_t currentBeatNum = (int)beat % (int)quantum;
+  bool trig = ( (currentBeatNum == 0) && (currentBeatNum != m_lastCalcNum) );
+  m_lastCalcNum = currentBeatNum;
+  return trig;
+}
+
+void OutputJack::writeToJack(bool state)
+{
+  m_currentState = state;
+  m_pGpioPin->Write((DigitalValue)state);
 }
 
 namespace MissingLink {
