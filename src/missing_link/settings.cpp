@@ -43,6 +43,10 @@ Settings Settings::Load() {
     settings.quantum = config.lookup("quantum");
     settings.ppqn_index = config.lookup("ppqn_index");
     settings.reset_mode = config.lookup("reset_mode");
+    settings.outa_mode = config.lookup("outa_mode");
+    settings.outb_mode = config.lookup("outb_mode");
+    settings.outa_ppqn = config.lookup("outa_ppqn");
+    settings.outb_ppqn = config.lookup("outb_ppqn");
     settings.delay_compensation = config.lookup("delay_compensation");
     settings.start_stop_sync = config.lookup("start_stop_sync");
     settings.ap_mode = config.lookup("ap_mode");
@@ -57,6 +61,10 @@ Settings Settings::Load() {
     "\n  quantum: " << settings.quantum <<
     "\n  ppqn: " << settings.getPPQN() <<
     "\n  reset_mode: " << settings.reset_mode <<
+    "\n  outa_mode: " << settings.outa_mode <<
+    "\n  outb_mode: " << settings.outb_mode <<
+    "\n  outa_ppqn: " << settings.outa_ppqn <<
+    "\n  outb_ppqn: " << settings.outb_ppqn <<
     "\n  delay_compensation: " << settings.delay_compensation <<
     "\n  start_stop_sync: " << settings.start_stop_sync <<
     "\n  ap_mode: " << settings.ap_mode << std::endl;
@@ -78,6 +86,10 @@ void Settings::Save(const Settings settings) {
   root.add("quantum", Setting::TypeInt) = settings.quantum;
   root.add("ppqn_index", Setting::TypeInt) = settings.ppqn_index;
   root.add("reset_mode", Setting::TypeInt) = settings.reset_mode;
+  root.add("outa_mode", Setting::TypeInt) = settings.outa_mode;
+  root.add("outb_mode", Setting::TypeInt) = settings.outb_mode;
+  root.add("outa_ppqn", Setting::TypeInt) = settings.outa_ppqn;
+  root.add("outb_ppqn", Setting::TypeInt) = settings.outb_ppqn;
   root.add("delay_compensation", Setting::TypeInt) = settings.delay_compensation;
   root.add("start_stop_sync", Setting::TypeBoolean) = settings.start_stop_sync;
   root.add("ap_mode", Setting::TypeInt) = settings.ap_mode;
