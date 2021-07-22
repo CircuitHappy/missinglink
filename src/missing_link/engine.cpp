@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
+#include "missing_link/output_jack.hpp"
 #include "missing_link/user_interface.hpp"
 
 #define MIN_TEMPO 20.0
@@ -66,6 +67,8 @@ Engine::Engine()
   , m_inputMode(InputMode::BPM)
   , m_link(m_settings.load().tempo)
   , m_pView(shared_ptr<MainView>(new MainView()))
+  , m_pJackA(shared_ptr<OutputJack>(new OutputJack(ML_CLOCK_PIN, OutputJack::OutputMode::CLOCK_ALWAYS_ON_MODE, 4, "JackA")))
+  , m_pJackB(shared_ptr<OutputJack>(new OutputJack(ML_RESET_PIN, OutputJack::OutputMode::RESET_TRIGGER_MODE, 4, "JackB")))
   , m_pTapTempo(unique_ptr<TapTempo>(new TapTempo()))
   , m_pMidiOut(std::shared_ptr<MidiOut>(new MidiOut()))
   , m_QueueStartTransport(false)
@@ -82,7 +85,12 @@ Engine::Engine()
 
   m_link.enableStartStopSync(settings.start_stop_sync);
 
-  auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(*this));
+  auto jackAProcess = unique_ptr<JackProcess>(new JackProcess(*this, m_pJackA));
+  auto jackBProcess = unique_ptr<JackProcess>(new JackProcess(*this, m_pJackB));
+  m_processes.push_back(std::move(jackAProcess));
+  m_processes.push_back(std::move(jackBProcess));
+
+  auto outputProcess = unique_ptr<OutputProcess>(new OutputProcess(*this, m_pJackA, m_pJackB));
   m_processes.push_back(std::move(outputProcess));
 
   auto viewProcess = unique_ptr<ViewUpdateProcess>(new ViewUpdateProcess(*this, m_pView));
@@ -182,12 +190,10 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   output.now = now;
 
   auto timeline = m_link.captureAudioSessionState();
-  output.tempo = timeline.tempo();
 
   if (last == std::chrono::microseconds(0)) {
     output.clockTriggered = false;
     output.resetTriggered = false;
-    output.midiClockTriggered = false;
     return output;
   }
 
@@ -195,20 +201,17 @@ const Engine::OutputModel Engine::GetOutputModel(std::chrono::microseconds last)
   const double beats = timeline.beatAtTime(now, currentSettings.quantum);
   const double lastBeats = timeline.beatAtTime(last, currentSettings.quantum);
 
-  const int edgesPerBeat = currentSettings.getPPQN() * 2;
-  const int midiEdgesPerBeat = 24 * 2;
+  const int edgesPerBeat = 48 * 2;
   const int edgesPerLoop = edgesPerBeat * currentSettings.quantum;
 
   const int edge = (int)floor(beats * (double)edgesPerBeat);
   const int lastEdge = (int)floor(lastBeats * (double)edgesPerBeat);
 
-  const int midiEdge = (int)floor(beats * (double)midiEdgesPerBeat);
-  const int midiLastEdge = (int)floor(lastBeats * (double)midiEdgesPerBeat);
-
   output.clockTriggered = (edge % 2 == 0) && (edge != lastEdge);
   output.resetTriggered = output.clockTriggered && (edge % edgesPerLoop == 0);
+  output.clockNum = edge / 2;
 
-  output.midiClockTriggered = (midiEdge % 2 == 0) && (midiEdge != midiLastEdge);
+  // std::cout << "clockNum: " << output.clockNum << std::endl;
 
   return output;
 }
@@ -612,6 +615,26 @@ int Engine::getCurrentDelayCompensation() const {
 int Engine::getCurrentStartStopSync() const {
   auto settings = m_settings.load();
   return settings.start_stop_sync;
+}
+
+uint8_t Engine::GetOutAMode() const {
+  auto settings = m_settings.load();
+  return settings.outa_mode;
+}
+
+uint8_t Engine::GetOutBMode() const {
+  auto settings = m_settings.load();
+  return settings.outb_mode;
+}
+
+uint8_t Engine::GetOutAPPQN() const {
+  auto settings = m_settings.load();
+  return settings.outa_ppqn;
+}
+
+uint8_t Engine::GetOutBPPQN() const {
+  auto settings = m_settings.load();
+  return settings.outb_ppqn;
 }
 
 void Engine::startResetApModeSettings() {

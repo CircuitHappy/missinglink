@@ -15,15 +15,19 @@
 #include "missing_link/view.hpp"
 #include "missing_link/engine.hpp"
 #include "missing_link/output.hpp"
+#include "missing_link/output_jack.hpp"
 #include "missing_link/wifi_status.hpp"
 
 using namespace MissingLink;
 using namespace MissingLink::GPIO;
+using namespace std;
 using std::min;
 using std::max;
 
-OutputProcess::OutputProcess(Engine &engine)
+OutputProcess::OutputProcess(Engine &engine, std::shared_ptr<OutputJack> pJackA, std::shared_ptr<OutputJack> pJackB)
   : Engine::Process(engine, std::chrono::seconds(1), std::chrono::microseconds(100))
+  , m_pJackA(pJackA)
+  , m_pJackB(pJackB)
   , m_pClockOut(std::unique_ptr<Pin>(new Pin(ML_CLOCK_PIN, Pin::OUT)))
   , m_pResetOut(std::unique_ptr<Pin>(new Pin(ML_RESET_PIN, Pin::OUT)))
 {
@@ -43,101 +47,184 @@ void OutputProcess::Run() {
 void OutputProcess::process() {
   auto midiOut = m_engine.GetMidiOut();
   auto playState = m_engine.GetPlayState();
-  const auto model = m_engine.GetOutputModel(m_lastOutTime);
-  m_lastOutTime = model.now;
-
-  switch (playState) {
-    case Engine::PlayState::Stopped:
-      if (m_transportStopped == false) {
-        midiOut->StopTransport();
-        m_transportStopped = true;
-      }
-      setClock(false);
-      setReset(false);
-      break;
-    case Engine::PlayState::Cued:
-      // start playing on first clock of loop
-      if (!model.resetTriggered) {
-        break;
-      }
-      // Deliberate fallthrough here
-      m_engine.SetPlayState(Engine::PlayState::Playing);
-    case Engine::PlayState::Playing:
-      triggerOutputs(model.clockTriggered, model.resetTriggered);
-      break;
-    case Engine::PlayState::CuedStop:
-      // stop playing on first clock of loop
-      if (model.resetTriggered) {
-        m_engine.SetPlayState(Engine::PlayState::Stopped);
-        midiOut->StopTransport(); //stop before start of next loop
-        m_transportStopped = true;
-      } else {
-        //keep playing the clock
-        triggerOutputs(model.clockTriggered, model.resetTriggered);
-      }
-      break;
-    default:
-      break;
-  }
-  if (model.midiClockTriggered) { midiOut->ClockOut(); } //always output midi clock
-}
-
-void OutputProcess::triggerOutputs(bool clockTriggered, bool resetTriggered) {
-  auto midiOut = m_engine.GetMidiOut();
-  auto playState = m_engine.GetPlayState();
   auto mainView = m_engine.GetMainView();
-  bool resetTrig = true;
-  if (m_engine.getResetMode() == 2) {
-    resetTrig = false;
-  }
-  if (resetTriggered) {
-    setReset(resetTrig);
-    //first reset trigger is start of sequence, tell midi to StartTransport
-    //or, a manually queued MIDI Start Transport
-    if (m_transportStopped || m_engine.GetQueuedStartTransport()) {
-      midiOut->StartTransport();
-      mainView->flashLedRing();
-      m_transportStopped = false;
-    }
-  }
-  if (clockTriggered) { setClock(true); }
-
-  if (clockTriggered || resetTriggered) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    switch (m_engine.getResetMode()) {
-      case 0:
-        if (playState == Engine::PlayState::Playing) {
-          setReset(false);
-        }
+  const auto model = m_engine.GetOutputModel(m_lastOutTime);
+  OutputProcess::OutputMode outAMode = intToOutputMode(m_engine.GetOutAMode());
+  OutputProcess::OutputMode outBMode = intToOutputMode(m_engine.GetOutBMode());
+  int outAPPQN = m_engine.GetOutAPPQN();
+  int outBPPQN = m_engine.GetOutBPPQN();
+  // std::cout << "clockDiv: " << 48 / outAPPQN << "; outAPPQN: " << outAPPQN << std::endl;
+  m_lastOutTime = model.now;
+  if (model.clockNum == 0)
+  {
+    switch (playState)
+    {
+      case Engine::PlayState::Cued:
+        m_engine.SetPlayState(Engine::PlayState::Playing);
+        playState = Engine::PlayState::Playing;
+        midiOut->StartTransport();
+        mainView->flashLedRing();
+        m_transportStopped = false;
         break;
-      case 1:
-        if (playState == Engine::PlayState::Playing) {
-          setReset(true);
-        }
-        break;
-      case 2:
-        if (playState == Engine::PlayState::Playing) {
-          setReset(true);
+      case Engine::PlayState::CuedStop:
+        m_engine.SetPlayState(Engine::PlayState::Stopped);
+        playState = Engine::PlayState::Stopped;
+        if (m_transportStopped == false) {
+          midiOut->StopTransport();
+          m_transportStopped = true;
         }
         break;
       default:
-        setReset(false);
         break;
     }
-    setClock(false);
+  }
+
+  bool outAState = GetOutState(model.clockTriggered, model.clockNum, playState, 4, outAMode);
+  bool outBState = GetOutState(model.clockTriggered, model.clockNum, playState, 2, outBMode);
+
+  if (model.clockTriggered) { 
+    // setOutA(outAState);
+    // setOutB(outBState);
+    m_pJackA->RequestTrigger();
+    if (model.clockNum == 0) m_pJackB->RequestTrigger();
+    // if (outBState) m_pJackB->RequestTrigger();
+    midiOut->ClockOut();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
+    // if (outAMode != OutputProcess::OutputMode::GATE_MODE) {
+    //   setOutA(false);
+    // }
+    // if (outBMode != OutputProcess::OutputMode::GATE_MODE) {
+    //     setOutB(false);
+    // }
   }
 }
 
-void OutputProcess::setClock(bool high) {
+bool OutputProcess::GetOutState(bool triggered, uint16_t clockNum, Engine::PlayState playState, int ppqn, OutputProcess::OutputMode mode)
+{
+  uint16_t clockDiv = 48 / (uint16_t)ppqn;
+  if (clockDiv < 1) clockDiv = 1;
+  switch (mode)
+  {
+  case OutputProcess::OutputMode::CLOCK_ALWAYS_ON_MODE:
+    if (triggered && ((clockNum % clockDiv) == 0))
+    {
+      return true;
+    }
+    break;
+  case OutputProcess::OutputMode::CLOCK_NORMAL_MODE:
+    if ((playState == Engine::PlayState::Playing) || (playState == Engine::PlayState::CuedStop))
+    {
+      if (triggered && ((clockNum % clockDiv) == 0))
+      {
+        return true;
+      }
+    }
+    break;
+  case OutputProcess::OutputMode::RESET_TRIGGER_MODE:
+    if ((playState == Engine::PlayState::Playing) || (playState == Engine::PlayState::CuedStop))
+    {
+      if (triggered && (clockNum == 0))
+      {
+        return true;
+      }
+    }
+    break;
+  case OutputProcess::OutputMode::GATE_MODE:
+    if ((playState == Engine::PlayState::Playing) || (playState == Engine::PlayState::CuedStop))
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+    break;
+  }
+  return false;
+}
+
+void OutputProcess::setOutA(bool high) {
   if (m_clockHigh == high) { return; }
   m_clockHigh = high;
   m_pClockOut->Write(high ? HIGH : LOW);
 }
 
-void OutputProcess::setReset(bool high) {
+void OutputProcess::setOutB(bool high) {
   if (m_resetHigh == high) { return; }
   m_resetHigh = high;
   m_pResetOut->Write(high ? HIGH : LOW);
+}
+
+OutputProcess::OutputMode OutputProcess::intToOutputMode(uint8_t mode)
+{
+  return static_cast<OutputProcess::OutputMode>(mode);
+}
+
+int OutputProcess::OutputModeToInt(OutputProcess::OutputMode mode)
+{
+  return static_cast<int>(mode);
+}
+
+uint16_t OutputProcess::GetPpqnValue(uint16_t index)
+{
+  uint8_t ppqn;
+  OutputProcess::PpqnItem item = static_cast<OutputProcess::PpqnItem>(index);
+  switch (item)
+  {
+  case OutputProcess::PpqnItem::PPQN_1:
+    ppqn = 1;
+    break;
+  case OutputProcess::PpqnItem::PPQN_2:
+    ppqn = 2;
+    break;
+  case OutputProcess::PpqnItem::PPQN_4:
+    ppqn = 4;
+    break;
+  case OutputProcess::PpqnItem::PPQN_8:
+    ppqn = 8;
+    break;
+  case OutputProcess::PpqnItem::PPQN_12:
+    ppqn = 12;
+    break;
+  case OutputProcess::PpqnItem::PPQN_24:
+    ppqn = 24;
+    break;
+  default:
+    ppqn = 1;
+    break;
+  }
+  return ppqn;
+}
+
+uint16_t OutputProcess::GetPpqnItemIndex(uint8_t ppqnValue)
+{
+  uint16_t index;
+  switch (ppqnValue)
+  {
+  case 1:
+    index = 0;
+    break;
+  case 2:
+    index = 1;
+    break;
+  case 4:
+    index = 2;
+    break;
+  case 8:
+    index = 3;
+    break;
+  case 12:
+    index = 4;
+    break;
+  case 24:
+    index = 5;
+    break;
+  default:
+    index = 0;
+    break;
+  }
+  return index;
 }
 
 namespace MissingLink {
@@ -285,4 +372,35 @@ float ViewUpdateProcess::getWifiStatusFrame(int wifiStatus) {
     frameIndex = 0;
   }
   return animationFrames.at(frameIndex);
+}
+
+JackProcess::JackProcess(Engine &engine, std::shared_ptr<OutputJack> pJack)
+:  Engine::Process(engine, std::chrono::seconds(1), std::chrono::microseconds(100))
+, m_pJack(pJack)
+{
+  
+}
+
+void JackProcess::Run() {
+  Process::Run();
+  // sched_param param;
+  // param.sched_priority = 50;
+  // if(::pthread_setschedparam(m_pThread->native_handle(), SCHED_FIFO, &param) < 0) {
+  //   std::cerr << "Failed to set output thread priority\n";
+  // }
+}
+
+void JackProcess::process()
+{
+  m_run = true;
+  while (m_run == true)
+  {
+    while (m_pJack->TriggerRequested() == false)
+    {
+      this_thread::yield();
+    }
+    m_pJack->Write(true);
+    this_thread::sleep_for(chrono::milliseconds(5));
+    m_pJack->Write(false);
+  }
 }

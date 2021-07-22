@@ -15,6 +15,7 @@
 #include "missing_link/tap_tempo.hpp"
 #include "missing_link/settings.hpp"
 #include "missing_link/view.hpp"
+#include "missing_link/output_jack.hpp"
 #include "missing_link/wifi_status.hpp"
 #include "missing_link/midi_out.hpp"
 #include "missing_link/system_info.hpp"
@@ -48,10 +49,9 @@ namespace MissingLink {
       /// Model for engine output processes
       struct OutputModel {
         std::chrono::microseconds now;
-        double tempo;
         bool clockTriggered;
         bool resetTriggered;
-        bool midiClockTriggered;
+        uint16_t clockNum;
       };
 
       class Process {
@@ -100,6 +100,11 @@ namespace MissingLink {
       int getWifiStatus();
       int getResetMode();
 
+      uint8_t GetOutAMode() const;
+      uint8_t GetOutBMode() const;
+      uint8_t GetOutAPPQN() const;
+      uint8_t GetOutBPPQN() const;
+
       std::shared_ptr<MidiOut> GetMidiOut();
       std::shared_ptr<MainView> GetMainView();
 
@@ -116,6 +121,8 @@ namespace MissingLink {
       ableton::Link m_link;
 
       std::shared_ptr<MainView> m_pView;
+      std::shared_ptr<OutputJack> m_pJackA;
+      std::shared_ptr<OutputJack> m_pJackB;
       std::unique_ptr<TapTempo> m_pTapTempo;
       std::shared_ptr<MidiOut> m_pMidiOut;
       std::atomic<bool> m_QueueStartTransport;

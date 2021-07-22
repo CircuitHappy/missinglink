@@ -33,9 +33,9 @@ struct Settings {
   , start_stop_sync(false)
   , ap_mode(0) 
   , outa_mode(0)
-  , outb_mode(2)
-  , outa_ppqn(4)
-  , outb_ppqn(4)
+  , outb_mode(3)
+  , outa_ppqn(2)
+  , outb_ppqn(8)
   {}
 
   // Load from config file
